@@ -1,46 +1,66 @@
-import { Link, type LinkProps } from "@tanstack/react-router";
-import { LibraryBig, Plus } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils";
-import { ComingSoon } from "@/components/layout/ComingSoon";
+import { useShallow } from "zustand/react/shallow";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { isDirty, useDocumentsStore } from "@/features/documents/documentsStore";
+import {
+  entryForPath,
+  HOME,
+  initials,
+  serverOf,
+  topLevelFolders,
+} from "@/features/library/libraryModel";
+import { useLibraryStore } from "@/features/library/libraryStore";
+import { useActiveServer } from "@/features/library/useActiveServer";
+import { useUiStore } from "@/features/ui/uiStore";
+import { cn } from "@/lib/utils";
 
 const railIcon =
-  "relative flex size-12 items-center justify-center rounded-3xl transition-all duration-150 hover:rounded-2xl";
+  "group relative flex size-12 items-center justify-center rounded-3xl transition-all duration-150 hover:rounded-2xl";
 
-/** White pill on the rail's left edge: small on hover, tall when active. */
-function Pill() {
+/**
+ * White pill on the rail's left edge (Discord's indicator):
+ * tall = selected, short = hover, small dot = has unsaved documents.
+ */
+function Pill({ active, unsaved }: { active: boolean; unsaved: boolean }) {
   return (
     <span
       aria-hidden
-      className="absolute top-1/2 -left-3 h-0 w-1 -translate-y-1/2 rounded-r-full bg-header-primary transition-all duration-150 group-hover:h-5 group-data-[status=active]:h-10"
+      className={cn(
+        "absolute top-1/2 -left-3 w-1 -translate-y-1/2 rounded-r-full bg-header-primary transition-all duration-150",
+        active ? "h-10" : unsaved ? "h-2 group-hover:h-5" : "h-0 group-hover:h-5",
+      )}
     />
   );
 }
 
-interface RailLinkProps {
-  to: LinkProps["to"];
+function RailItem({
+  label,
+  active,
+  unsaved,
+  children,
+  ...link
+}: {
   label: string;
-  exact?: boolean;
+  active: boolean;
+  unsaved: boolean;
   children: ReactNode;
-  className?: string;
-}
-
-function RailLink({ to, label, exact, children, className }: RailLinkProps) {
+} & ({ to: "/" } | { to: "/folder/$folder"; params: { folder: string } })) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Link
-          to={to}
-          aria-label={label}
-          activeOptions={{ exact }}
+          {...link}
+          aria-label={unsaved ? `${label} (unsaved changes)` : label}
+          aria-current={active ? "page" : undefined}
           className={cn(
             railIcon,
-            "group bg-surface-primary text-text-normal hover:bg-primary hover:text-white data-[status=active]:rounded-2xl data-[status=active]:bg-primary data-[status=active]:text-white",
-            className,
+            "bg-surface-primary text-text-normal hover:bg-primary hover:text-white",
+            active && "rounded-2xl bg-primary text-white",
           )}
         >
-          <Pill />
+          <Pill active={active} unsaved={unsaved} />
           {children}
         </Link>
       </TooltipTrigger>
@@ -49,33 +69,72 @@ function RailLink({ to, label, exact, children, className }: RailLinkProps) {
   );
 }
 
-/** Far-left navigation rail (Discord's server list). */
+/** Servers with unsaved open documents, so the rail can flag them. */
+function useUnsavedServers(): Set<string> {
+  const listing = useLibraryStore((s) => s.listing);
+  const dirtyPaths = useDocumentsStore(
+    useShallow((s) =>
+      Object.values(s.documents)
+        .filter(isDirty)
+        .map((d) => d.path),
+    ),
+  );
+  return new Set(
+    dirtyPaths.map((path) => {
+      const entry = entryForPath(listing, path);
+      return entry ? serverOf(entry.relativePath) : HOME;
+    }),
+  );
+}
+
+/** Far-left rail: Home + one entry per top-level library folder. */
 export function ServerRail() {
+  const listing = useLibraryStore((s) => s.listing);
+  const { server } = useActiveServer();
+  const unsaved = useUnsavedServers();
+  const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
+  const folders = listing ? topLevelFolders(listing) : [];
+
   return (
     <nav
-      aria-label="Workspaces"
+      aria-label="Folders"
       className="flex w-[72px] shrink-0 flex-col items-center gap-2 overflow-y-auto bg-surface-tertiary py-3"
     >
-      <RailLink to="/" label="Home" exact>
+      <RailItem to="/" label="Home" active={server === HOME} unsaved={unsaved.has(HOME)}>
         <span className="text-sm font-extrabold tracking-tight">MD</span>
-      </RailLink>
+      </RailItem>
 
-      <div className="h-0.5 w-8 rounded-full bg-surface-selected" role="separator" />
+      <div className="h-0.5 w-8 shrink-0 rounded-full bg-surface-selected" role="separator" />
 
-      <RailLink to="/library" label="Library">
-        <LibraryBig className="size-6" />
-      </RailLink>
-
-      <ComingSoon label="Create project — coming soon" side="right">
-        <button
-          type="button"
-          disabled
-          aria-label="Create project"
-          className={cn(railIcon, "bg-surface-primary text-success opacity-60")}
+      {folders.map((folder) => (
+        <RailItem
+          key={folder}
+          to="/folder/$folder"
+          params={{ folder }}
+          label={folder}
+          active={server === folder}
+          unsaved={unsaved.has(folder)}
         >
-          <Plus className="size-6" />
-        </button>
-      </ComingSoon>
+          <span className="text-base font-semibold">{initials(folder)}</span>
+        </RailItem>
+      ))}
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="Create folder"
+            onClick={() => setCreateFolderOpen(true)}
+            className={cn(
+              railIcon,
+              "bg-surface-primary text-success hover:bg-success hover:text-white",
+            )}
+          >
+            <Plus className="size-6" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right">Create folder</TooltipContent>
+      </Tooltip>
     </nav>
   );
 }

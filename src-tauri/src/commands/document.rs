@@ -3,7 +3,7 @@ use tauri::{AppHandle, State, Window};
 use crate::commands::dialog;
 use crate::models::document::{DocumentFile, FileVersion};
 use crate::models::error::{AppError, AppResult};
-use crate::services::document_service;
+use crate::services::{document_service, library_tree};
 use crate::state::AppState;
 
 /// Shows the Open dialog. Returns `None` if the user cancelled.
@@ -27,14 +27,19 @@ pub fn open_document(state: State<'_, AppState>, path: String) -> AppResult<Docu
     document_service::open(&state.scope.authorize(&path)?)
 }
 
-/// Creates a new empty document in the library folder.
+/// Creates a new empty document in the library, optionally in a subfolder
+/// (`/`-separated, relative to the library).
 #[tauri::command]
-pub fn create_document(state: State<'_, AppState>) -> AppResult<DocumentFile> {
+pub fn create_document(
+    state: State<'_, AppState>,
+    folder: Option<String>,
+) -> AppResult<DocumentFile> {
     let library = state
         .scope
         .library()
         .ok_or(AppError::LibraryNotConfigured)?;
-    document_service::create_in(&library)
+    let dir = library_tree::resolve_folder(&library, folder.as_deref().unwrap_or(""))?;
+    document_service::create_in(&dir)
 }
 
 #[tauri::command]

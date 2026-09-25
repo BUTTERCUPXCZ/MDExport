@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { LibraryListing } from "@/types/library";
 
 export const libraryService = {
   /** Current library folder, or `null` on first launch. */
@@ -18,5 +19,15 @@ export const libraryService = {
   /** Shows a folder picker. Resolves `null` if cancelled. */
   chooseLocation(): Promise<string | null> {
     return invoke("choose_library_location");
+  },
+
+  /** Folders and Markdown files in the library. */
+  list(): Promise<LibraryListing> {
+    return invoke("list_library");
+  },
+
+  /** Creates a top-level folder. Resolves its relative path. */
+  createFolder(name: string): Promise<string> {
+    return invoke("create_folder", { name });
   },
 };

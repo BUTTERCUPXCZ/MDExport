@@ -1,0 +1,71 @@
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { useDocumentsStore } from "@/features/documents/documentsStore";
+import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
+import { refreshLibrary } from "@/features/library/libraryStore";
+import { useUiStore } from "@/features/ui/uiStore";
+
+export interface Command {
+  id: string;
+  label: string;
+  shortcut?: string;
+  run: () => void;
+}
+
+/** Commands available in the quick switcher (type ">" to list only commands). */
+export function useCommands(): Command[] {
+  const navigate = useNavigate();
+  const { newDocument, openDocument } = useDocumentCommands();
+  const { documentId } = useParams({ strict: false });
+  const hasDocument = useDocumentsStore((s) => Boolean(documentId && s.documents[documentId]));
+  const { setViewMode, setShortcutsOpen, setCreateFolderOpen } = useUiStore.getState();
+
+  return useMemo(() => {
+    const commands: Command[] = [
+      { id: "new", label: "New document", shortcut: "Ctrl+N", run: () => void newDocument() },
+      { id: "open", label: "Open file…", shortcut: "Ctrl+O", run: () => void openDocument() },
+      { id: "folder", label: "New folder…", run: () => setCreateFolderOpen(true) },
+      { id: "home", label: "Go to Home", run: () => void navigate({ to: "/" }) },
+      { id: "refresh", label: "Refresh library", run: () => void refreshLibrary() },
+      {
+        id: "settings",
+        label: "Open settings",
+        shortcut: "Ctrl+,",
+        run: () => void navigate({ to: "/settings" }),
+      },
+      {
+        id: "shortcuts",
+        label: "Keyboard shortcuts",
+        shortcut: "Ctrl+/",
+        run: () => setShortcutsOpen(true),
+      },
+    ];
+    if (hasDocument && documentId) {
+      const { save, saveAs } = useDocumentsStore.getState();
+      commands.splice(
+        2,
+        0,
+        { id: "save", label: "Save", shortcut: "Ctrl+S", run: () => void save(documentId) },
+        {
+          id: "save-as",
+          label: "Save as…",
+          shortcut: "Ctrl+Shift+S",
+          run: () => void saveAs(documentId),
+        },
+        { id: "view-editor", label: "View: Editor only", run: () => setViewMode("editor") },
+        { id: "view-split", label: "View: Split", run: () => setViewMode("split") },
+        { id: "view-preview", label: "View: Preview only", run: () => setViewMode("preview") },
+      );
+    }
+    return commands;
+  }, [
+    documentId,
+    hasDocument,
+    navigate,
+    newDocument,
+    openDocument,
+    setCreateFolderOpen,
+    setShortcutsOpen,
+    setViewMode,
+  ]);
+}

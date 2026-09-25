@@ -8,7 +8,7 @@ import {
 import { RootLayout } from "@/app/RootLayout";
 import { EditorPage } from "@/app/routes/EditorPage";
 import { HomePage } from "@/app/routes/HomePage";
-import { LibraryPage } from "@/app/routes/LibraryPage";
+import { FolderPage } from "@/app/routes/FolderPage";
 import { NotFoundPage } from "@/app/routes/NotFoundPage";
 import { SettingsPage } from "@/app/routes/SettingsPage";
 import { AppShell } from "@/components/layout/AppShell";
@@ -31,10 +31,10 @@ const homeRoute = createRoute({
   component: HomePage,
 });
 
-const libraryRoute = createRoute({
+const folderRoute = createRoute({
   getParentRoute: () => shellRoute,
-  path: "/library",
-  component: LibraryPage,
+  path: "/folder/$folder",
+  component: FolderPage,
 });
 
 const editorRoute = createRoute({
@@ -50,13 +50,13 @@ const settingsRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([
-  shellRoute.addChildren([homeRoute, libraryRoute, editorRoute]),
+  shellRoute.addChildren([homeRoute, folderRoute, editorRoute]),
   settingsRoute,
 ]);
 
 /**
  * Hash history: the app is served from Tauri's custom protocol, where deep
- * paths like /library would not resolve to index.html on reload.
+ * paths like /folder/x would not resolve to index.html on reload.
  */
 export function createAppRouter(history: RouterHistory = createHashHistory()) {
   return createRouter({ routeTree, history });

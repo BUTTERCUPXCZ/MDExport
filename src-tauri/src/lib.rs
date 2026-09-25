@@ -30,6 +30,8 @@ pub fn run() {
             commands::library::get_default_library_location,
             commands::library::use_default_library_location,
             commands::library::choose_library_location,
+            commands::library::list_library,
+            commands::library::create_folder,
             commands::document::open_document_dialog,
             commands::document::open_document,
             commands::document::create_document,

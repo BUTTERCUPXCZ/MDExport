@@ -4,6 +4,8 @@ use tauri::{AppHandle, Manager, State, Window};
 
 use crate::commands::dialog;
 use crate::models::error::{AppError, AppResult};
+use crate::models::library::LibraryListing;
+use crate::services::library_tree;
 use crate::state::AppState;
 
 fn default_location(app: &AppHandle) -> AppResult<PathBuf> {
@@ -54,4 +56,24 @@ pub async fn choose_library_location(
         Some(dir) => apply(&state, &dir).map(Some),
         None => Ok(None),
     }
+}
+
+/// Lists the library's folders and Markdown files.
+#[tauri::command]
+pub fn list_library(state: State<'_, AppState>) -> AppResult<LibraryListing> {
+    let library = state
+        .scope
+        .library()
+        .ok_or(AppError::LibraryNotConfigured)?;
+    library_tree::scan(&library)
+}
+
+/// Creates a top-level folder in the library. Returns its relative path.
+#[tauri::command]
+pub fn create_folder(state: State<'_, AppState>, name: String) -> AppResult<String> {
+    let library = state
+        .scope
+        .library()
+        .ok_or(AppError::LibraryNotConfigured)?;
+    library_tree::create_folder(&library, &name)
 }

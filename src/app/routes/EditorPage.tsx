@@ -1,7 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { FileQuestion, FileText, FolderOpen } from "lucide-react";
+import { FileQuestion, FolderOpen, Hash } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { DocumentActions } from "@/components/layout/DocumentActions";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -15,11 +14,13 @@ import {
 } from "@/features/documents/documentsStore";
 import { EditorActions } from "@/features/documents/EditorActions";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
-import { documentTitle } from "@/features/editor/documentText";
 import { MarkdownEditor } from "@/features/editor/MarkdownEditor";
 import { MarkdownPreview } from "@/features/editor/MarkdownPreview";
 import { useMarkdownPreview } from "@/features/editor/useMarkdownPreview";
-import { ViewModeToggle, type ViewMode } from "@/features/editor/ViewModeToggle";
+import { ViewModeToggle } from "@/features/editor/ViewModeToggle";
+import { entryForPath } from "@/features/library/libraryModel";
+import { useLibraryStore } from "@/features/library/libraryStore";
+import { useUiStore } from "@/features/ui/uiStore";
 import { showError } from "@/features/notices/noticeStore";
 import { cn } from "@/lib/utils";
 import { toAppError } from "@/types/document";
@@ -29,7 +30,12 @@ const stripExtension = (name: string) => name.replace(/\.(md|markdown)$/i, "");
 function DocumentEditor({ doc }: { doc: OpenDocument }) {
   const navigate = useNavigate();
   const { setContent, save, saveAs, reload, clearConflict, remove } = useDocumentsStore();
-  const [viewMode, setViewMode] = useState<ViewMode>("split");
+  const viewMode = useUiStore((s) => s.viewMode);
+  const setViewMode = useUiStore((s) => s.setViewMode);
+  const listing = useLibraryStore((s) => s.listing);
+  const entry = entryForPath(listing, doc.path);
+  // Topic: path inside the library ("backend / handovers / auth-flow.md"), or the full path.
+  const location = entry ? entry.relativePath.split("/").join(" / ") : doc.path;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const preview = useMarkdownPreview(doc.content);
   const dirty = isDirty(doc);
@@ -61,9 +67,9 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
   return (
     <>
       <PageHeader
-        icon={<FileText />}
-        title={(documentTitle(doc.content) ?? stripExtension(doc.name)) + (dirty ? " •" : "")}
-        topic={doc.path}
+        icon={<Hash />}
+        title={stripExtension(doc.name) + (dirty ? " •" : "")}
+        topic={location}
         actions={
           <>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
@@ -123,7 +129,7 @@ function DocumentNotOpen() {
   const { openDocument } = useDocumentCommands();
   return (
     <>
-      <PageHeader icon={<FileText />} title="No document" actions={<DocumentActions />} />
+      <PageHeader icon={<Hash />} title="No document" />
       <div className="flex-1 overflow-y-auto">
         <EmptyState
           icon={<FileQuestion />}

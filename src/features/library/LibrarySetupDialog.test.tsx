@@ -44,11 +44,8 @@ describe("Library setup", () => {
   });
 
   it("does not ask when a library is already set, and shows it in Settings", async () => {
-    const user = userEvent.setup();
     setupApp();
     await renderAt("/settings");
-
-    await user.click(screen.getByRole("button", { name: "Library" }));
 
     expect(await screen.findByText(LIBRARY)).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();

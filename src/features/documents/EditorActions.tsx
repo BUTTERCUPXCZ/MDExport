@@ -1,6 +1,5 @@
-import { FileDown, Save, SaveAll, Trash2 } from "lucide-react";
+import { Save, SaveAll, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 function IconAction({
@@ -48,16 +47,6 @@ export function EditorActions({ canSave, onSave, onSaveAs, onDelete }: EditorAct
       <IconAction label="Save As (Ctrl+Shift+S)" onClick={onSaveAs}>
         <SaveAll />
       </IconAction>
-      <ComingSoon label="Export — coming soon">
-        <button
-          type="button"
-          disabled
-          aria-label="Export"
-          className="flex size-6 items-center justify-center text-interactive-normal opacity-50 [&_svg]:size-5"
-        >
-          <FileDown />
-        </button>
-      </ComingSoon>
       <IconAction label="Move to trash" onClick={onDelete}>
         <Trash2 />
       </IconAction>

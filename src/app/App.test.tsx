@@ -5,16 +5,21 @@ import { appService } from "@/services/tauri/app";
 import { documentService } from "@/services/tauri/documents";
 import { docFile, renderAt, setupApp } from "@/test/renderApp";
 
-describe("App shell", () => {
+describe("Home", () => {
   beforeEach(() => setupApp());
   afterEach(() => vi.restoreAllMocks());
 
-  it("renders Home inside the shell with the version from Rust", async () => {
+  it("shows quick actions, recent documents and the version from Rust", async () => {
     await renderAt("/");
 
     expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
-    expect(screen.getByText("Welcome to MDForge")).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Workspaces" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^New document\s*Ctrl\+N$/ })).toBeInTheDocument();
+    const recent = screen.getByRole("heading", { name: "Recently edited — 4" }).parentElement!;
+    const names = within(recent)
+      .getAllByRole("button")
+      .map((b) => b.textContent);
+    // Newest first.
+    expect(names[0]).toMatch(/^auth-flow/);
     expect(screen.getByRole("status")).toHaveTextContent("No document open");
     expect(await screen.findByText("v0.1.0 · Local")).toBeInTheDocument();
   });
@@ -27,72 +32,47 @@ describe("App shell", () => {
     expect(await screen.findByTestId("app-version")).toHaveTextContent("Local");
   });
 
-  it("marks the current sidebar item active and navigates on click", async () => {
+  it("opens a recent document", async () => {
     const user = userEvent.setup();
+    const open = vi
+      .spyOn(documentService, "open")
+      .mockResolvedValue(
+        docFile({ path: "/home/me/Documents/MDForge/backend/api.md", name: "api.md" }),
+      );
     const router = await renderAt("/");
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
+    const recent = screen.getByRole("heading", { name: "Recently edited — 4" }).parentElement!;
 
-    expect(within(sidebar).getByRole("link", { name: "Home" })).toHaveAttribute(
-      "data-status",
-      "active",
-    );
+    await user.click(within(recent).getByRole("button", { name: /^api/ }));
 
-    await user.click(within(sidebar).getByRole("link", { name: "Library" }));
-
-    expect(router.state.location.pathname).toBe("/library");
-    expect(screen.getByText("No documents yet")).toBeInTheDocument();
-    expect(within(sidebar).getByRole("link", { name: "Library" })).toHaveAttribute(
-      "data-status",
-      "active",
-    );
+    expect(open).toHaveBeenCalledWith("/home/me/Documents/MDForge/backend/api.md");
+    expect(router.state.location.pathname).toMatch(/^\/editor\//);
   });
-
-  it("shows a not-found page for unknown routes", async () => {
-    await renderAt("/does-not-exist");
-
-    expect(screen.getByText("Page not found")).toBeInTheDocument();
-  });
-});
-
-describe("Home document commands", () => {
-  beforeEach(() => setupApp());
-  afterEach(() => vi.restoreAllMocks());
 
   it("New document creates a file in the library and opens it", async () => {
     const user = userEvent.setup();
-    vi.spyOn(documentService, "create").mockResolvedValue(
-      docFile({ path: "/lib/Untitled.md", name: "Untitled.md", content: "" }),
-    );
+    const create = vi
+      .spyOn(documentService, "create")
+      .mockResolvedValue(docFile({ path: "/lib/Untitled.md", name: "Untitled.md", content: "" }));
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "New document" }));
+    await user.click(screen.getByRole("button", { name: /^New document\s*Ctrl\+N$/ }));
 
+    expect(create).toHaveBeenCalledWith(undefined);
     expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
     expect(screen.getByRole("heading", { level: 1, name: "Untitled" })).toBeInTheDocument();
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
-    expect(within(sidebar).getByRole("link", { name: "Untitled.md" })).toBeInTheDocument();
   });
 
-  it("Open file opens the picked file", async () => {
+  it("Open file opens the picked file; cancelling stays on Home", async () => {
     const user = userEvent.setup();
-    vi.spyOn(documentService, "openDialog").mockResolvedValue(docFile());
-    await renderAt("/");
-
-    await user.click(screen.getByRole("button", { name: "Open file" }));
-
-    expect(screen.getByText("/home/me/Documents/MDForge/Bug Fix.md")).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
-  });
-
-  it("cancelling the Open dialog stays on Home", async () => {
-    const user = userEvent.setup();
-    vi.spyOn(documentService, "openDialog").mockResolvedValue(null);
+    const openDialog = vi.spyOn(documentService, "openDialog").mockResolvedValueOnce(null);
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "Open file" }));
-
+    await user.click(screen.getByRole("button", { name: /Open file/ }));
     expect(router.state.location.pathname).toBe("/");
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    openDialog.mockResolvedValueOnce(docFile());
+    await user.click(screen.getByRole("button", { name: /Open file/ }));
+    expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
   });
 
   it("shows file errors in the notice bar", async () => {
@@ -103,7 +83,7 @@ describe("Home document commands", () => {
     });
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "Open file" }));
+    await user.click(screen.getByRole("button", { name: /Open file/ }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't open the file: Permission denied: /root/secret.md",
@@ -112,17 +92,10 @@ describe("Home document commands", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("Ctrl+N and Ctrl+O work from anywhere", async () => {
-    const user = userEvent.setup();
-    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
-    const openDialog = vi.spyOn(documentService, "openDialog").mockResolvedValue(null);
-    await renderAt("/library");
+  it("shows a not-found page for unknown routes", async () => {
+    await renderAt("/does-not-exist");
 
-    await user.keyboard("{Control>}o{/Control}");
-    expect(openDialog).toHaveBeenCalled();
-
-    await user.keyboard("{Control>}n{/Control}");
-    expect(create).toHaveBeenCalled();
+    expect(screen.getByText("Page not found")).toBeInTheDocument();
   });
 });
 
@@ -132,15 +105,15 @@ describe("Settings", () => {
 
   it("opens with Ctrl+, and closes with Esc back to the previous page", async () => {
     const user = userEvent.setup();
-    const router = await renderAt("/library");
+    const router = await renderAt("/folder/backend");
 
     await user.keyboard("{Control>},{/Control}");
     expect(router.state.location.pathname).toBe("/settings");
-    expect(screen.getByRole("heading", { level: 1, name: "Appearance" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Workspaces" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Library" })).toBeInTheDocument();
+    expect(await screen.findByText("/home/me/Documents/MDForge")).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
-    expect(router.state.location.pathname).toBe("/library");
+    expect(router.state.location.pathname).toBe("/folder/backend");
   });
 
   it("closes to Home when opened directly", async () => {
@@ -152,15 +125,20 @@ describe("Settings", () => {
     expect(router.state.location.pathname).toBe("/");
   });
 
-  it("switches between setting sections", async () => {
+  it("only lists working sections, including every keybind", async () => {
     const user = userEvent.setup();
     await renderAt("/settings");
+    const nav = screen.getByRole("navigation", { name: "Settings" });
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
+    expect(
+      within(nav)
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual(["Library", "Keybinds", "About"]);
+    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Export" })).toBeInTheDocument();
-    expect(screen.getByText("Default PDF Template")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Export" })).toHaveAttribute("aria-current", "page");
+    await user.click(within(nav).getByRole("button", { name: "Keybinds" }));
+    expect(screen.getByText("Quick switcher")).toBeInTheDocument();
   });
 });
 

@@ -16,7 +16,7 @@ describe("Editor page", () => {
     await renderEditor();
 
     expect(screen.getByRole("heading", { level: 1, name: "Bug Fix" })).toBeInTheDocument();
-    expect(screen.getByText("/home/me/Documents/MDForge/Bug Fix.md")).toBeInTheDocument();
+    expect(screen.getByText("Bug Fix.md")).toBeInTheDocument(); // header topic: path in library
     expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
     const preview = screen.getByRole("article", { name: "Preview" });
     expect(await within(preview).findByRole("heading", { name: "Bug Fix" })).toBeInTheDocument();
@@ -177,15 +177,31 @@ describe("Editor page", () => {
     expect(rendered).toHaveClass("hidden");
   });
 
-  it("lists open documents in the sidebar with an unsaved marker", async () => {
+  it("highlights the open document in the sidebar and marks unsaved changes", async () => {
     const { id } = await renderEditor();
     const sidebar = screen.getByRole("navigation", { name: "Main" });
-    expect(within(sidebar).getByRole("link", { name: "Bug Fix.md" })).toBeInTheDocument();
-    expect(within(sidebar).queryByLabelText("Unsaved changes")).not.toBeInTheDocument();
+    expect(within(sidebar).getByRole("button", { name: "Bug Fix" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
 
     useDocumentsStore.getState().setContent(id, "changed");
 
-    expect(await within(sidebar).findByLabelText("Unsaved changes")).toBeInTheDocument();
+    expect(
+      await within(sidebar).findByRole("button", { name: "Bug Fix (unsaved changes)" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows files outside the library in their own sidebar section", async () => {
+    await renderEditor(docFile({ path: "/tmp/scratch.md", name: "scratch.md" }));
+    const sidebar = screen.getByRole("navigation", { name: "Main" });
+
+    expect(within(sidebar).getByText("Outside library")).toBeInTheDocument();
+    expect(within(sidebar).getByRole("button", { name: "scratch" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByText("/tmp/scratch.md")).toBeInTheDocument();
   });
 
   it("clears editor status when leaving the editor", async () => {
@@ -193,7 +209,7 @@ describe("Editor page", () => {
     await renderEditor();
     const sidebar = screen.getByRole("navigation", { name: "Main" });
 
-    await user.click(within(sidebar).getByRole("link", { name: "Library" }));
+    await user.click(within(sidebar).getByRole("link", { name: "Home" }));
 
     expect(screen.getByRole("status")).toHaveTextContent("No document open");
   });

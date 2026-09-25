@@ -1,84 +1,89 @@
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { showError } from "@/features/notices/noticeStore";
+import { ShortcutList } from "@/features/shortcuts/ShortcutsDialog";
+import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
 
-function LibraryLocationValue() {
-  const location = useLibraryLocation((s) => s.location);
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="mt-2 rounded-sm bg-surface-tertiary px-2 py-1 font-mono text-sm break-all text-text-normal">
-      {location ?? "Not set"}
+    <div className="border-b border-border pb-5">
+      <h2 className="mb-2 text-xs font-bold tracking-wide text-header-secondary uppercase">
+        {label}
+      </h2>
+      {children}
     </div>
   );
 }
 
-function ChangeLibraryButton() {
+function LibrarySection() {
+  const location = useLibraryLocation((s) => s.location);
   const setLocation = useLibraryLocation((s) => s.set);
+
   const change = async () => {
     try {
       const chosen = await libraryService.chooseLocation();
-      if (chosen) setLocation(chosen);
+      if (chosen) {
+        setLocation(chosen);
+        void refreshLibrary();
+      }
     } catch (e) {
       showError(`Couldn't change the library folder: ${toAppError(e).message}`);
     }
   };
+
   return (
-    <Button variant="secondary" className="shrink-0" onClick={() => void change()}>
-      Change…
-    </Button>
+    <Field label="Library folder">
+      <p className="mb-3 text-sm text-text-muted">
+        New documents are created here. Top-level folders appear as icons in the left rail.
+      </p>
+      <div className="flex items-center gap-3">
+        <code className="min-w-0 flex-1 rounded-[3px] bg-surface-tertiary px-2.5 py-2 font-mono text-sm break-all text-text-normal">
+          {location || "Not set"}
+        </code>
+        <Button variant="secondary" onClick={() => void change()}>
+          Change…
+        </Button>
+      </div>
+    </Field>
   );
 }
 
-/** Planned settings from Phase 18 of the implementation plan. */
+function AboutSection() {
+  const [version, setVersion] = useState<string | null>(null);
+  useEffect(() => {
+    appService.getInfo().then(
+      (info) => setVersion(info.version),
+      () => setVersion(null),
+    );
+  }, []);
+
+  return (
+    <Field label="MDForge">
+      <p className="text-sm text-text-normal">Version {version ?? "unknown"}</p>
+      <p className="mt-1 text-sm text-text-muted">
+        Local-first Markdown workspace. Your documents are plain .md files on your disk.
+      </p>
+    </Field>
+  );
+}
+
 const SECTIONS = [
-  {
-    id: "appearance",
-    label: "Appearance",
-    items: [
-      ["Theme", "Dark, light, or follow the system."],
-      ["Editor Font", "Font used in the Markdown editor."],
-      ["Font Size", "Editor and preview text size."],
-      ["Preview Width", "Maximum width of the rendered preview."],
-    ],
-  },
-  {
-    id: "editor",
-    label: "Editor",
-    items: [
-      ["Word Wrap", "Wrap long lines in the editor."],
-      ["Auto Save", "Save automatically after you stop typing."],
-      ["Sync Scrolling", "Keep editor and preview scrolled together."],
-    ],
-  },
-  {
-    id: "export",
-    label: "Export",
-    items: [
-      ["Default PDF Template", "Template used for PDF exports."],
-      ["Default DOCX Template", "Template used for Word exports."],
-      ["Default Output Folder", "Where exported files are saved."],
-    ],
-  },
-  {
-    id: "library",
-    label: "Library",
-    items: [
-      ["Library Location", "Folder where new documents are created."],
-      ["Version Retention", "How many old versions to keep."],
-      ["Backup", "Export or restore your whole library."],
-    ],
-  },
+  { id: "library", label: "Library", render: () => <LibrarySection /> },
+  { id: "keybinds", label: "Keybinds", render: () => <ShortcutList /> },
+  { id: "about", label: "About", render: () => <AboutSection /> },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
 /** Full-screen settings layer (Discord's User Settings layout). Esc closes it. */
 export function SettingsPage() {
-  const [sectionId, setSectionId] = useState<SectionId>("appearance");
+  const [sectionId, setSectionId] = useState<SectionId>("library");
   const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
 
   const router = useRouter();
@@ -122,27 +127,7 @@ export function SettingsPage() {
       <div className="flex flex-[1_1_800px] items-start overflow-y-auto bg-surface-primary">
         <section className="max-w-[740px] min-w-[460px] flex-1 px-10 pt-[60px] pb-20">
           <h1 className="mb-5 text-xl font-semibold text-header-primary">{section.label}</h1>
-          <ul>
-            {section.items.map(([name, description]) => (
-              <li
-                key={name}
-                className="flex items-center justify-between gap-4 border-b border-border py-4"
-              >
-                <div className="min-w-0">
-                  <div className="text-base font-medium text-header-primary">{name}</div>
-                  <div className="text-sm text-text-muted">{description}</div>
-                  {name === "Library Location" && <LibraryLocationValue />}
-                </div>
-                {name === "Library Location" ? (
-                  <ChangeLibraryButton />
-                ) : (
-                  <span className="shrink-0 rounded-sm bg-surface-tertiary px-2 py-0.5 text-xs font-semibold text-text-muted uppercase">
-                    Coming soon
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
+          {section.render()}
         </section>
 
         <div className="sticky top-0 flex-none pt-[60px] pr-5">

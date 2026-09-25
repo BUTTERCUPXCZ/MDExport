@@ -27,6 +27,12 @@ pub enum AppError {
     #[error("The library folder is not set up yet")]
     LibraryNotConfigured,
 
+    #[error("Invalid name: {0}")]
+    InvalidName(String),
+
+    #[error("Already exists: {0}")]
+    AlreadyExists(String),
+
     #[error("{0}")]
     Io(String),
 }
@@ -40,6 +46,8 @@ impl AppError {
             AppError::NotAllowed(_) => "notAllowed",
             AppError::NotMarkdown(_) => "notMarkdown",
             AppError::LibraryNotConfigured => "libraryNotConfigured",
+            AppError::InvalidName(_) => "invalidName",
+            AppError::AlreadyExists(_) => "alreadyExists",
             AppError::Io(_) => "io",
         }
     }

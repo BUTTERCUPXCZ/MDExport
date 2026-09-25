@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { documentService } from "@/services/tauri/documents";
+import { refreshLibrary } from "@/features/library/libraryStore";
 import { showError } from "@/features/notices/noticeStore";
 import { toAppError, type DocumentFile, type FileVersion } from "@/types/document";
 
@@ -118,6 +119,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
           saveState: "idle",
           conflict: null,
         });
+        void refreshLibrary();
         return "saved";
       } catch (e) {
         showError(toAppError(e).message);
@@ -155,6 +157,7 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
       if (!doc) return;
       await documentService.delete(doc.path);
       get().close(id);
+      void refreshLibrary();
     },
   };
 });
