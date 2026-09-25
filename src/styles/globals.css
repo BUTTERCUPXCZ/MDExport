@@ -1,16 +1,18 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/noto-sans";
+@import "@fontsource-variable/source-code-pro";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  /* Discord's own fallbacks for its proprietary gg sans / gg mono fonts. */
+  --font-sans: "Noto Sans Variable", "Helvetica Neue", Helvetica, Arial, sans-serif;
   --font-heading: var(--font-sans);
-  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+  --font-mono: "Source Code Pro Variable", Consolas, "Andale Mono WT", monospace;
 
+  /* shadcn/ui tokens */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -34,108 +36,136 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  /* Discord-style surface + text tokens */
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-secondary-alt: var(--surface-secondary-alt);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-floating: var(--surface-floating);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-header-primary: var(--header-primary);
+  --color-header-secondary: var(--header-secondary);
+  --color-text-normal: var(--text-normal);
+  --color-text-muted: var(--text-muted);
+  --color-text-link: var(--text-link);
+  --color-interactive-normal: var(--interactive-normal);
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-active: var(--interactive-active);
+  --color-channel-default: var(--channel-default);
+  --color-floating-foreground: var(--floating-foreground);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --shadow-elevation-low: var(--elevation-low);
+  --shadow-elevation-high: var(--elevation-high);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-xl: calc(var(--radius) * 1.5);
 }
 
 /*
- * MDForge design tokens — see "8. Design System" in the implementation plan.
- * Plan name → token:
- *   Background → --background      Surface → --card / --sidebar
- *   Elevated   → --popover, --secondary, --muted, --accent
- *   Primary Text → --foreground    Secondary Text → --muted-foreground
- *   Muted Text → --subtle-foreground
+ * MDForge design tokens — Discord-inspired, see "8. Design System" in the plan.
+ * Surfaces: tertiary = rail, secondary = sidebar, primary = main content,
+ *           floating = tooltips/menus.
  */
 
 /* Light theme */
 :root {
   --radius: 0.5rem;
 
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --surface-primary: #ffffff;
+  --surface-secondary: #f2f3f5;
+  --surface-secondary-alt: #ebedef;
+  --surface-tertiary: #e3e5e8;
+  --surface-floating: #ffffff;
+  --surface-hover: rgb(116 127 141 / 0.16);
+  --surface-selected: rgb(116 127 141 / 0.3);
 
-  --primary: #4f46e5;
+  --header-primary: #060607;
+  --header-secondary: #4e5058;
+  --text-normal: #313338;
+  --text-muted: #5c5e66;
+  --text-link: #006ce7;
+  --interactive-normal: #4e5058;
+  --interactive-hover: #313338;
+  --interactive-active: #060607;
+  --channel-default: #5c5e66;
+  --floating-foreground: #313338;
+
+  --elevation-low: 0 1px 0 rgb(6 6 7 / 0.08), 0 1.5px 0 rgb(6 6 7 / 0.03);
+  --elevation-high: 0 8px 16px rgb(0 0 0 / 0.16);
+
+  --background: var(--surface-primary);
+  --foreground: var(--text-normal);
+  --card: var(--surface-secondary);
+  --card-foreground: var(--text-normal);
+  --popover: var(--surface-floating);
+  --popover-foreground: var(--floating-foreground);
+  --primary: #5865f2;
   --primary-foreground: #ffffff;
-  --primary-hover: #4338ca;
-
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #475569;
-  --subtle-foreground: #94a3b8;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
-
-  --destructive: #dc2626;
-  --success: #059669;
-  --warning: #d97706;
-
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #4f46e5;
-
-  --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #4f46e5;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f5f9;
-  --sidebar-accent-foreground: #0f172a;
-  --sidebar-border: #e2e8f0;
-  --sidebar-ring: #4f46e5;
+  --primary-hover: #4752c4;
+  --secondary: #6d6f78;
+  --secondary-foreground: #ffffff;
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-muted);
+  --subtle-foreground: #80848e;
+  --accent: var(--surface-hover);
+  --accent-foreground: var(--interactive-hover);
+  --destructive: #da373c;
+  --success: #248046;
+  --warning: #f0b232;
+  --border: rgb(6 6 7 / 0.08);
+  --input: var(--surface-tertiary);
+  --ring: #00a8fc;
 }
 
 /* Dark theme */
 .dark {
-  --background: #0b0f14;
-  --foreground: #f1f5f9;
-  --card: #111820;
-  --card-foreground: #f1f5f9;
-  --popover: #18212b;
-  --popover-foreground: #f1f5f9;
+  --surface-primary: #313338;
+  --surface-secondary: #2b2d31;
+  --surface-secondary-alt: #232428;
+  --surface-tertiary: #1e1f22;
+  --surface-floating: #111214;
+  --surface-hover: rgb(78 80 88 / 0.3);
+  --surface-selected: rgb(78 80 88 / 0.6);
 
-  --primary: #6366f1;
+  --header-primary: #f2f3f5;
+  --header-secondary: #b5bac1;
+  --text-normal: #dbdee1;
+  --text-muted: #949ba4;
+  --text-link: #00a8fc;
+  --interactive-normal: #b5bac1;
+  --interactive-hover: #dbdee1;
+  --interactive-active: #ffffff;
+  --channel-default: #80848e;
+  --floating-foreground: #dbdee1;
+
+  --elevation-low: 0 1px 0 rgb(2 2 2 / 0.2), 0 1.5px 0 rgb(6 6 7 / 0.05), 0 2px 0 rgb(2 2 2 / 0.05);
+  --elevation-high: 0 8px 16px rgb(0 0 0 / 0.24);
+
+  --background: var(--surface-primary);
+  --foreground: var(--text-normal);
+  --card: var(--surface-secondary);
+  --card-foreground: var(--text-normal);
+  --popover: var(--surface-floating);
+  --popover-foreground: var(--floating-foreground);
+  --primary: #5865f2;
   --primary-foreground: #ffffff;
-  --primary-hover: #818cf8;
-
-  --secondary: #18212b;
-  --secondary-foreground: #f1f5f9;
-  --muted: #18212b;
-  --muted-foreground: #94a3b8;
-  --subtle-foreground: #64748b;
-  --accent: #18212b;
-  --accent-foreground: #f1f5f9;
-
-  --destructive: #f87171;
-  --success: #34d399;
-  --warning: #fbbf24;
-
-  --border: #263241;
-  --input: #263241;
-  --ring: #818cf8;
-
-  --sidebar: #111820;
-  --sidebar-foreground: #f1f5f9;
-  --sidebar-primary: #6366f1;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #18212b;
-  --sidebar-accent-foreground: #f1f5f9;
-  --sidebar-border: #263241;
-  --sidebar-ring: #818cf8;
+  --primary-hover: #4752c4;
+  --secondary: #4e5058;
+  --secondary-foreground: #ffffff;
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-muted);
+  --subtle-foreground: #80848e;
+  --accent: var(--surface-hover);
+  --accent-foreground: var(--interactive-hover);
+  --destructive: #da373c;
+  --success: #23a55a;
+  --warning: #f0b232;
+  --border: rgb(78 80 88 / 0.48);
+  --input: var(--surface-tertiary);
+  --ring: #00a8fc;
 }
 
 @layer base {
@@ -150,10 +180,20 @@
     color-scheme: dark;
   }
   body {
-    @apply bg-background text-sm text-foreground antialiased;
+    @apply overflow-hidden bg-surface-tertiary text-text-normal antialiased;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* Thin Discord-style scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-tertiary) transparent;
   }
 }
