@@ -38,8 +38,8 @@ describe("Editor page", () => {
 
     useDocumentsStore.getState().setContent(id, "# Bug Fix\n\nMore details");
 
-    await waitFor(() => expect(status).toHaveTextContent("Unsaved"));
-    expect(screen.getByRole("heading", { level: 1, name: "Bug Fix *" })).toBeInTheDocument();
+    await waitFor(() => expect(status).toHaveTextContent("Unsaved changes"));
+    expect(screen.getByRole("heading", { level: 1, name: "Bug Fix •" })).toBeInTheDocument();
   });
 
   it("Ctrl+S saves with the version the editor last saw", async () => {
@@ -61,11 +61,13 @@ describe("Editor page", () => {
 
   it("Save is disabled until there are unsaved changes", async () => {
     const { id } = await renderEditor();
-    expect(screen.getByRole("button", { name: "Save Ctrl+S" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Save (Ctrl+S)" })).toBeDisabled();
 
     useDocumentsStore.getState().setContent(id, "changed");
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Save Ctrl+S" })).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Save (Ctrl+S)" })).toBeEnabled(),
+    );
   });
 
   it("Ctrl+Shift+S saves as a new file", async () => {
@@ -137,7 +139,7 @@ describe("Editor page", () => {
 
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
       expect(content(id)).toBe("mine");
-      expect(screen.getByRole("status")).toHaveTextContent("Unsaved");
+      expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
     });
   });
 
@@ -146,7 +148,7 @@ describe("Editor page", () => {
     const del = vi.spyOn(documentService, "delete").mockResolvedValue();
     const { router } = await renderEditor();
 
-    await user.click(screen.getByRole("button", { name: "Trash" }));
+    await user.click(screen.getByRole("button", { name: "Move to trash" }));
     const dialog = screen.getByRole("alertdialog", { name: "Move “Bug Fix.md” to trash?" });
     await user.click(within(dialog).getByRole("button", { name: "Move to trash" }));
 
@@ -166,11 +168,11 @@ describe("Editor page", () => {
     const source = screen.getByRole("region", { name: "Markdown source" });
     const rendered = screen.getByRole("region", { name: "Rendered preview" });
 
-    await user.click(screen.getByRole("button", { name: "Preview" }));
+    await user.click(screen.getByRole("button", { name: "Preview only" }));
     expect(source).toHaveClass("hidden");
     expect(rendered).not.toHaveClass("hidden");
 
-    await user.click(screen.getByRole("button", { name: "Edit" }));
+    await user.click(screen.getByRole("button", { name: "Editor only" }));
     expect(source).not.toHaveClass("hidden");
     expect(rendered).toHaveClass("hidden");
   });

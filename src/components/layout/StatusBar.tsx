@@ -3,13 +3,12 @@ import { isDirty, useOpenDocument, type OpenDocument } from "@/features/document
 import { useEditorStatus } from "@/features/editor/editorStatus";
 
 function saveLabel(doc: OpenDocument): { text: string; className: string } {
-  if (doc.saveState === "saving") return { text: "Saving…", className: "text-ink-2" };
-  if (doc.saveState === "error") return { text: "Save failed", className: "text-danger" };
-  if (isDirty(doc)) return { text: "Unsaved", className: "text-accent" };
-  return { text: "Saved", className: "text-ink-3" };
+  if (doc.saveState === "saving") return { text: "Saving…", className: "" };
+  if (doc.saveState === "error") return { text: "Save failed", className: "text-destructive" };
+  if (isDirty(doc)) return { text: "Unsaved changes", className: "text-warning" };
+  return { text: "Saved", className: "text-success" };
 }
 
-/** Terminal-style status line. */
 export function StatusBar() {
   const editor = useEditorStatus();
   const { documentId } = useParams({ strict: false });
@@ -19,11 +18,14 @@ export function StatusBar() {
   return (
     <footer
       role="status"
-      className="flex h-7 shrink-0 items-center justify-between border-t px-6 font-mono text-[11px] tracking-[0.04em] text-ink-3 uppercase"
+      className="flex h-6 shrink-0 items-center justify-between bg-surface-secondary-alt px-3 text-xs text-text-muted"
     >
-      <span>Ready</span>
+      <span className="flex items-center gap-1.5">
+        <span aria-hidden className="size-2 rounded-full bg-success" />
+        Ready
+      </span>
       {editor && save ? (
-        <span className="flex items-center gap-5">
+        <span className="flex items-center gap-3">
           <span>
             Ln {editor.line}, Col {editor.column}
           </span>

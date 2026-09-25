@@ -11,7 +11,7 @@ interface NoticeState {
   dismiss: () => void;
 }
 
-/** App-wide notice line shown above the current page. */
+/** App-wide notice bar (Discord-style banner at the top of the main column). */
 export const useNoticeStore = create<NoticeState>((set) => ({
   notice: null,
   show: (notice) => set({ notice }),

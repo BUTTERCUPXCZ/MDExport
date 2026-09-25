@@ -1,9 +1,10 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
+import { FileQuestion, FileText, FolderOpen } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DocumentActions } from "@/components/layout/DocumentActions";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
-import { Kbd } from "@/components/ui/kbd";
 import { ConflictDialog } from "@/features/documents/ConflictDialog";
 import { DeleteDocumentDialog } from "@/features/documents/DeleteDocumentDialog";
 import {
@@ -60,13 +61,13 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
   return (
     <>
       <PageHeader
-        section="Editor"
-        title={(documentTitle(doc.content) ?? stripExtension(doc.name)) + (dirty ? " *" : "")}
-        meta={doc.path}
+        icon={<FileText />}
+        title={(documentTitle(doc.content) ?? stripExtension(doc.name)) + (dirty ? " •" : "")}
+        topic={doc.path}
         actions={
           <>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <span aria-hidden className="mx-2 h-4 w-px bg-line" />
+            <span aria-hidden className="h-6 w-px bg-surface-selected" />
             <EditorActions
               canSave={dirty && doc.saveState !== "saving"}
               onSave={() => void save(doc.id)}
@@ -88,7 +89,7 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
             onChange={onChange}
           />
         </section>
-        {viewMode === "split" && <div aria-hidden className="w-px shrink-0 bg-line" />}
+        {viewMode === "split" && <div aria-hidden className="w-px shrink-0 bg-surface-selected" />}
         <section
           aria-label="Rendered preview"
           className={cn("min-w-0 flex-1 overflow-y-auto", viewMode === "editor" && "hidden")}
@@ -122,15 +123,16 @@ function DocumentNotOpen() {
   const { openDocument } = useDocumentCommands();
   return (
     <>
-      <PageHeader section="Editor" title="No document" />
+      <PageHeader icon={<FileText />} title="No document" actions={<DocumentActions />} />
       <div className="flex-1 overflow-y-auto">
         <EmptyState
-          label="Editor — nothing open"
+          icon={<FileQuestion />}
           title="This document isn't open"
           description="It may have been closed or moved to the trash. Open a file to keep working."
           actions={
             <Button onClick={() => void openDocument()}>
-              Open file <Kbd>Ctrl+O</Kbd>
+              <FolderOpen data-icon="inline-start" />
+              Open file
             </Button>
           }
         />

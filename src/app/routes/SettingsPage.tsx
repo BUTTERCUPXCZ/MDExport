@@ -1,12 +1,37 @@
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { HeaderAction } from "@/components/layout/HeaderAction";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { showError } from "@/features/notices/noticeStore";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
+
+function LibraryLocationValue() {
+  const location = useLibraryLocation((s) => s.location);
+  return (
+    <div className="mt-2 rounded-sm bg-surface-tertiary px-2 py-1 font-mono text-sm break-all text-text-normal">
+      {location ?? "Not set"}
+    </div>
+  );
+}
+
+function ChangeLibraryButton() {
+  const setLocation = useLibraryLocation((s) => s.set);
+  const change = async () => {
+    try {
+      const chosen = await libraryService.chooseLocation();
+      if (chosen) setLocation(chosen);
+    } catch (e) {
+      showError(`Couldn't change the library folder: ${toAppError(e).message}`);
+    }
+  };
+  return (
+    <Button variant="secondary" className="shrink-0" onClick={() => void change()}>
+      Change…
+    </Button>
+  );
+}
 
 /** Planned settings from Phase 18 of the implementation plan. */
 const SECTIONS = [
@@ -51,30 +76,7 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-function LibraryLocationSetting() {
-  const location = useLibraryLocation((s) => s.location);
-  const setLocation = useLibraryLocation((s) => s.set);
-
-  const change = async () => {
-    try {
-      const chosen = await libraryService.chooseLocation();
-      if (chosen) setLocation(chosen);
-    } catch (e) {
-      showError(`Couldn't change the library folder: ${toAppError(e).message}`);
-    }
-  };
-
-  return (
-    <>
-      <p className="mt-2 font-mono text-[12px] break-all text-ink">{location || "Not set"}</p>
-      <Button variant="secondary" size="sm" className="mt-3" onClick={() => void change()}>
-        Change…
-      </Button>
-    </>
-  );
-}
-
-/** Settings page. Esc returns to the previous page. */
+/** Full-screen settings layer (Discord's User Settings layout). Esc closes it. */
 export function SettingsPage() {
   const [sectionId, setSectionId] = useState<SectionId>("appearance");
   const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
@@ -97,54 +99,66 @@ export function SettingsPage() {
   }, [close]);
 
   return (
-    <>
-      <PageHeader
-        title="Settings"
-        actions={
-          <HeaderAction onClick={close} shortcut="Esc">
-            Close
-          </HeaderAction>
-        }
-      />
-      <div className="flex min-h-0 flex-1">
-        <nav aria-label="Settings" className="w-52 shrink-0 border-r py-6">
-          {SECTIONS.map((s, i) => (
+    <div className="flex h-screen">
+      <aside className="flex flex-[1_0_218px] justify-end overflow-y-auto bg-surface-secondary">
+        <nav aria-label="Settings" className="w-[218px] py-[60px] pr-1.5 pl-5">
+          <h2 className="px-2.5 pb-1.5 text-xs font-bold tracking-wide text-channel-default uppercase">
+            App Settings
+          </h2>
+          {SECTIONS.map((s) => (
             <button
               key={s.id}
               type="button"
               aria-current={s.id === sectionId ? "page" : undefined}
               onClick={() => setSectionId(s.id)}
-              className="group flex h-8 w-full items-center gap-3 border-l-2 border-transparent pl-[22px] text-left text-[13px] text-ink-2 hover:text-ink aria-[current=page]:border-accent aria-[current=page]:text-ink"
+              className="mb-0.5 block w-full rounded-md px-2.5 py-1.5 text-left text-base font-medium text-interactive-normal hover:bg-surface-hover hover:text-interactive-hover aria-[current=page]:bg-surface-selected aria-[current=page]:text-interactive-active"
             >
-              <span
-                aria-hidden
-                className="w-5 font-mono text-[11px] text-ink-3 group-aria-[current=page]:text-accent"
-              >
-                {String(i + 1).padStart(2, "0")}
-              </span>
               {s.label}
             </button>
           ))}
         </nav>
+      </aside>
 
-        <section className="min-w-0 flex-1 overflow-y-auto px-6 py-6 md:px-12">
-          <h2 className="text-[28px] leading-tight font-semibold tracking-[-0.02em]">
-            {section.label}
-          </h2>
-          <ul className="mt-6 max-w-2xl border-t border-ink">
+      <div className="flex flex-[1_1_800px] items-start overflow-y-auto bg-surface-primary">
+        <section className="max-w-[740px] min-w-[460px] flex-1 px-10 pt-[60px] pb-20">
+          <h1 className="mb-5 text-xl font-semibold text-header-primary">{section.label}</h1>
+          <ul>
             {section.items.map(([name, description]) => (
-              <li key={name} className="grid grid-cols-[1fr_auto] gap-6 border-b py-4">
+              <li
+                key={name}
+                className="flex items-center justify-between gap-4 border-b border-border py-4"
+              >
                 <div className="min-w-0">
-                  <h3 className="text-[14px] font-semibold">{name}</h3>
-                  <p className="mt-0.5 text-[13px] text-ink-2">{description}</p>
-                  {name === "Library Location" && <LibraryLocationSetting />}
+                  <div className="text-base font-medium text-header-primary">{name}</div>
+                  <div className="text-sm text-text-muted">{description}</div>
+                  {name === "Library Location" && <LibraryLocationValue />}
                 </div>
-                {name !== "Library Location" && <span className="pt-0.5 label">Soon</span>}
+                {name === "Library Location" ? (
+                  <ChangeLibraryButton />
+                ) : (
+                  <span className="shrink-0 rounded-sm bg-surface-tertiary px-2 py-0.5 text-xs font-semibold text-text-muted uppercase">
+                    Coming soon
+                  </span>
+                )}
               </li>
             ))}
           </ul>
         </section>
+
+        <div className="sticky top-0 flex-none pt-[60px] pr-5">
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close settings"
+            className="group flex flex-col items-center gap-2"
+          >
+            <span className="flex size-9 items-center justify-center rounded-full border-2 border-interactive-normal text-interactive-normal transition-colors group-hover:bg-surface-hover">
+              <X className="size-[18px]" />
+            </span>
+            <span className="text-[13px] font-semibold text-interactive-normal">ESC</span>
+          </button>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

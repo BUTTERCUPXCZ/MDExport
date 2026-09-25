@@ -1,198 +1,271 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/ibm-plex-sans";
-@import "@fontsource/ibm-plex-mono/400.css";
-@import "@fontsource/ibm-plex-mono/500.css";
-@import "@fontsource/ibm-plex-mono/600.css";
-@import "@fontsource/ibm-plex-serif/400.css";
-@import "@fontsource/ibm-plex-serif/400-italic.css";
-@import "@fontsource/ibm-plex-serif/600.css";
+@import "@fontsource-variable/noto-sans";
+@import "@fontsource-variable/source-code-pro";
 
 @custom-variant dark (&:is(.dark *));
 
+@theme inline {
+  /* Discord's own fallbacks for its proprietary gg sans / gg mono fonts. */
+  --font-sans: "Noto Sans Variable", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: "Source Code Pro Variable", Consolas, "Andale Mono WT", monospace;
+
+  /* shadcn/ui tokens */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Discord-style surface + text tokens */
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-secondary-alt: var(--surface-secondary-alt);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-floating: var(--surface-floating);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-header-primary: var(--header-primary);
+  --color-header-secondary: var(--header-secondary);
+  --color-text-normal: var(--text-normal);
+  --color-text-muted: var(--text-muted);
+  --color-text-link: var(--text-link);
+  --color-interactive-normal: var(--interactive-normal);
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-active: var(--interactive-active);
+  --color-channel-default: var(--channel-default);
+  --color-floating-foreground: var(--floating-foreground);
+
+  --shadow-elevation-low: var(--elevation-low);
+  --shadow-elevation-high: var(--elevation-high);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+}
+
 /*
- * MDForge design system — Minimalism + Swiss/Editorial + Developer/Terminal.
- * See "8. Design System" in the implementation plan.
- *
- * - Ink on paper. Grays are tints of the ink; one accent (signal orange) used sparingly.
- * - 1px hairline rules instead of shadows. Square corners.
- * - IBM Plex: Sans for UI, Mono for labels/metadata/code, Serif for reading.
+ * MDForge design tokens — Discord-inspired, see "8. Design System" in the plan.
+ * Surfaces: tertiary = rail, secondary = sidebar, primary = main content,
+ *           floating = tooltips/menus.
  */
 
-@theme inline {
-  --font-sans: "IBM Plex Sans Variable", "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
-  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
-  --font-heading: var(--font-sans);
-
-  /* MDForge tokens */
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-line: var(--line);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-ink-3: var(--ink-3);
-  --color-accent: var(--accent);
-  --color-danger: var(--danger);
-  --color-ok: var(--ok);
-  --color-warn: var(--warn);
-
-  /* shadcn/ui aliases */
-  --color-background: var(--bg);
-  --color-foreground: var(--ink);
-  --color-popover: var(--ink);
-  --color-popover-foreground: var(--bg);
-  --color-primary: var(--ink);
-  --color-primary-foreground: var(--bg);
-  --color-border: var(--line);
-  --color-input: var(--line);
-  --color-ring: var(--accent);
-  --color-destructive: var(--danger);
-  --color-muted: var(--surface);
-  --color-muted-foreground: var(--ink-3);
-
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
-}
-
-/* Light — paper */
+/* Light theme */
 :root {
-  --bg: #ffffff;
-  --surface: #f5f5f4;
-  --surface-2: #ebebea;
-  --line: #e2e2e0;
-  --ink: #111111;
-  --ink-2: #4a4a4a;
-  --ink-3: #8a8a8a;
-  --accent: #ff4f00;
-  --danger: #d12d1f;
-  --ok: #1f7a3d;
-  --warn: #a86500;
+  --radius: 0.5rem;
 
-  --selection: rgb(255 79 0 / 0.16);
-  --code-bg: #f5f5f4;
-  --syn-string: #1f7a3d;
+  --surface-primary: #ffffff;
+  --surface-secondary: #f2f3f5;
+  --surface-secondary-alt: #ebedef;
+  --surface-tertiary: #e3e5e8;
+  --surface-floating: #ffffff;
+  --surface-hover: rgb(116 127 141 / 0.16);
+  --surface-selected: rgb(116 127 141 / 0.3);
+
+  --header-primary: #060607;
+  --header-secondary: #4e5058;
+  --text-normal: #313338;
+  --text-muted: #5c5e66;
+  --text-link: #006ce7;
+  --interactive-normal: #4e5058;
+  --interactive-hover: #313338;
+  --interactive-active: #060607;
+  --channel-default: #5c5e66;
+  --floating-foreground: #313338;
+
+  --elevation-low: 0 1px 0 rgb(6 6 7 / 0.08), 0 1.5px 0 rgb(6 6 7 / 0.03);
+  --elevation-high: 0 8px 16px rgb(0 0 0 / 0.16);
+
+  --background: var(--surface-primary);
+  --foreground: var(--text-normal);
+  --card: var(--surface-secondary);
+  --card-foreground: var(--text-normal);
+  --popover: var(--surface-floating);
+  --popover-foreground: var(--floating-foreground);
+  --primary: #5865f2;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4752c4;
+  --secondary: #6d6f78;
+  --secondary-foreground: #ffffff;
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-muted);
+  --subtle-foreground: #80848e;
+  --accent: var(--surface-hover);
+  --accent-foreground: var(--interactive-hover);
+  --destructive: #da373c;
+  --success: #248046;
+  --warning: #f0b232;
+  --border: rgb(6 6 7 / 0.08);
+  --input: var(--surface-tertiary);
+  --ring: #00a8fc;
+
+  /* Syntax highlighting (editor + preview code blocks) */
+  --hl-keyword: #cf222e;
+  --hl-string: #0a3069;
+  --hl-comment: #6e7781;
+  --hl-constant: #0550ae;
+  --hl-function: #8250df;
+  --hl-type: #953800;
+  --hl-tag: #116329;
+  --hl-attr: #0550ae;
+  --hl-punctuation: #4e5058;
+  --hl-markup: #80848e;
+  --editor-selection: rgb(88 101 242 / 0.25);
 }
 
-/* Dark — terminal */
+/* Dark theme */
 .dark {
-  --bg: #0c0c0c;
-  --surface: #121212;
-  --surface-2: #1c1c1c;
-  --line: #262626;
-  --ink: #ededed;
-  --ink-2: #a3a3a3;
-  --ink-3: #6b6b6b;
-  --accent: #ff5c1a;
-  --danger: #ff5147;
-  --ok: #5fb86b;
-  --warn: #e0a33a;
+  --surface-primary: #313338;
+  --surface-secondary: #2b2d31;
+  --surface-secondary-alt: #232428;
+  --surface-tertiary: #1e1f22;
+  --surface-floating: #111214;
+  --surface-hover: rgb(78 80 88 / 0.3);
+  --surface-selected: rgb(78 80 88 / 0.6);
 
-  --selection: rgb(255 92 26 / 0.24);
-  --code-bg: #141414;
-  --syn-string: #8cc58c;
-}
+  --header-primary: #f2f3f5;
+  --header-secondary: #b5bac1;
+  --text-normal: #dbdee1;
+  --text-muted: #949ba4;
+  --text-link: #00a8fc;
+  --interactive-normal: #b5bac1;
+  --interactive-hover: #dbdee1;
+  --interactive-active: #ffffff;
+  --channel-default: #80848e;
+  --floating-foreground: #dbdee1;
 
-/* Small uppercase monospace label: section titles, metadata, keyboard hints. */
-@utility label {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
+  --elevation-low: 0 1px 0 rgb(2 2 2 / 0.2), 0 1.5px 0 rgb(6 6 7 / 0.05), 0 2px 0 rgb(2 2 2 / 0.05);
+  --elevation-high: 0 8px 16px rgb(0 0 0 / 0.24);
+
+  --background: var(--surface-primary);
+  --foreground: var(--text-normal);
+  --card: var(--surface-secondary);
+  --card-foreground: var(--text-normal);
+  --popover: var(--surface-floating);
+  --popover-foreground: var(--floating-foreground);
+  --primary: #5865f2;
+  --primary-foreground: #ffffff;
+  --primary-hover: #4752c4;
+  --secondary: #4e5058;
+  --secondary-foreground: #ffffff;
+  --muted: var(--surface-secondary);
+  --muted-foreground: var(--text-muted);
+  --subtle-foreground: #80848e;
+  --accent: var(--surface-hover);
+  --accent-foreground: var(--interactive-hover);
+  --destructive: #da373c;
+  --success: #23a55a;
+  --warning: #f0b232;
+  --border: rgb(78 80 88 / 0.48);
+  --input: var(--surface-tertiary);
+  --ring: #00a8fc;
+
+  --hl-keyword: #ff7b72;
+  --hl-string: #a5d6ff;
+  --hl-comment: #8b949e;
+  --hl-constant: #79c0ff;
+  --hl-function: #d2a8ff;
+  --hl-type: #ffa657;
+  --hl-tag: #7ee787;
+  --hl-attr: #79c0ff;
+  --hl-punctuation: #b5bac1;
+  --hl-markup: #80848e;
+  --editor-selection: rgb(88 101 242 / 0.35);
 }
 
 @layer base {
   * {
-    @apply border-line;
+    @apply border-border outline-ring/50;
   }
   html {
     @apply font-sans;
     color-scheme: light;
-    font-feature-settings: "ss02";
   }
   html.dark {
     color-scheme: dark;
   }
   body {
-    @apply overflow-hidden bg-bg text-[14px] text-ink antialiased;
-  }
-  ::selection {
-    background: var(--selection);
+    @apply overflow-hidden bg-surface-tertiary text-text-normal antialiased;
   }
   button:not(:disabled),
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
   :focus-visible {
-    outline: 1px solid var(--accent);
-    outline-offset: 1px;
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
+
+  /* Thin Discord-style scrollbars */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--line) transparent;
+    scrollbar-color: var(--surface-tertiary) transparent;
   }
 }
 
-/* Rendered Markdown preview (HTML from the Rust `render_markdown` command) — editorial reading. */
+/* Rendered Markdown preview (HTML from the Rust `render_markdown` command) */
 @layer components {
   .markdown-preview {
-    font-family: var(--font-serif);
-    font-size: 17px;
-    line-height: 1.7;
-    color: var(--ink);
+    @apply text-text-normal;
+    font-size: 16px;
+    line-height: 1.6;
     overflow-wrap: anywhere;
 
     & > :first-child {
       margin-top: 0;
     }
-
     & :is(h1, h2, h3, h4, h5, h6) {
+      @apply text-header-primary;
       position: relative;
-      font-family: var(--font-sans);
-      font-weight: 600;
-      line-height: 1.2;
-      letter-spacing: -0.015em;
+      margin: 1.5em 0 0.5em;
+      font-weight: 700;
+      line-height: 1.25;
     }
     & h1 {
-      margin: 0 0 1.25rem;
-      font-size: 40px;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
+      font-size: 32px;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
     }
-    /* Section headings sit on a rule, like an editorial section break. */
     & h2 {
-      margin: 2.75rem 0 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--ink);
       font-size: 24px;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
     }
     & h3 {
-      margin: 2rem 0 0.5rem;
-      font-size: 19px;
+      font-size: 20px;
     }
-    & :is(h4, h5, h6) {
-      margin: 1.75rem 0 0.5rem;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--ink-2);
+    & h4 {
+      font-size: 16px;
     }
-    /* comrak heading anchors */
+    & :is(h5, h6) {
+      @apply text-header-secondary;
+      font-size: 14px;
+    }
+    /* comrak heading anchors: "#" shown on hover */
     & .anchor {
-      margin-left: 0.5rem;
-      font-family: var(--font-mono);
-      font-size: 0.6em;
+      @apply text-channel-default;
+      margin-left: 0.4em;
       font-weight: 400;
-      color: var(--ink-3);
       text-decoration: none;
       opacity: 0;
     }
@@ -202,155 +275,147 @@
     & :is(h1, h2, h3, h4, h5, h6):hover .anchor {
       opacity: 1;
     }
-
     & :is(p, ul, ol, blockquote, pre, table) {
-      margin: 0 0 1.15em;
+      margin: 0 0 1em;
     }
     & a {
-      color: inherit;
-      text-decoration: underline;
-      text-decoration-thickness: 1px;
-      text-underline-offset: 3px;
-      text-decoration-color: var(--ink-3);
+      @apply text-text-link;
+      text-decoration: none;
     }
     & a:hover {
-      color: var(--accent);
-      text-decoration-color: var(--accent);
+      text-decoration: underline;
     }
     & strong {
-      font-weight: 600;
+      @apply text-header-primary;
+      font-weight: 700;
     }
     & del {
-      color: var(--ink-3);
+      @apply text-text-muted;
     }
-
     & :is(ul, ol) {
-      padding-left: 1.5em;
+      padding-left: 1.75em;
     }
-    & ul > li {
-      list-style: none;
-      position: relative;
-    }
-    & ul > li::before {
-      content: "–";
-      position: absolute;
-      left: -1.1em;
-      color: var(--ink-3);
+    & ul {
+      list-style: disc;
     }
     & ol {
-      padding-left: 2.25em;
-      list-style: decimal-leading-zero;
-    }
-    & ol > li::marker {
-      font-family: var(--font-mono);
-      font-size: 0.8em;
-      color: var(--ink-3);
+      list-style: decimal;
     }
     & li + li {
-      margin-top: 0.3em;
+      margin-top: 0.25em;
     }
-    & ul > li:has(> input[type="checkbox"])::before {
-      content: none;
+    & li:has(> input[type="checkbox"]) {
+      list-style: none;
+      margin-left: -1.5em;
     }
     & input[type="checkbox"] {
-      margin: 0 0.6em 0 -1.5em;
+      margin-right: 0.5em;
       vertical-align: middle;
-      accent-color: var(--accent);
+      accent-color: var(--primary);
     }
-
+    /* Discord-style quote: rounded bar on the left */
     & blockquote {
-      padding-left: 1.25em;
-      border-left: 2px solid var(--ink);
-      font-style: italic;
-      color: var(--ink-2);
+      @apply text-text-normal;
+      position: relative;
+      padding: 0 0 0 16px;
     }
-
+    & blockquote::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      border-radius: 4px;
+      background: var(--interactive-normal);
+      opacity: 0.5;
+    }
     & code {
-      padding: 0.1em 0.3em;
-      font-family: var(--font-mono);
-      font-size: 0.82em;
-      background: var(--code-bg);
+      @apply font-mono;
+      font-size: 0.85em;
+      padding: 0.15em 0.3em;
+      border-radius: 4px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--surface-tertiary);
     }
     & pre {
-      padding: 1rem 1.25rem;
+      @apply font-mono;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 0.75em 1em;
       overflow-x: auto;
-      font-family: var(--font-mono);
-      font-size: 13.5px;
-      line-height: 1.6;
-      background: var(--code-bg);
-      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--surface-tertiary);
     }
     & pre code {
       padding: 0;
       font-size: inherit;
+      border: 0;
       background: none;
     }
-
-    /* Swiss table: horizontal rules only, mono column labels. */
     & table {
       display: block;
       width: max-content;
       max-width: 100%;
       overflow-x: auto;
       border-collapse: collapse;
-      font-family: var(--font-sans);
-      font-size: 14px;
-      line-height: 1.5;
+    }
+    & :is(th, td) {
+      padding: 6px 13px;
+      border: 1px solid var(--border);
     }
     & th {
-      padding: 0.4rem 1.5rem 0.4rem 0;
-      border-bottom: 1px solid var(--ink);
-      font-family: var(--font-mono);
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      text-align: left;
-      text-transform: uppercase;
-      color: var(--ink-2);
+      @apply text-header-primary;
+      font-weight: 600;
+      background: var(--surface-secondary);
     }
-    & td {
-      padding: 0.5rem 1.5rem 0.5rem 0;
-      border-bottom: 1px solid var(--line);
-      vertical-align: top;
-    }
-
     & hr {
-      margin: 2.5rem 0;
+      margin: 1.5em 0;
       border: 0;
-      border-top: 1px solid var(--line);
+      border-top: 1px solid var(--border);
     }
     & img {
       max-width: 100%;
+      border-radius: 4px;
     }
     & .footnotes {
+      @apply text-text-muted;
       font-size: 14px;
-      color: var(--ink-2);
     }
   }
 
-  /* syntect classes (prefix "hl-") emitted by the Rust markdown module. Restrained palette. */
+  /* syntect classes (prefix "hl-") emitted by the Rust markdown module */
   .markdown-preview pre {
     & .hl-comment {
-      color: var(--ink-3);
+      color: var(--hl-comment);
       font-style: italic;
     }
     & :is(.hl-string, .hl-string .hl-punctuation) {
-      color: var(--syn-string);
+      color: var(--hl-string);
     }
-    & :is(.hl-constant.hl-numeric, .hl-constant.hl-language) {
-      color: var(--accent);
+    & .hl-constant {
+      color: var(--hl-constant);
     }
     & :is(.hl-keyword, .hl-storage) {
-      font-weight: 600;
+      color: var(--hl-keyword);
     }
-    & :is(.hl-entity.hl-name.hl-type, .hl-support.hl-type, .hl-entity.hl-name.hl-class) {
-      color: var(--ink-2);
+    &
+      :is(
+        .hl-entity.hl-name.hl-type,
+        .hl-entity.hl-name.hl-class,
+        .hl-support.hl-type,
+        .hl-support.hl-class,
+        .hl-entity.hl-name.hl-struct
+      ) {
+      color: var(--hl-type);
+    }
+    & :is(.hl-entity.hl-name.hl-function, .hl-support.hl-function) {
+      color: var(--hl-function);
     }
     & .hl-entity.hl-name.hl-tag {
-      font-weight: 600;
+      color: var(--hl-tag);
     }
     & .hl-entity.hl-other.hl-attribute-name {
-      color: var(--ink-2);
+      color: var(--hl-attr);
     }
   }
 }

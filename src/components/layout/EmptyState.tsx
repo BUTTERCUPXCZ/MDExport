@@ -1,21 +1,23 @@
 import type { ReactNode } from "react";
 
 interface EmptyStateProps {
-  /** Small mono label above the title, e.g. "Library — 0 documents". */
-  label: string;
+  icon: ReactNode;
   title: string;
   description: ReactNode;
   actions?: ReactNode;
 }
 
-/** Left-aligned, type-led empty state. */
-export function EmptyState({ label, title, description, actions }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, actions }: EmptyStateProps) {
   return (
-    <div className="max-w-2xl px-6 py-16 md:px-12">
-      <p className="label">{label}</p>
-      <h2 className="mt-3 text-[28px] leading-tight font-semibold tracking-[-0.02em]">{title}</h2>
-      <p className="mt-2 max-w-md text-[15px] leading-relaxed text-ink-2">{description}</p>
-      {actions && <div className="mt-8 flex flex-wrap gap-2">{actions}</div>}
+    <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className="flex size-20 items-center justify-center rounded-full bg-surface-secondary text-interactive-normal [&_svg]:size-10">
+        {icon}
+      </div>
+      <div className="max-w-md space-y-1">
+        <h2 className="text-xl font-bold text-header-primary">{title}</h2>
+        <p className="text-base text-text-muted">{description}</p>
+      </div>
+      {actions && <div className="mt-2 flex gap-3">{actions}</div>}
     </div>
   );
 }

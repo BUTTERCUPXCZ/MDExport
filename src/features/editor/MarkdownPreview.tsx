@@ -29,7 +29,7 @@ export function MarkdownPreview({ preview }: MarkdownPreviewProps) {
 
   if (preview.status === "error") {
     return (
-      <p role="alert" className="p-10 font-mono text-[12px] text-danger">
+      <p role="alert" className="p-6 text-destructive">
         Preview failed to render.
       </p>
     );
@@ -39,7 +39,7 @@ export function MarkdownPreview({ preview }: MarkdownPreviewProps) {
     <article
       aria-label="Preview"
       aria-busy={preview.status === "loading"}
-      className="markdown-preview mx-auto max-w-[72ch] px-10 py-12"
+      className="markdown-preview mx-auto max-w-[900px] px-8 py-6"
       onClick={onClick}
       dangerouslySetInnerHTML={{ __html: preview.status === "ready" ? preview.html : "" }}
     />

@@ -1,32 +1,30 @@
+import { X } from "lucide-react";
 import { useNoticeStore } from "@/features/notices/noticeStore";
 import { cn } from "@/lib/utils";
 
-/** Full-width notice line above the page. */
+/** Discord-style notice banner shown above page content. */
 export function NoticeBar() {
   const notice = useNoticeStore((s) => s.notice);
   const dismiss = useNoticeStore((s) => s.dismiss);
 
   if (!notice) return null;
 
-  const isError = notice.kind === "error";
   return (
     <div
-      role={isError ? "alert" : "status"}
+      role={notice.kind === "error" ? "alert" : "status"}
       className={cn(
-        "flex min-h-9 shrink-0 items-center gap-4 border-b px-6 py-1.5 text-[13px]",
-        isError ? "border-danger bg-danger text-white" : "bg-surface text-ink",
+        "flex min-h-9 shrink-0 items-center gap-3 px-4 py-1.5 text-sm font-medium text-white",
+        notice.kind === "error" ? "bg-destructive" : "bg-primary",
       )}
     >
-      <span className="font-mono text-[11px] font-semibold tracking-[0.08em] uppercase">
-        {isError ? "Error" : "Note"}
-      </span>
       <span className="min-w-0 flex-1 break-words">{notice.message}</span>
       <button
         type="button"
+        aria-label="Dismiss"
         onClick={dismiss}
-        className="font-mono text-[11px] tracking-[0.06em] uppercase underline-offset-4 hover:underline"
+        className="flex size-6 shrink-0 items-center justify-center rounded-full hover:bg-white/20"
       >
-        Dismiss
+        <X className="size-4" />
       </button>
     </div>
   );

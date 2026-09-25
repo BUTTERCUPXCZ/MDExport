@@ -1,3 +1,4 @@
+import { FolderOpen } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Modal } from "@/components/layout/Modal";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,6 @@ export function LibrarySetupDialog() {
   return (
     <Modal
       open={needed}
-      label="Setup · 1 of 1"
       title="Choose your library folder"
       description="MDForge saves new documents as plain .md files in this folder. You can change it later in Settings."
       footer={
@@ -50,6 +50,7 @@ export function LibrarySetupDialog() {
             disabled={busy}
             onClick={() => run(libraryService.chooseLocation)}
           >
+            <FolderOpen data-icon="inline-start" />
             Choose folder…
           </Button>
           <Button disabled={busy} onClick={() => run(libraryService.useDefaultLocation)}>
@@ -58,11 +59,15 @@ export function LibrarySetupDialog() {
         </>
       }
     >
-      <div className="border-t pt-3">
-        <p className="label">Default location</p>
-        <p className="mt-1.5 font-mono text-[13px] break-all">{defaultPath ?? "…"}</p>
+      <div className="pt-2">
+        <div className="mb-2 text-xs font-bold tracking-wide text-header-secondary uppercase">
+          Default location
+        </div>
+        <div className="rounded-sm bg-surface-tertiary px-2.5 py-2 font-mono text-sm break-all text-text-normal">
+          {defaultPath ?? "…"}
+        </div>
         {error && (
-          <p role="alert" className="mt-3 font-mono text-[12px] text-danger">
+          <p role="alert" className="mt-2 text-sm text-destructive">
             {error}
           </p>
         )}

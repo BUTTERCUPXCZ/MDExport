@@ -1,12 +1,14 @@
+import { Code, Columns2, Eye } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+
 export type ViewMode = "editor" | "split" | "preview";
 
-const VIEW_MODES: { mode: ViewMode; label: string }[] = [
-  { mode: "editor", label: "Edit" },
-  { mode: "split", label: "Split" },
-  { mode: "preview", label: "Preview" },
+const VIEW_MODES: { mode: ViewMode; label: string; icon: typeof Code }[] = [
+  { mode: "editor", label: "Editor only", icon: Code },
+  { mode: "split", label: "Split view", icon: Columns2 },
+  { mode: "preview", label: "Preview only", icon: Eye },
 ];
 
-/** Segmented control; the active segment is inverted (ink block). */
 export function ViewModeToggle({
   value,
   onChange,
@@ -15,17 +17,22 @@ export function ViewModeToggle({
   onChange: (mode: ViewMode) => void;
 }) {
   return (
-    <div role="group" aria-label="View mode" className="flex border">
-      {VIEW_MODES.map(({ mode, label }) => (
-        <button
-          key={mode}
-          type="button"
-          aria-pressed={value === mode}
-          onClick={() => onChange(mode)}
-          className="h-6 border-l px-2 font-mono text-[11px] tracking-[0.06em] text-ink-2 uppercase first:border-l-0 hover:text-ink aria-pressed:bg-ink aria-pressed:text-bg"
-        >
-          {label}
-        </button>
+    <div role="group" aria-label="View mode" className="flex items-center gap-1">
+      {VIEW_MODES.map(({ mode, label, icon: Icon }) => (
+        <Tooltip key={mode}>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label={label}
+              aria-pressed={value === mode}
+              onClick={() => onChange(mode)}
+              className="flex size-7 items-center justify-center rounded-md text-interactive-normal transition-colors hover:bg-surface-hover hover:text-interactive-hover aria-pressed:bg-surface-selected aria-pressed:text-interactive-active"
+            >
+              <Icon className="size-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
       ))}
     </div>
   );
