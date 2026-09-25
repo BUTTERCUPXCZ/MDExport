@@ -1,13 +1,12 @@
-import { useNavigate } from "@tanstack/react-router";
 import { FilePlus2, FolderOpen, House } from "lucide-react";
-import { ComingSoon } from "@/components/layout/ComingSoon";
 import { DocumentActions } from "@/components/layout/DocumentActions";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
+import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 
 export function HomePage() {
-  const navigate = useNavigate();
+  const { newDocument, openDocument } = useDocumentCommands();
 
   return (
     <>
@@ -24,26 +23,20 @@ export function HomePage() {
           description="Create, organize, and export developer documentation. Everything stays on your machine as plain .md files."
           actions={
             <>
-              <Button
-                onClick={() =>
-                  void navigate({
-                    to: "/editor/$documentId",
-                    params: { documentId: crypto.randomUUID() },
-                  })
-                }
-              >
+              <Button onClick={() => void newDocument()}>
                 <FilePlus2 data-icon="inline-start" />
                 New document
               </Button>
-              <ComingSoon label="Open file — coming in the next phase">
-                <Button variant="secondary" disabled>
-                  <FolderOpen data-icon="inline-start" />
-                  Open file
-                </Button>
-              </ComingSoon>
+              <Button variant="secondary" onClick={() => void openDocument()}>
+                <FolderOpen data-icon="inline-start" />
+                Open file
+              </Button>
             </>
           }
         />
+        <p className="-mt-6 text-center text-xs text-text-muted">
+          <kbd className="font-mono">Ctrl+N</kbd> new · <kbd className="font-mono">Ctrl+O</kbd> open
+        </p>
       </div>
     </>
   );

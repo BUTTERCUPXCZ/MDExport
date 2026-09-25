@@ -1,8 +1,10 @@
 import { Link, type LinkProps } from "@tanstack/react-router";
-import { Clock, Hash, House, LibraryBig, Plus, Search, Settings } from "lucide-react";
+import { Clock, FileText, Hash, House, LibraryBig, Plus, Search, Settings } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { ComingSoon } from "@/components/layout/ComingSoon";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { isDirty, useDocumentsStore } from "@/features/documents/documentsStore";
 import { appService } from "@/services/tauri/app";
 
 const itemBase =
@@ -50,6 +52,37 @@ function SidebarSection({
       </h2>
       <div className="mt-0.5">{children}</div>
     </section>
+  );
+}
+
+/** Documents open in this session, with an unsaved-changes dot. */
+function OpenDocuments() {
+  const documents = useDocumentsStore(useShallow((s) => Object.values(s.documents)));
+  if (documents.length === 0) return null;
+
+  return (
+    <SidebarSection title="Open documents">
+      <div className="flex flex-col gap-0.5">
+        {documents.map((doc) => (
+          <Link
+            key={doc.id}
+            to="/editor/$documentId"
+            params={{ documentId: doc.id }}
+            title={doc.path}
+            className={`${itemBase} text-channel-default hover:bg-surface-hover hover:text-interactive-hover data-[status=active]:bg-surface-selected data-[status=active]:text-interactive-active`}
+          >
+            <FileText className="size-5 shrink-0" />
+            <span className="truncate">{doc.name}</span>
+            {isDirty(doc) && (
+              <span
+                aria-label="Unsaved changes"
+                className="ml-auto size-2 shrink-0 rounded-full bg-header-primary"
+              />
+            )}
+          </Link>
+        ))}
+      </div>
+    </SidebarSection>
   );
 }
 
@@ -136,6 +169,8 @@ export function Sidebar() {
             </button>
           </ComingSoon>
         </div>
+
+        <OpenDocuments />
 
         <SidebarSection
           title="Projects"

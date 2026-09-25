@@ -1,1 +1,4 @@
-//! Persistence (SQLite / filesystem). Populated from Phase 4 onwards.
+//! Persistence (filesystem now, SQLite from Phase 6).
+
+pub mod config_repository;
+pub mod file_repository;

@@ -4,11 +4,11 @@ import { ComingSoon } from "@/components/layout/ComingSoon";
 const iconButton =
   "text-interactive-normal flex size-6 items-center justify-center opacity-50 [&_svg]:size-5";
 
-/** Save / Export toolbar buttons. Wired up in Phase 4 (save) and Phase 13–14 (export). */
+/** Disabled Save / Export placeholders for pages without an open document. */
 export function DocumentActions() {
   return (
     <>
-      <ComingSoon label="Save (Ctrl+S) — coming soon">
+      <ComingSoon label="Open a document to save it">
         <button type="button" disabled aria-label="Save" className={iconButton}>
           <Save />
         </button>

@@ -1,0 +1,42 @@
+import { invoke } from "@tauri-apps/api/core";
+import type { DocumentFile, FileVersion } from "@/types/document";
+
+/**
+ * Document file operations. All dialogs run in Rust, and Rust only accepts
+ * paths inside the library folder or chosen by the user in a dialog.
+ * Errors reject with an `AppError` (see `@/types/document`).
+ */
+export const documentService = {
+  /** Shows the Open dialog. Resolves `null` if cancelled. */
+  openDialog(): Promise<DocumentFile | null> {
+    return invoke("open_document_dialog");
+  },
+
+  /** Re-reads an already-open document from disk. */
+  open(path: string): Promise<DocumentFile> {
+    return invoke("open_document", { path });
+  },
+
+  /** Creates an empty `Untitled.md` in the library folder. */
+  create(): Promise<DocumentFile> {
+    return invoke("create_document");
+  },
+
+  /**
+   * Saves content. Rejects with a `conflict` error if the file changed on disk
+   * since `expectedHash`, unless `force` is set.
+   */
+  save(path: string, content: string, expectedHash: string, force = false): Promise<FileVersion> {
+    return invoke("save_document", { path, content, expectedHash, force });
+  },
+
+  /** Shows the Save As dialog. Resolves `null` if cancelled. */
+  saveAs(content: string, suggestedName: string): Promise<DocumentFile | null> {
+    return invoke("save_document_as", { content, suggestedName });
+  },
+
+  /** Moves the file to the OS trash. */
+  delete(path: string): Promise<void> {
+    return invoke("delete_document", { path });
+  },
+};

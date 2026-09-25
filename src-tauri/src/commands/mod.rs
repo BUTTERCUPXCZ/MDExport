@@ -1,4 +1,7 @@
 //! Tauri commands. Keep these thin: validate input, call a service, return.
 
 pub mod app;
+mod dialog;
+pub mod document;
+pub mod library;
 pub mod markdown;

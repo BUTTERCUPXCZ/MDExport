@@ -38,19 +38,35 @@ pnpm tauri build    # build a release bundle
 
 ```
 src/                      React frontend
-├── app/                  app root and screens
-├── components/ui/        shadcn/ui components
+├── app/                  router, root layout, route pages
+├── components/           layout (shell, modal, header), sidebar, shadcn/ui
+├── features/             documents (store, dialogs), editor, library, notices
 ├── services/tauri/       typed wrappers around Tauri IPC (only place invoke() is used)
 ├── types/                TypeScript types mirroring Rust models
 ├── lib/                  small utilities (theme, cn)
-└── styles/globals.css    design tokens (dark + light)
+└── styles/globals.css    design tokens (dark + light), preview + syntax styles
 
 src-tauri/src/            Rust application core
-├── commands/             thin Tauri commands
-├── services/             business logic
-├── repositories/         persistence (SQLite / filesystem)
-└── models/               domain types
+├── commands/             thin Tauri commands (+ native dialogs)
+├── services/             business logic, AccessScope (path authorization)
+├── repositories/         persistence (files, config; SQLite from Phase 6)
+├── markdown/             the single Markdown parser (comrak + syntect)
+└── models/               domain types and AppError
 ```
+
+## File access
+
+- The frontend has no filesystem or dialog permissions. Open / Save As / folder
+  pickers run in Rust.
+- Rust accepts a path only if it is a `.md`/`.markdown` file inside the library
+  folder or one the user picked in a dialog this session. Paths are canonicalized,
+  so `..` and symlinks cannot escape.
+- Saves are atomic (temp file + rename) and send the last-seen content hash;
+  if the file changed on disk, the save is refused and the user chooses
+  overwrite / reload / save a copy.
+- Delete moves files to the OS trash.
+- The library folder is stored in `<app config dir>/config.json`
+  (Linux: `~/.config/dev.mdforge.app/`).
 
 Request flow: `React → services/tauri → Tauri command → service → repository`.
 

@@ -1,6 +1,37 @@
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useLibraryLocation } from "@/features/library/useLibraryLocation";
+import { showError } from "@/features/notices/noticeStore";
+import { libraryService } from "@/services/tauri/library";
+import { toAppError } from "@/types/document";
+
+function LibraryLocationValue() {
+  const location = useLibraryLocation((s) => s.location);
+  return (
+    <div className="mt-2 rounded-sm bg-surface-tertiary px-2 py-1 font-mono text-sm break-all text-text-normal">
+      {location ?? "Not set"}
+    </div>
+  );
+}
+
+function ChangeLibraryButton() {
+  const setLocation = useLibraryLocation((s) => s.set);
+  const change = async () => {
+    try {
+      const chosen = await libraryService.chooseLocation();
+      if (chosen) setLocation(chosen);
+    } catch (e) {
+      showError(`Couldn't change the library folder: ${toAppError(e).message}`);
+    }
+  };
+  return (
+    <Button variant="secondary" className="shrink-0" onClick={() => void change()}>
+      Change…
+    </Button>
+  );
+}
 
 /** Planned settings from Phase 18 of the implementation plan. */
 const SECTIONS = [
@@ -97,13 +128,18 @@ export function SettingsPage() {
                 key={name}
                 className="flex items-center justify-between gap-4 border-b border-border py-4"
               >
-                <div>
+                <div className="min-w-0">
                   <div className="text-base font-medium text-header-primary">{name}</div>
                   <div className="text-sm text-text-muted">{description}</div>
+                  {name === "Library Location" && <LibraryLocationValue />}
                 </div>
-                <span className="shrink-0 rounded-sm bg-surface-tertiary px-2 py-0.5 text-xs font-semibold text-text-muted uppercase">
-                  Coming soon
-                </span>
+                {name === "Library Location" ? (
+                  <ChangeLibraryButton />
+                ) : (
+                  <span className="shrink-0 rounded-sm bg-surface-tertiary px-2 py-0.5 text-xs font-semibold text-text-muted uppercase">
+                    Coming soon
+                  </span>
+                )}
               </li>
             ))}
           </ul>

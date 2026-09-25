@@ -1,28 +1,13 @@
-import { createMemoryHistory } from "@tanstack/react-router";
-import { act, render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { App } from "@/app/App";
-import { createAppRouter } from "@/app/router";
-import { draftStore } from "@/features/editor/drafts";
 import { appService } from "@/services/tauri/app";
-import { markdownService } from "@/services/tauri/markdown";
-
-async function renderAt(path: string) {
-  const router = createAppRouter(createMemoryHistory({ initialEntries: [path] }));
-  await act(() => router.load());
-  render(<App router={router} />);
-  return router;
-}
+import { documentService } from "@/services/tauri/documents";
+import { docFile, renderAt, setupApp } from "@/test/renderApp";
 
 describe("App shell", () => {
-  beforeEach(() => {
-    vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+  beforeEach(() => setupApp());
+  afterEach(() => vi.restoreAllMocks());
 
   it("renders Home inside the shell with the version from Rust", async () => {
     await renderAt("/");
@@ -60,20 +45,6 @@ describe("App shell", () => {
       "data-status",
       "active",
     );
-    expect(within(sidebar).getByRole("link", { name: "Home" })).not.toHaveAttribute("data-status");
-  });
-
-  it("opens a new document in the editor from Home", async () => {
-    const user = userEvent.setup();
-    vi.spyOn(markdownService, "render").mockResolvedValue("");
-    const router = await renderAt("/");
-
-    await user.click(screen.getByRole("button", { name: "New document" }));
-
-    expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
-    expect(
-      screen.getByRole("heading", { level: 1, name: "Untitled document" }),
-    ).toBeInTheDocument();
   });
 
   it("shows a not-found page for unknown routes", async () => {
@@ -83,14 +54,81 @@ describe("App shell", () => {
   });
 });
 
-describe("Settings", () => {
-  beforeEach(() => {
-    vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });
+describe("Home document commands", () => {
+  beforeEach(() => setupApp());
+  afterEach(() => vi.restoreAllMocks());
+
+  it("New document creates a file in the library and opens it", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(documentService, "create").mockResolvedValue(
+      docFile({ path: "/lib/Untitled.md", name: "Untitled.md", content: "" }),
+    );
+    const router = await renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: "New document" }));
+
+    expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
+    expect(screen.getByRole("heading", { level: 1, name: "Untitled" })).toBeInTheDocument();
+    const sidebar = screen.getByRole("navigation", { name: "Main" });
+    expect(within(sidebar).getByRole("link", { name: "Untitled.md" })).toBeInTheDocument();
   });
 
-  afterEach(() => {
-    vi.restoreAllMocks();
+  it("Open file opens the picked file", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(documentService, "openDialog").mockResolvedValue(docFile());
+    await renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: "Open file" }));
+
+    expect(screen.getByText("/home/me/Documents/MDForge/Bug Fix.md")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
   });
+
+  it("cancelling the Open dialog stays on Home", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(documentService, "openDialog").mockResolvedValue(null);
+    const router = await renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: "Open file" }));
+
+    expect(router.state.location.pathname).toBe("/");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows file errors in the notice bar", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(documentService, "openDialog").mockRejectedValue({
+      kind: "permissionDenied",
+      message: "Permission denied: /root/secret.md",
+    });
+    await renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: "Open file" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Couldn't open the file: Permission denied: /root/secret.md",
+    );
+    await user.click(screen.getByRole("button", { name: "Dismiss" }));
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("Ctrl+N and Ctrl+O work from anywhere", async () => {
+    const user = userEvent.setup();
+    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
+    const openDialog = vi.spyOn(documentService, "openDialog").mockResolvedValue(null);
+    await renderAt("/library");
+
+    await user.keyboard("{Control>}o{/Control}");
+    expect(openDialog).toHaveBeenCalled();
+
+    await user.keyboard("{Control>}n{/Control}");
+    expect(create).toHaveBeenCalled();
+  });
+});
+
+describe("Settings", () => {
+  beforeEach(() => setupApp());
+  afterEach(() => vi.restoreAllMocks());
 
   it("opens with Ctrl+, and closes with Esc back to the previous page", async () => {
     const user = userEvent.setup();
@@ -126,74 +164,11 @@ describe("Settings", () => {
   });
 });
 
-describe("Editor", () => {
-  beforeEach(() => {
-    vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });
-    vi.spyOn(markdownService, "render").mockImplementation(async (md) =>
-      md.startsWith("# ") ? `<h1>${md.slice(2).split("\n")[0]}</h1>` : "",
-    );
-  });
-
-  afterEach(() => {
-    draftStore.clear();
-    vi.restoreAllMocks();
-  });
-
-  it("shows the Markdown source and its rendered preview side by side", async () => {
-    draftStore.set("doc-1", "# Bug Fix\n\nDetails");
-    await renderAt("/editor/doc-1");
-
-    expect(screen.getByRole("heading", { level: 1, name: "Bug Fix" })).toBeInTheDocument();
-    expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
-    const preview = screen.getByRole("article", { name: "Preview" });
-    expect(await within(preview).findByRole("heading", { name: "Bug Fix" })).toBeInTheDocument();
-    expect(markdownService.render).toHaveBeenCalledWith("# Bug Fix\n\nDetails");
-  });
-
-  it("shows cursor position, word count and unsaved state in the status bar", async () => {
-    draftStore.set("doc-1", "# Bug Fix\n\nDetails");
-    await renderAt("/editor/doc-1");
-
-    const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Ln 1, Col 1");
-    expect(status).toHaveTextContent("3 words");
-    expect(status).toHaveTextContent("Not saved");
-  });
-
-  it("switches between editor, split and preview views", async () => {
-    const user = userEvent.setup();
-    await renderAt("/editor/doc-1");
-    const source = screen.getByRole("region", { name: "Markdown source" });
-    const rendered = screen.getByRole("region", { name: "Rendered preview" });
-
-    expect(screen.getByRole("button", { name: "Split view" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-
-    await user.click(screen.getByRole("button", { name: "Preview only" }));
-    expect(source).toHaveClass("hidden");
-    expect(rendered).not.toHaveClass("hidden");
-
-    await user.click(screen.getByRole("button", { name: "Editor only" }));
-    expect(source).not.toHaveClass("hidden");
-    expect(rendered).toHaveClass("hidden");
-  });
-
-  it("clears editor status when leaving the editor", async () => {
-    const user = userEvent.setup();
-    await renderAt("/editor/doc-1");
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
-
-    await user.click(within(sidebar).getByRole("link", { name: "Library" }));
-
-    expect(screen.getByRole("status")).toHaveTextContent("No document open");
-  });
-});
-
 describe("Reserved shortcuts", () => {
+  beforeEach(() => setupApp());
+  afterEach(() => vi.restoreAllMocks());
+
   it.each(["s", "S", "p"])("Ctrl+%s never reaches the webview's default handler", async (key) => {
-    vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });
     await renderAt("/");
 
     const event = new KeyboardEvent("keydown", {
@@ -205,6 +180,5 @@ describe("Reserved shortcuts", () => {
     window.dispatchEvent(event);
 
     expect(event.defaultPrevented).toBe(true);
-    vi.restoreAllMocks();
   });
 });

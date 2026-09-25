@@ -1,71 +1,79 @@
-import { useParams } from "@tanstack/react-router";
-import { Code, Columns2, Eye, FileText } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { FileQuestion, FileText, FolderOpen } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { DocumentActions } from "@/components/layout/DocumentActions";
+import { EmptyState } from "@/components/layout/EmptyState";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { ConflictDialog } from "@/features/documents/ConflictDialog";
+import { DeleteDocumentDialog } from "@/features/documents/DeleteDocumentDialog";
+import {
+  isDirty,
+  useDocumentsStore,
+  useOpenDocument,
+  type OpenDocument,
+} from "@/features/documents/documentsStore";
+import { EditorActions } from "@/features/documents/EditorActions";
+import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { documentTitle } from "@/features/editor/documentText";
-import { draftStore } from "@/features/editor/drafts";
 import { MarkdownEditor } from "@/features/editor/MarkdownEditor";
 import { MarkdownPreview } from "@/features/editor/MarkdownPreview";
 import { useMarkdownPreview } from "@/features/editor/useMarkdownPreview";
+import { ViewModeToggle, type ViewMode } from "@/features/editor/ViewModeToggle";
+import { showError } from "@/features/notices/noticeStore";
 import { cn } from "@/lib/utils";
+import { toAppError } from "@/types/document";
 
-type ViewMode = "editor" | "split" | "preview";
+const stripExtension = (name: string) => name.replace(/\.(md|markdown)$/i, "");
 
-const VIEW_MODES: { mode: ViewMode; label: string; icon: typeof Code }[] = [
-  { mode: "editor", label: "Editor only", icon: Code },
-  { mode: "split", label: "Split view", icon: Columns2 },
-  { mode: "preview", label: "Preview only", icon: Eye },
-];
-
-function ViewModeToggle({ value, onChange }: { value: ViewMode; onChange: (m: ViewMode) => void }) {
-  return (
-    <div role="group" aria-label="View mode" className="flex items-center gap-1">
-      {VIEW_MODES.map(({ mode, label, icon: Icon }) => (
-        <Tooltip key={mode}>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              aria-label={label}
-              aria-pressed={value === mode}
-              onClick={() => onChange(mode)}
-              className="flex size-7 items-center justify-center rounded-md text-interactive-normal transition-colors hover:bg-surface-hover hover:text-interactive-hover aria-pressed:bg-surface-selected aria-pressed:text-interactive-active"
-            >
-              <Icon className="size-5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent>{label}</TooltipContent>
-        </Tooltip>
-      ))}
-    </div>
-  );
-}
-
-function DocumentEditor({ documentId }: { documentId: string }) {
-  const [content, setContent] = useState(() => draftStore.get(documentId));
+function DocumentEditor({ doc }: { doc: OpenDocument }) {
+  const navigate = useNavigate();
+  const { setContent, save, saveAs, reload, clearConflict, remove } = useDocumentsStore();
   const [viewMode, setViewMode] = useState<ViewMode>("split");
-  const preview = useMarkdownPreview(content);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const preview = useMarkdownPreview(doc.content);
+  const dirty = isDirty(doc);
 
-  const onChange = useCallback(
-    (value: string) => {
-      draftStore.set(documentId, value);
-      setContent(value);
-    },
-    [documentId],
-  );
+  const onChange = useCallback((value: string) => setContent(doc.id, value), [doc.id, setContent]);
+
+  // Ctrl+S / Ctrl+Shift+S (the global hook keeps these from the webview).
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+      if (event.key.toLowerCase() !== "s") return;
+      if (event.shiftKey) void saveAs(doc.id);
+      else void save(doc.id);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [doc.id, save, saveAs]);
+
+  const deleteDocument = async () => {
+    try {
+      await remove(doc.id);
+      void navigate({ to: "/" });
+    } catch (e) {
+      setConfirmDelete(false);
+      showError(`Couldn't move to trash: ${toAppError(e).message}`);
+    }
+  };
 
   return (
     <>
       <PageHeader
         icon={<FileText />}
-        title={documentTitle(content) ?? "Untitled document"}
-        topic="Draft — not saved to disk yet"
+        title={(documentTitle(doc.content) ?? stripExtension(doc.name)) + (dirty ? " •" : "")}
+        topic={doc.path}
         actions={
           <>
             <ViewModeToggle value={viewMode} onChange={setViewMode} />
             <span aria-hidden className="h-6 w-px bg-surface-selected" />
-            <DocumentActions />
+            <EditorActions
+              canSave={dirty && doc.saveState !== "saving"}
+              onSave={() => void save(doc.id)}
+              onSaveAs={() => void saveAs(doc.id)}
+              onDelete={() => setConfirmDelete(true)}
+            />
           </>
         }
       />
@@ -74,7 +82,12 @@ function DocumentEditor({ documentId }: { documentId: string }) {
           aria-label="Markdown source"
           className={cn("min-w-0 flex-1", viewMode === "preview" && "hidden")}
         >
-          <MarkdownEditor initialValue={content} onChange={onChange} />
+          {/* Remount when content is replaced from disk (reload). */}
+          <MarkdownEditor
+            key={`${doc.id}:${doc.revision}`}
+            initialValue={doc.content}
+            onChange={onChange}
+          />
         </section>
         {viewMode === "split" && <div aria-hidden className="w-px shrink-0 bg-surface-selected" />}
         <section
@@ -84,12 +97,52 @@ function DocumentEditor({ documentId }: { documentId: string }) {
           <MarkdownPreview preview={preview} />
         </section>
       </div>
+
+      <ConflictDialog
+        open={doc.conflict !== null}
+        fileName={doc.name}
+        onCancel={() => clearConflict(doc.id)}
+        onOverwrite={() => void save(doc.id, { force: true })}
+        onReload={() => void reload(doc.id)}
+        onSaveCopy={() => {
+          clearConflict(doc.id);
+          void saveAs(doc.id);
+        }}
+      />
+      <DeleteDocumentDialog
+        open={confirmDelete}
+        fileName={doc.name}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={deleteDocument}
+      />
+    </>
+  );
+}
+
+function DocumentNotOpen() {
+  const { openDocument } = useDocumentCommands();
+  return (
+    <>
+      <PageHeader icon={<FileText />} title="No document" actions={<DocumentActions />} />
+      <div className="flex-1 overflow-y-auto">
+        <EmptyState
+          icon={<FileQuestion />}
+          title="This document isn't open"
+          description="It may have been closed or moved to the trash. Open a file to keep working."
+          actions={
+            <Button onClick={() => void openDocument()}>
+              <FolderOpen data-icon="inline-start" />
+              Open file
+            </Button>
+          }
+        />
+      </div>
     </>
   );
 }
 
 export function EditorPage() {
   const { documentId } = useParams({ from: "/shell/editor/$documentId" });
-  // Remount per document so the editor starts from that document's content.
-  return <DocumentEditor key={documentId} documentId={documentId} />;
+  const doc = useOpenDocument(documentId);
+  return doc ? <DocumentEditor doc={doc} /> : <DocumentNotOpen />;
 }
