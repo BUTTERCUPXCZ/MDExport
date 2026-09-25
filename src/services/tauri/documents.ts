@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { DocumentFile, FileVersion } from "@/types/document";
+import type { DocumentFile, FileVersion, RenamedDocument } from "@/types/document";
 
 /**
  * Document file operations. All dialogs run in Rust, and Rust only accepts
@@ -33,6 +33,11 @@ export const documentService = {
   /** Shows the Save As dialog. Resolves `null` if cancelled. */
   saveAs(content: string, suggestedName: string): Promise<DocumentFile | null> {
     return invoke("save_document_as", { content, suggestedName });
+  },
+
+  /** Renames the file within its folder; `.md` is added if the name has no extension. */
+  rename(path: string, newName: string): Promise<RenamedDocument> {
+    return invoke("rename_document", { path, newName });
   },
 
   /** Moves the file to the OS trash. */

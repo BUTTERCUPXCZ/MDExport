@@ -40,6 +40,15 @@ export function useGlobalShortcuts() {
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
+      // F2: rename the open document (VS Code convention).
+      if (event.key === "F2" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        const { activePath } = latest.current;
+        if (activePath) {
+          event.preventDefault();
+          useUiStore.getState().setRenamingPath(activePath);
+        }
+        return;
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       const ui = useUiStore.getState();
       const key = event.key.toLowerCase();

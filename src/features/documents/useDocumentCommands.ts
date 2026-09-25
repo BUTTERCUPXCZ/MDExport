@@ -62,5 +62,19 @@ export function useDocumentCommands() {
     [navigate, openInEditor],
   );
 
-  return { newDocument, openDocument, openPath };
+  /**
+   * Renames a document on disk and updates it everywhere (open editor, sidebar).
+   * Rejects with a user-facing message so the rename field can show it inline.
+   */
+  const renameDocument = useCallback(async (path: string, newName: string) => {
+    try {
+      const renamed = await documentService.rename(path, newName);
+      useDocumentsStore.getState().applyRename(path, renamed);
+      await refreshLibrary();
+    } catch (e) {
+      throw new Error(toAppError(e).message, { cause: e });
+    }
+  }, []);
+
+  return { newDocument, openDocument, openPath, renameDocument };
 }

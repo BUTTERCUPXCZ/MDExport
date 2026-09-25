@@ -34,6 +34,8 @@ interface DocumentsState {
   reload: (id: string) => Promise<void>;
   clearConflict: (id: string) => void;
   close: (id: string) => void;
+  /** Points an open document at its new path after a rename (unsaved edits are kept). */
+  applyRename: (oldPath: string, renamed: { path: string; name: string }) => void;
   remove: (id: string) => Promise<void>;
 }
 
@@ -142,6 +144,11 @@ export const useDocumentsStore = create<DocumentsState>((set, get) => {
 
     clearConflict(id) {
       update(id, { conflict: null });
+    },
+
+    applyRename(oldPath, renamed) {
+      const doc = Object.values(get().documents).find((d) => d.path === oldPath);
+      if (doc) update(doc.id, { path: renamed.path, name: renamed.name });
     },
 
     close(id) {

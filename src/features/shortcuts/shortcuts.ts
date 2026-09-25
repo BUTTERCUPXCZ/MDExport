@@ -18,6 +18,7 @@ export const SHORTCUT_GROUPS = [
       ["Open file", ["Ctrl", "O"]],
       ["Save", ["Ctrl", "S"]],
       ["Save as", ["Ctrl", "Shift", "S"]],
+      ["Rename document", ["F2"]],
     ],
   },
   {

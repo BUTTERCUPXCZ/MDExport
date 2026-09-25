@@ -4,7 +4,6 @@ import {
   ChevronRight,
   FilePlus2,
   FolderPlus,
-  Hash,
   Keyboard,
   Plus,
   RefreshCw,
@@ -14,6 +13,7 @@ import {
 import { DropdownMenu } from "radix-ui";
 import { useEffect, useState, type ReactNode } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { Channel } from "@/components/sidebar/Channel";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDirty, useDocumentsStore } from "@/features/documents/documentsStore";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
@@ -21,13 +21,11 @@ import {
   channelGroups,
   entryForPath,
   HOME,
-  stem,
   type ChannelGroup,
 } from "@/features/library/libraryModel";
 import { refreshLibrary, useLibraryStore } from "@/features/library/libraryStore";
 import { useActiveServer } from "@/features/library/useActiveServer";
 import { useUiStore } from "@/features/ui/uiStore";
-import { cn } from "@/lib/utils";
 import { appService } from "@/services/tauri/app";
 
 /** Paths of open documents with unsaved changes. */
@@ -40,45 +38,6 @@ function useDirtyPaths(): Set<string> {
     ),
   );
   return new Set(paths);
-}
-
-/** A document row, styled like a Discord text channel. Unsaved = bold + dot (like unread). */
-function Channel({
-  name,
-  title,
-  active,
-  unsaved,
-  onOpen,
-}: {
-  name: string;
-  title: string;
-  active: boolean;
-  unsaved: boolean;
-  onOpen: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      title={title}
-      aria-current={active ? "page" : undefined}
-      aria-label={unsaved ? `${name} (unsaved changes)` : name}
-      onClick={onOpen}
-      className={cn(
-        "relative flex h-[34px] w-full items-center gap-1.5 rounded-md px-2 text-left text-base font-medium text-channel-default transition-colors hover:bg-surface-hover hover:text-interactive-hover",
-        unsaved && "text-interactive-active",
-        active && "bg-surface-selected text-interactive-active",
-      )}
-    >
-      {unsaved && !active && (
-        <span aria-hidden className="absolute -left-2 h-2 w-1 rounded-r-full bg-header-primary" />
-      )}
-      <Hash className="size-5 shrink-0 text-channel-default" />
-      <span className="truncate">{name}</span>
-      {unsaved && (
-        <span aria-hidden className="ml-auto size-2 shrink-0 rounded-full bg-header-primary" />
-      )}
-    </button>
-  );
 }
 
 function SectionHeader({ children, action }: { children: ReactNode; action?: ReactNode }) {
@@ -252,7 +211,8 @@ function OutsideLibrary({ activePath, dirty }: { activePath: string | null; dirt
         {outside.map((doc) => (
           <Channel
             key={doc.id}
-            name={stem(doc.name)}
+            fileName={doc.name}
+            path={doc.path}
             title={doc.path}
             active={doc.path === activePath}
             unsaved={dirty.has(doc.path)}
@@ -310,7 +270,8 @@ function ChannelList({
               {visible.map((doc) => (
                 <Channel
                   key={doc.path}
-                  name={stem(doc.name)}
+                  fileName={doc.name}
+                  path={doc.path}
                   title={doc.relativePath}
                   active={doc.path === activePath}
                   unsaved={dirty.has(doc.path)}

@@ -11,6 +11,14 @@ pub struct FileVersion {
     pub modified_ms: u64,
 }
 
+/// Result of renaming a document: its new canonical path and file name.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RenamedDocument {
+    pub path: String,
+    pub name: String,
+}
+
 /// A Markdown file opened from disk. Mirrored by `DocumentFile` in `src/types/document.ts`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]

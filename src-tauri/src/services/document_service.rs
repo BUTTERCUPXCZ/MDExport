@@ -7,6 +7,7 @@ use crate::models::document::{DocumentFile, FileVersion};
 use crate::models::error::{AppError, AppResult};
 use crate::repositories::file_repository;
 use crate::services::access_scope::is_markdown;
+use crate::services::library_tree;
 
 const NEW_DOCUMENT_STEM: &str = "Untitled";
 const MAX_UNTITLED: u32 = 10_000;
@@ -102,6 +103,31 @@ pub fn create_in(dir: &Path) -> AppResult<DocumentFile> {
 
 pub fn delete(path: &Path) -> AppResult<()> {
     file_repository::move_to_trash(path)
+}
+
+/// Renames a document within its folder. `new_name` may omit the extension
+/// (`.md` is added). Never overwrites another file; a case-only rename of the
+/// same file (e.g. `untitled.md` → `Untitled.md`) is allowed.
+pub fn rename(path: &Path, new_name: &str) -> AppResult<PathBuf> {
+    let name = library_tree::validate_name(new_name)?;
+    let dir = path
+        .parent()
+        .ok_or_else(|| AppError::NotAllowed(path.display().to_string()))?;
+    let target = with_markdown_extension(&dir.join(name));
+    if target == path {
+        return Ok(target);
+    }
+    if !path.exists() {
+        return Err(AppError::NotFound(path.display().to_string()));
+    }
+    if target.exists() {
+        let same_file = target.canonicalize().ok() == path.canonicalize().ok();
+        if !same_file {
+            return Err(AppError::AlreadyExists(file_name(&target)));
+        }
+    }
+    fs::rename(path, &target).map_err(|e| AppError::from_io(e, path))?;
+    Ok(target)
 }
 
 #[cfg(test)]
@@ -206,6 +232,76 @@ mod tests {
             with_markdown_extension(Path::new("/a/b.markdown")),
             PathBuf::from("/a/b.markdown")
         );
+    }
+
+    #[test]
+    fn rename_keeps_folder_and_content_and_adds_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = dir.path().join("Untitled.md");
+        fs::write(&old, "# Notes").unwrap();
+
+        let new = rename(&old, "  auth-flow ").unwrap();
+
+        assert_eq!(new, dir.path().join("auth-flow.md"));
+        assert!(!old.exists());
+        assert_eq!(fs::read_to_string(&new).unwrap(), "# Notes");
+        assert_eq!(
+            rename(&new, "auth-flow.markdown").unwrap(),
+            dir.path().join("auth-flow.markdown")
+        );
+    }
+
+    #[test]
+    fn rename_to_same_name_is_a_no_op() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("a.md");
+        fs::write(&path, "x").unwrap();
+
+        assert_eq!(rename(&path, "a").unwrap(), path);
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn rename_never_overwrites_another_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a.md");
+        let b = dir.path().join("b.md");
+        fs::write(&a, "A").unwrap();
+        fs::write(&b, "B").unwrap();
+
+        assert!(matches!(rename(&a, "b"), Err(AppError::AlreadyExists(name)) if name == "b.md"));
+        assert_eq!(fs::read_to_string(&b).unwrap(), "B");
+        assert!(a.exists());
+    }
+
+    #[test]
+    fn rename_rejects_invalid_names_and_missing_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let a = dir.path().join("a.md");
+        fs::write(&a, "A").unwrap();
+
+        for bad in ["", "  ", "../escape", "sub/dir", ".hidden", "a:b"] {
+            assert!(
+                matches!(rename(&a, bad), Err(AppError::InvalidName(_))),
+                "{bad:?} should be rejected"
+            );
+        }
+        assert!(matches!(
+            rename(&dir.path().join("gone.md"), "x"),
+            Err(AppError::NotFound(_))
+        ));
+    }
+
+    #[test]
+    fn rename_allows_case_only_change() {
+        let dir = tempfile::tempdir().unwrap();
+        let old = dir.path().join("untitled.md");
+        fs::write(&old, "x").unwrap();
+
+        let new = rename(&old, "Untitled").unwrap();
+
+        assert_eq!(new.file_name().unwrap(), "Untitled.md");
+        assert_eq!(fs::read_to_string(&new).unwrap(), "x");
     }
 
     #[test]

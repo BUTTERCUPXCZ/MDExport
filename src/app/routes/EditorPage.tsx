@@ -78,6 +78,7 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
               canSave={dirty && doc.saveState !== "saving"}
               onSave={() => void save(doc.id)}
               onSaveAs={() => void saveAs(doc.id)}
+              onRename={() => useUiStore.getState().setRenamingPath(doc.path)}
               onDelete={() => setConfirmDelete(true)}
             />
           </>

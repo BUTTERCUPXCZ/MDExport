@@ -1,7 +1,7 @@
 use tauri::{AppHandle, State, Window};
 
 use crate::commands::dialog;
-use crate::models::document::{DocumentFile, FileVersion};
+use crate::models::document::{DocumentFile, FileVersion, RenamedDocument};
 use crate::models::error::{AppError, AppResult};
 use crate::services::{document_service, library_tree};
 use crate::state::AppState;
@@ -84,4 +84,25 @@ pub fn delete_document(state: State<'_, AppState>, path: String) -> AppResult<()
     document_service::delete(&path)?;
     state.scope.revoke(&path);
     Ok(())
+}
+
+/// Renames a document within its folder (e.g. `Untitled.md` → `auth-flow.md`).
+#[tauri::command]
+pub fn rename_document(
+    state: State<'_, AppState>,
+    path: String,
+    new_name: String,
+) -> AppResult<RenamedDocument> {
+    let old = state.scope.authorize(&path)?;
+    let new = document_service::rename(&old, &new_name)?;
+    // Keep access for files outside the library that were granted by a dialog.
+    state.scope.revoke(&old);
+    let new = state.scope.grant(&new)?;
+    Ok(RenamedDocument {
+        name: new
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        path: new.display().to_string(),
+    })
 }

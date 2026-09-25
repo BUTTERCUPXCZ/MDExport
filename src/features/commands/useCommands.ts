@@ -17,8 +17,12 @@ export function useCommands(): Command[] {
   const navigate = useNavigate();
   const { newDocument, openDocument } = useDocumentCommands();
   const { documentId } = useParams({ strict: false });
-  const hasDocument = useDocumentsStore((s) => Boolean(documentId && s.documents[documentId]));
-  const { setViewMode, setShortcutsOpen, setCreateFolderOpen } = useUiStore.getState();
+  const documentPath = useDocumentsStore((s) =>
+    documentId ? s.documents[documentId]?.path : undefined,
+  );
+  const hasDocument = Boolean(documentPath);
+  const { setViewMode, setShortcutsOpen, setCreateFolderOpen, setRenamingPath } =
+    useUiStore.getState();
 
   return useMemo(() => {
     const commands: Command[] = [
@@ -52,6 +56,12 @@ export function useCommands(): Command[] {
           shortcut: "Ctrl+Shift+S",
           run: () => void saveAs(documentId),
         },
+        {
+          id: "rename",
+          label: "Rename document",
+          shortcut: "F2",
+          run: () => setRenamingPath(documentPath ?? null),
+        },
         { id: "view-editor", label: "View: Editor only", run: () => setViewMode("editor") },
         { id: "view-split", label: "View: Split", run: () => setViewMode("split") },
         { id: "view-preview", label: "View: Preview only", run: () => setViewMode("preview") },
@@ -60,11 +70,13 @@ export function useCommands(): Command[] {
     return commands;
   }, [
     documentId,
+    documentPath,
     hasDocument,
     navigate,
     newDocument,
     openDocument,
     setCreateFolderOpen,
+    setRenamingPath,
     setShortcutsOpen,
     setViewMode,
   ]);

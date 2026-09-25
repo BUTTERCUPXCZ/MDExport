@@ -7,11 +7,14 @@ interface UiState {
   quickSwitcherOpen: boolean;
   shortcutsOpen: boolean;
   createFolderOpen: boolean;
+  /** Path of the document whose name is being edited in the sidebar, if any. */
+  renamingPath: string | null;
   /** Editor layout, shared so the quick switcher and shortcuts can change it. */
   viewMode: ViewMode;
   setQuickSwitcherOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
   setCreateFolderOpen: (open: boolean) => void;
+  setRenamingPath: (path: string | null) => void;
   setViewMode: (mode: ViewMode) => void;
   cycleViewMode: () => void;
 }
@@ -20,10 +23,12 @@ export const useUiStore = create<UiState>((set) => ({
   quickSwitcherOpen: false,
   shortcutsOpen: false,
   createFolderOpen: false,
+  renamingPath: null,
   viewMode: "split",
   setQuickSwitcherOpen: (quickSwitcherOpen) => set({ quickSwitcherOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   setCreateFolderOpen: (createFolderOpen) => set({ createFolderOpen }),
+  setRenamingPath: (renamingPath) => set({ renamingPath }),
   setViewMode: (viewMode) => set({ viewMode }),
   cycleViewMode: () =>
     set((s) => ({

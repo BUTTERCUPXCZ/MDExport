@@ -4,6 +4,12 @@ export interface FileVersion {
   modifiedMs: number;
 }
 
+/** Mirrors `models::document::RenamedDocument` in Rust. */
+export interface RenamedDocument {
+  path: string;
+  name: string;
+}
+
 /** Mirrors `models::document::DocumentFile` in Rust. */
 export interface DocumentFile {
   path: string;
@@ -19,6 +25,8 @@ export type AppErrorKind =
   | "notAllowed"
   | "notMarkdown"
   | "libraryNotConfigured"
+  | "invalidName"
+  | "alreadyExists"
   | "io";
 
 /** Mirrors `models::error::AppError` as serialized by Rust. */

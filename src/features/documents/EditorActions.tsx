@@ -1,4 +1,4 @@
-import { Save, SaveAll, Trash2 } from "lucide-react";
+import { Pencil, Save, SaveAll, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -35,10 +35,17 @@ interface EditorActionsProps {
   canSave: boolean;
   onSave: () => void;
   onSaveAs: () => void;
+  onRename: () => void;
   onDelete: () => void;
 }
 
-export function EditorActions({ canSave, onSave, onSaveAs, onDelete }: EditorActionsProps) {
+export function EditorActions({
+  canSave,
+  onSave,
+  onSaveAs,
+  onRename,
+  onDelete,
+}: EditorActionsProps) {
   return (
     <>
       <IconAction label="Save (Ctrl+S)" onClick={onSave} disabled={!canSave}>
@@ -46,6 +53,9 @@ export function EditorActions({ canSave, onSave, onSaveAs, onDelete }: EditorAct
       </IconAction>
       <IconAction label="Save As (Ctrl+Shift+S)" onClick={onSaveAs}>
         <SaveAll />
+      </IconAction>
+      <IconAction label="Rename (F2)" onClick={onRename}>
+        <Pencil />
       </IconAction>
       <IconAction label="Move to trash" onClick={onDelete}>
         <Trash2 />

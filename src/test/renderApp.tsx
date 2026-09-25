@@ -61,6 +61,7 @@ export function setupApp({
     quickSwitcherOpen: false,
     shortcutsOpen: false,
     createFolderOpen: false,
+    renamingPath: null,
     viewMode: "split",
   });
 

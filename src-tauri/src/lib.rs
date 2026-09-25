@@ -38,6 +38,7 @@ pub fn run() {
             commands::document::save_document,
             commands::document::save_document_as,
             commands::document::delete_document,
+            commands::document::rename_document,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
