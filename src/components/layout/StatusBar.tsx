@@ -1,8 +1,7 @@
-import { useMatchRoute } from "@tanstack/react-router";
+import { useEditorStatus } from "@/features/editor/editorStatus";
 
 export function StatusBar() {
-  const matchRoute = useMatchRoute();
-  const inEditor = Boolean(matchRoute({ to: "/editor/$documentId" }));
+  const editor = useEditorStatus();
 
   return (
     <footer
@@ -13,7 +12,19 @@ export function StatusBar() {
         <span aria-hidden className="size-2 rounded-full bg-success" />
         Ready
       </span>
-      <span>{inEditor ? "Saved" : "No document open"}</span>
+      {editor ? (
+        <span className="flex items-center gap-3">
+          <span>
+            Ln {editor.line}, Col {editor.column}
+          </span>
+          <span>
+            {editor.words} {editor.words === 1 ? "word" : "words"}
+          </span>
+          <span className="text-warning">Not saved</span>
+        </span>
+      ) : (
+        <span>No document open</span>
+      )}
     </footer>
   );
 }

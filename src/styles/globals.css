@@ -118,6 +118,19 @@
   --border: rgb(6 6 7 / 0.08);
   --input: var(--surface-tertiary);
   --ring: #00a8fc;
+
+  /* Syntax highlighting (editor + preview code blocks) */
+  --hl-keyword: #cf222e;
+  --hl-string: #0a3069;
+  --hl-comment: #6e7781;
+  --hl-constant: #0550ae;
+  --hl-function: #8250df;
+  --hl-type: #953800;
+  --hl-tag: #116329;
+  --hl-attr: #0550ae;
+  --hl-punctuation: #4e5058;
+  --hl-markup: #80848e;
+  --editor-selection: rgb(88 101 242 / 0.25);
 }
 
 /* Dark theme */
@@ -166,6 +179,18 @@
   --border: rgb(78 80 88 / 0.48);
   --input: var(--surface-tertiary);
   --ring: #00a8fc;
+
+  --hl-keyword: #ff7b72;
+  --hl-string: #a5d6ff;
+  --hl-comment: #8b949e;
+  --hl-constant: #79c0ff;
+  --hl-function: #d2a8ff;
+  --hl-type: #ffa657;
+  --hl-tag: #7ee787;
+  --hl-attr: #79c0ff;
+  --hl-punctuation: #b5bac1;
+  --hl-markup: #80848e;
+  --editor-selection: rgb(88 101 242 / 0.35);
 }
 
 @layer base {
@@ -195,5 +220,202 @@
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--surface-tertiary) transparent;
+  }
+}
+
+/* Rendered Markdown preview (HTML from the Rust `render_markdown` command) */
+@layer components {
+  .markdown-preview {
+    @apply text-text-normal;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+
+    & > :first-child {
+      margin-top: 0;
+    }
+    & :is(h1, h2, h3, h4, h5, h6) {
+      @apply text-header-primary;
+      position: relative;
+      margin: 1.5em 0 0.5em;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+    & h1 {
+      font-size: 32px;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
+    }
+    & h2 {
+      font-size: 24px;
+      padding-bottom: 0.3em;
+      border-bottom: 1px solid var(--border);
+    }
+    & h3 {
+      font-size: 20px;
+    }
+    & h4 {
+      font-size: 16px;
+    }
+    & :is(h5, h6) {
+      @apply text-header-secondary;
+      font-size: 14px;
+    }
+    /* comrak heading anchors: "#" shown on hover */
+    & .anchor {
+      @apply text-channel-default;
+      margin-left: 0.4em;
+      font-weight: 400;
+      text-decoration: none;
+      opacity: 0;
+    }
+    & .anchor::before {
+      content: "#";
+    }
+    & :is(h1, h2, h3, h4, h5, h6):hover .anchor {
+      opacity: 1;
+    }
+    & :is(p, ul, ol, blockquote, pre, table) {
+      margin: 0 0 1em;
+    }
+    & a {
+      @apply text-text-link;
+      text-decoration: none;
+    }
+    & a:hover {
+      text-decoration: underline;
+    }
+    & strong {
+      @apply text-header-primary;
+      font-weight: 700;
+    }
+    & del {
+      @apply text-text-muted;
+    }
+    & :is(ul, ol) {
+      padding-left: 1.75em;
+    }
+    & ul {
+      list-style: disc;
+    }
+    & ol {
+      list-style: decimal;
+    }
+    & li + li {
+      margin-top: 0.25em;
+    }
+    & li:has(> input[type="checkbox"]) {
+      list-style: none;
+      margin-left: -1.5em;
+    }
+    & input[type="checkbox"] {
+      margin-right: 0.5em;
+      vertical-align: middle;
+      accent-color: var(--primary);
+    }
+    /* Discord-style quote: rounded bar on the left */
+    & blockquote {
+      @apply text-text-normal;
+      position: relative;
+      padding: 0 0 0 16px;
+    }
+    & blockquote::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 4px;
+      border-radius: 4px;
+      background: var(--interactive-normal);
+      opacity: 0.5;
+    }
+    & code {
+      @apply font-mono;
+      font-size: 0.85em;
+      padding: 0.15em 0.3em;
+      border-radius: 4px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--surface-tertiary);
+    }
+    & pre {
+      @apply font-mono;
+      font-size: 14px;
+      line-height: 1.45;
+      padding: 0.75em 1em;
+      overflow-x: auto;
+      border-radius: 4px;
+      background: var(--surface-secondary);
+      border: 1px solid var(--surface-tertiary);
+    }
+    & pre code {
+      padding: 0;
+      font-size: inherit;
+      border: 0;
+      background: none;
+    }
+    & table {
+      display: block;
+      width: max-content;
+      max-width: 100%;
+      overflow-x: auto;
+      border-collapse: collapse;
+    }
+    & :is(th, td) {
+      padding: 6px 13px;
+      border: 1px solid var(--border);
+    }
+    & th {
+      @apply text-header-primary;
+      font-weight: 600;
+      background: var(--surface-secondary);
+    }
+    & hr {
+      margin: 1.5em 0;
+      border: 0;
+      border-top: 1px solid var(--border);
+    }
+    & img {
+      max-width: 100%;
+      border-radius: 4px;
+    }
+    & .footnotes {
+      @apply text-text-muted;
+      font-size: 14px;
+    }
+  }
+
+  /* syntect classes (prefix "hl-") emitted by the Rust markdown module */
+  .markdown-preview pre {
+    & .hl-comment {
+      color: var(--hl-comment);
+      font-style: italic;
+    }
+    & :is(.hl-string, .hl-string .hl-punctuation) {
+      color: var(--hl-string);
+    }
+    & .hl-constant {
+      color: var(--hl-constant);
+    }
+    & :is(.hl-keyword, .hl-storage) {
+      color: var(--hl-keyword);
+    }
+    &
+      :is(
+        .hl-entity.hl-name.hl-type,
+        .hl-entity.hl-name.hl-class,
+        .hl-support.hl-type,
+        .hl-support.hl-class,
+        .hl-entity.hl-name.hl-struct
+      ) {
+      color: var(--hl-type);
+    }
+    & :is(.hl-entity.hl-name.hl-function, .hl-support.hl-function) {
+      color: var(--hl-function);
+    }
+    & .hl-entity.hl-name.hl-tag {
+      color: var(--hl-tag);
+    }
+    & .hl-entity.hl-other.hl-attribute-name {
+      color: var(--hl-attr);
+    }
   }
 }
