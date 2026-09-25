@@ -18,7 +18,7 @@ const rootRoute = createRootRoute({
   notFoundComponent: NotFoundPage,
 });
 
-/** Pathless layout route: everything except Settings renders inside the app shell. */
+/** Pathless layout route: every page renders inside the app shell. */
 const shellRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "shell",
@@ -44,14 +44,13 @@ const editorRoute = createRoute({
 });
 
 const settingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: "/settings",
   component: SettingsPage,
 });
 
 const routeTree = rootRoute.addChildren([
-  shellRoute.addChildren([homeRoute, libraryRoute, editorRoute]),
-  settingsRoute,
+  shellRoute.addChildren([homeRoute, libraryRoute, editorRoute, settingsRoute]),
 ]);
 
 /**

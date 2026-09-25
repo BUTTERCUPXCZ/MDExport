@@ -1,26 +1,29 @@
 import type { ReactNode } from "react";
 
 interface PageHeaderProps {
-  icon: ReactNode;
+  /** Section label, e.g. "Library". Shown in small mono caps before the title. */
+  section?: string;
   title: string;
-  /** Short muted text after the title (Discord's channel topic). */
-  topic?: string;
+  /** Secondary metadata, e.g. the file path. */
+  meta?: string;
   actions?: ReactNode;
 }
 
-/** 48px top bar of the main column. */
-export function PageHeader({ icon, title, topic, actions }: PageHeaderProps) {
+/** 44px top bar: section / title — meta ........ actions */
+export function PageHeader({ section, title, meta, actions }: PageHeaderProps) {
   return (
-    <header className="z-10 flex h-12 shrink-0 items-center gap-2 bg-surface-primary px-4 shadow-elevation-low">
-      <span className="text-channel-default [&_svg]:size-6">{icon}</span>
-      <h1 className="truncate text-base font-semibold text-header-primary">{title}</h1>
-      {topic && (
+    <header className="flex h-11 shrink-0 items-center gap-3 border-b px-6">
+      {section && (
         <>
-          <span aria-hidden className="mx-2 h-6 w-px bg-surface-selected" />
-          <p className="truncate text-sm text-text-muted">{topic}</p>
+          <span className="label">{section}</span>
+          <span aria-hidden className="text-ink-3">
+            /
+          </span>
         </>
       )}
-      {actions && <div className="ml-auto flex items-center gap-4">{actions}</div>}
+      <h1 className="truncate text-[14px] font-semibold">{title}</h1>
+      {meta && <p className="min-w-0 truncate font-mono text-[11px] text-ink-3">{meta}</p>}
+      {actions && <div className="ml-auto flex shrink-0 items-center gap-1">{actions}</div>}
     </header>
   );
 }

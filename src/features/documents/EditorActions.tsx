@@ -1,36 +1,5 @@
-import { FileDown, Save, SaveAll, Trash2 } from "lucide-react";
-import type { ReactNode } from "react";
 import { ComingSoon } from "@/components/layout/ComingSoon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-
-function IconAction({
-  label,
-  onClick,
-  disabled,
-  children,
-}: {
-  label: string;
-  onClick: () => void;
-  disabled?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          disabled={disabled}
-          onClick={onClick}
-          className="flex size-6 items-center justify-center text-interactive-normal transition-colors hover:text-interactive-hover disabled:opacity-50 [&_svg]:size-5"
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
+import { HeaderAction } from "@/components/layout/HeaderAction";
 
 interface EditorActionsProps {
   canSave: boolean;
@@ -42,25 +11,18 @@ interface EditorActionsProps {
 export function EditorActions({ canSave, onSave, onSaveAs, onDelete }: EditorActionsProps) {
   return (
     <>
-      <IconAction label="Save (Ctrl+S)" onClick={onSave} disabled={!canSave}>
-        <Save />
-      </IconAction>
-      <IconAction label="Save As (Ctrl+Shift+S)" onClick={onSaveAs}>
-        <SaveAll />
-      </IconAction>
+      <HeaderAction onClick={onSave} disabled={!canSave} shortcut="Ctrl+S">
+        Save
+      </HeaderAction>
+      <HeaderAction onClick={onSaveAs} shortcut="Ctrl+Shift+S">
+        Save as
+      </HeaderAction>
       <ComingSoon label="Export — coming soon">
-        <button
-          type="button"
-          disabled
-          aria-label="Export"
-          className="flex size-6 items-center justify-center text-interactive-normal opacity-50 [&_svg]:size-5"
-        >
-          <FileDown />
-        </button>
+        <HeaderAction disabled>Export</HeaderAction>
       </ComingSoon>
-      <IconAction label="Move to trash" onClick={onDelete}>
-        <Trash2 />
-      </IconAction>
+      <HeaderAction onClick={onDelete} className="hover:bg-danger hover:text-white">
+        Trash
+      </HeaderAction>
     </>
   );
 }

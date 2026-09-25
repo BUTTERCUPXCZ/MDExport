@@ -13,10 +13,10 @@ describe("App shell", () => {
     await renderAt("/");
 
     expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
-    expect(screen.getByText("Welcome to MDForge")).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Workspaces" })).toBeInTheDocument();
+    expect(screen.getByText("Documentation that stays in plain files.")).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Main" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("No document open");
-    expect(await screen.findByText("v0.1.0 · Local")).toBeInTheDocument();
+    expect(await screen.findByText("v0.1.0 · local")).toBeInTheDocument();
   });
 
   it("shows a fallback when the version cannot be loaded", async () => {
@@ -24,7 +24,7 @@ describe("App shell", () => {
 
     await renderAt("/");
 
-    expect(await screen.findByTestId("app-version")).toHaveTextContent("Local");
+    expect(await screen.findByTestId("app-version")).toHaveTextContent("local");
   });
 
   it("marks the current sidebar item active and navigates on click", async () => {
@@ -65,7 +65,7 @@ describe("Home document commands", () => {
     );
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "New document" }));
+    await user.click(screen.getByRole("button", { name: /^New document/ }));
 
     expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
     expect(screen.getByRole("heading", { level: 1, name: "Untitled" })).toBeInTheDocument();
@@ -78,7 +78,7 @@ describe("Home document commands", () => {
     vi.spyOn(documentService, "openDialog").mockResolvedValue(docFile());
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "Open file" }));
+    await user.click(screen.getByRole("button", { name: /^Open file/ }));
 
     expect(screen.getByText("/home/me/Documents/MDForge/Bug Fix.md")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
@@ -89,7 +89,7 @@ describe("Home document commands", () => {
     vi.spyOn(documentService, "openDialog").mockResolvedValue(null);
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "Open file" }));
+    await user.click(screen.getByRole("button", { name: /^Open file/ }));
 
     expect(router.state.location.pathname).toBe("/");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("Home document commands", () => {
     });
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "Open file" }));
+    await user.click(screen.getByRole("button", { name: /^Open file/ }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't open the file: Permission denied: /root/secret.md",
@@ -136,8 +136,8 @@ describe("Settings", () => {
 
     await user.keyboard("{Control>},{/Control}");
     expect(router.state.location.pathname).toBe("/settings");
-    expect(screen.getByRole("heading", { level: 1, name: "Appearance" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Workspaces" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Appearance" })).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     expect(router.state.location.pathname).toBe("/library");
@@ -147,7 +147,7 @@ describe("Settings", () => {
     const user = userEvent.setup();
     const router = await renderAt("/settings");
 
-    await user.click(screen.getByRole("button", { name: "Close settings" }));
+    await user.click(screen.getByRole("button", { name: /^Close/ }));
 
     expect(router.state.location.pathname).toBe("/");
   });
@@ -158,7 +158,7 @@ describe("Settings", () => {
 
     await user.click(screen.getByRole("button", { name: "Export" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Export" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Export" })).toBeInTheDocument();
     expect(screen.getByText("Default PDF Template")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Export" })).toHaveAttribute("aria-current", "page");
   });

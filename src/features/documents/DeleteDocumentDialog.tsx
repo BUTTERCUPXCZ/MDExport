@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Modal, ModalCancel } from "@/components/layout/Modal";
+import { Modal } from "@/components/layout/Modal";
 import { Button } from "@/components/ui/button";
 
 interface DeleteDocumentDialogProps {
@@ -30,11 +30,14 @@ export function DeleteDocumentDialog({
     <Modal
       open={open}
       onOpenChange={(next) => !next && !busy && onCancel()}
+      label="Delete"
       title={`Move “${fileName}” to trash?`}
       description="The file will be moved to your system trash. You can restore it from there."
       footer={
         <>
-          <ModalCancel onClick={onCancel} />
+          <Button variant="ghost" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button variant="danger" disabled={busy} onClick={() => void confirm()}>
             Move to trash
           </Button>

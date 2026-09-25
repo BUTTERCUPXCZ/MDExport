@@ -20,7 +20,7 @@ export function ComingSoon({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span tabIndex={0} className={cn("inline-flex rounded-md", className)}>
+        <span tabIndex={0} className={cn("inline-flex", className)}>
           {children}
         </span>
       </TooltipTrigger>
