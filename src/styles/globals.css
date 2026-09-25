@@ -223,11 +223,33 @@
   }
 }
 
-/* Rendered Markdown preview (HTML from the Rust `render_markdown` command) */
+/*
+ * Rendered Markdown preview (HTML from the Rust `render_markdown` command).
+ * Shown as a light "document page" in the same modern style as the PDF / DOCX
+ * exports (src-tauri/src/export) — the look of ChatGPT / Claude documents — so
+ * what you see is what you export. Always light, whatever the app theme.
+ */
 @layer components {
   .markdown-preview {
-    @apply text-text-normal;
-    font-size: 16px;
+    --doc-ink: #1f2328;
+    --doc-muted: #59636e;
+    --doc-accent: #1f3a5f;
+    --doc-link: #0969da;
+    --doc-rule: #d0d7de;
+    --doc-tint: #f6f8fa;
+
+    color-scheme: light;
+    max-width: 820px;
+    margin: 24px auto;
+    padding: clamp(24px, 7%, 64px);
+    border-radius: 4px;
+    background: #ffffff;
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 0.2),
+      0 8px 24px rgb(0 0 0 / 0.14);
+    color: var(--doc-ink);
+    font-family: "Noto Sans Variable", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
     line-height: 1.6;
     overflow-wrap: anywhere;
 
@@ -235,37 +257,36 @@
       margin-top: 0;
     }
     & :is(h1, h2, h3, h4, h5, h6) {
-      @apply text-header-primary;
       position: relative;
-      margin: 1.5em 0 0.5em;
+      margin: 1.6em 0 0.6em;
       font-weight: 700;
       line-height: 1.25;
+      color: var(--doc-ink);
     }
     & h1 {
-      font-size: 32px;
-      padding-bottom: 0.3em;
-      border-bottom: 1px solid var(--border);
+      margin: 0 0 0.8em;
+      font-size: 29px;
+      letter-spacing: -0.01em;
     }
     & h2 {
-      font-size: 24px;
-      padding-bottom: 0.3em;
-      border-bottom: 1px solid var(--border);
+      font-size: 20px;
+      color: var(--doc-accent);
     }
     & h3 {
-      font-size: 20px;
+      font-size: 17px;
     }
     & h4 {
-      font-size: 16px;
+      font-size: 15px;
     }
     & :is(h5, h6) {
-      @apply text-header-secondary;
       font-size: 14px;
+      color: var(--doc-muted);
     }
     /* comrak heading anchors: "#" shown on hover */
     & .anchor {
-      @apply text-channel-default;
-      margin-left: 0.4em;
+      margin-left: 0.35em;
       font-weight: 400;
+      color: var(--doc-muted);
       text-decoration: none;
       opacity: 0;
     }
@@ -275,25 +296,26 @@
     & :is(h1, h2, h3, h4, h5, h6):hover .anchor {
       opacity: 1;
     }
+
     & :is(p, ul, ol, blockquote, pre, table) {
-      margin: 0 0 1em;
+      margin: 0 0 1.05em;
     }
     & a {
-      @apply text-text-link;
+      color: var(--doc-link);
       text-decoration: none;
     }
     & a:hover {
       text-decoration: underline;
     }
     & strong {
-      @apply text-header-primary;
       font-weight: 700;
     }
     & del {
-      @apply text-text-muted;
+      color: var(--doc-muted);
     }
+
     & :is(ul, ol) {
-      padding-left: 1.75em;
+      padding-left: 1.6em;
     }
     & ul {
       list-style: disc;
@@ -302,120 +324,105 @@
       list-style: decimal;
     }
     & li + li {
-      margin-top: 0.25em;
+      margin-top: 0.3em;
     }
     & li:has(> input[type="checkbox"]) {
       list-style: none;
-      margin-left: -1.5em;
+      margin-left: -1.4em;
     }
     & input[type="checkbox"] {
       margin-right: 0.5em;
       vertical-align: middle;
-      accent-color: var(--primary);
+      accent-color: var(--doc-link);
     }
-    /* Discord-style quote: rounded bar on the left */
+
+    /* Callout quote: tinted box with a blue bar. */
     & blockquote {
-      @apply text-text-normal;
-      position: relative;
-      padding: 0 0 0 16px;
+      padding: 10px 14px;
+      border-left: 3px solid var(--doc-link);
+      border-radius: 0 4px 4px 0;
+      background: #f3f6fa;
     }
-    & blockquote::before {
-      content: "";
-      position: absolute;
-      inset: 0 auto 0 0;
-      width: 4px;
-      border-radius: 4px;
-      background: var(--interactive-normal);
-      opacity: 0.5;
+    & blockquote > :last-child {
+      margin-bottom: 0;
     }
+
     & code {
-      @apply font-mono;
-      font-size: 0.85em;
-      padding: 0.15em 0.3em;
-      border-radius: 4px;
-      background: var(--surface-secondary);
-      border: 1px solid var(--surface-tertiary);
+      padding: 0.15em 0.35em;
+      border-radius: 3px;
+      background: #eff1f3;
+      font-family: "Source Code Pro Variable", Consolas, monospace;
+      font-size: 0.86em;
     }
     & pre {
-      @apply font-mono;
-      font-size: 14px;
-      line-height: 1.45;
-      padding: 0.75em 1em;
+      padding: 12px 14px;
       overflow-x: auto;
-      border-radius: 4px;
-      background: var(--surface-secondary);
-      border: 1px solid var(--surface-tertiary);
+      border: 1px solid var(--doc-rule);
+      border-radius: 6px;
+      background: var(--doc-tint);
+      font-size: 12.5px;
+      line-height: 1.5;
     }
     & pre code {
       padding: 0;
-      font-size: inherit;
-      border: 0;
       background: none;
+      font-size: inherit;
     }
+
     & table {
-      display: block;
-      width: max-content;
-      max-width: 100%;
-      overflow-x: auto;
+      width: 100%;
       border-collapse: collapse;
+      font-size: 13px;
     }
     & :is(th, td) {
-      padding: 6px 13px;
-      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border: 1px solid var(--doc-rule);
+      text-align: left;
+      vertical-align: top;
     }
     & th {
-      @apply text-header-primary;
-      font-weight: 600;
-      background: var(--surface-secondary);
+      background: #f0f3f6;
+      font-weight: 700;
     }
     & hr {
-      margin: 1.5em 0;
+      margin: 1.6em 0;
       border: 0;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--doc-rule);
     }
     & img {
       max-width: 100%;
-      border-radius: 4px;
     }
     & .footnotes {
-      @apply text-text-muted;
-      font-size: 14px;
+      font-size: 12px;
+      color: var(--doc-muted);
     }
-  }
 
-  /* syntect classes (prefix "hl-") emitted by the Rust markdown module */
-  .markdown-preview pre {
-    & .hl-comment {
-      color: var(--hl-comment);
+    /* syntect classes (prefix "hl-") from the Rust markdown module — light theme,
+       matching the exported documents. */
+    & pre .hl-comment {
+      color: #59636e;
       font-style: italic;
     }
-    & :is(.hl-string, .hl-string .hl-punctuation) {
-      color: var(--hl-string);
+    & pre :is(.hl-string, .hl-string .hl-punctuation) {
+      color: #0a3069;
     }
-    & .hl-constant {
-      color: var(--hl-constant);
+    & pre .hl-constant {
+      color: #0550ae;
     }
-    & :is(.hl-keyword, .hl-storage) {
-      color: var(--hl-keyword);
+    & pre :is(.hl-keyword, .hl-storage) {
+      color: #cf222e;
     }
-    &
-      :is(
-        .hl-entity.hl-name.hl-type,
-        .hl-entity.hl-name.hl-class,
-        .hl-support.hl-type,
-        .hl-support.hl-class,
-        .hl-entity.hl-name.hl-struct
-      ) {
-      color: var(--hl-type);
+    & pre :is(.hl-entity.hl-name.hl-function, .hl-support.hl-function) {
+      color: #8250df;
     }
-    & :is(.hl-entity.hl-name.hl-function, .hl-support.hl-function) {
-      color: var(--hl-function);
+    & pre :is(.hl-entity.hl-name.hl-type, .hl-entity.hl-name.hl-class, .hl-support.hl-type) {
+      color: #953800;
     }
-    & .hl-entity.hl-name.hl-tag {
-      color: var(--hl-tag);
+    & pre .hl-entity.hl-name.hl-tag {
+      color: #116329;
     }
-    & .hl-entity.hl-other.hl-attribute-name {
-      color: var(--hl-attr);
+    & pre .hl-entity.hl-other.hl-attribute-name {
+      color: #0550ae;
     }
   }
 }

@@ -102,7 +102,10 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
         {viewMode === "split" && <div aria-hidden className="w-px shrink-0 bg-surface-selected" />}
         <section
           aria-label="Rendered preview"
-          className={cn("min-w-0 flex-1 overflow-y-auto", viewMode === "editor" && "hidden")}
+          className={cn(
+            "min-w-0 flex-1 overflow-y-auto bg-surface-tertiary px-4",
+            viewMode === "editor" && "hidden",
+          )}
         >
           <MarkdownPreview preview={preview} />
         </section>

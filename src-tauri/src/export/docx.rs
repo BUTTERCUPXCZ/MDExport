@@ -1,5 +1,9 @@
 //! DOCX export with real Word styles (Heading 1–6, Code, Quote), numbered and
 //! bulleted lists, tables, links and page numbers.
+//!
+//! Uses the same "modern document" look as the PDF (`pdf.rs`) and the preview:
+//! sans-serif, left-aligned, dark-blue section headings, shaded table headers,
+//! code boxes and callout quotes — the style of ChatGPT / Claude documents.
 
 use std::collections::HashMap;
 use std::io::Cursor;
@@ -9,9 +13,10 @@ use comrak::Node;
 use docx_rs::{
     AbstractNumbering, AlignmentType, BorderType, BreakType, Docx, Footer, Hyperlink,
     HyperlinkType, IndentLevel, Level, LevelJc, LevelOverride, LevelText, LineSpacing,
-    NumberFormat, Numbering, NumberingId, PageMargin, PageNum, Paragraph, ParagraphBorder,
-    ParagraphBorderPosition, Run, RunFonts, Shading, ShdType, SpecialIndentType, Start, Style,
-    StyleType, Table, TableCell, TableRow, WidthType,
+    LineSpacingType, NumberFormat, Numbering, NumberingId, PageMargin, PageNum, Paragraph,
+    ParagraphBorder, ParagraphBorderPosition, Run, RunFonts, Shading, ShdType, SpecialIndentType,
+    Start, Style, StyleType, Table, TableBorder, TableBorderPosition, TableBorders, TableCell,
+    TableCellMargins, TableRow, WidthType,
 };
 
 use super::plain_text;
@@ -19,13 +24,19 @@ use crate::models::error::{AppError, AppResult};
 
 const BODY_FONT: &str = "Calibri";
 const MONO_FONT: &str = "Consolas";
-const CODE_FILL: &str = "F3F4F6";
-const LINK_COLOR: &str = "0563C1";
+const INK: &str = "1F2328";
+const ACCENT: &str = "1F3A5F";
+const LINK_COLOR: &str = "0969DA";
+const RULE: &str = "D0D7DE";
+const CODE_FILL: &str = "F6F8FA";
+const INLINE_CODE_FILL: &str = "EFF1F3";
+const QUOTE_FILL: &str = "F3F6FA";
+const HEADER_FILL: &str = "F0F3F6";
 const BULLET_ABSTRACT: usize = 1;
 const DECIMAL_ABSTRACT: usize = 2;
 
-/// Heading sizes in half-points, for levels 1–6.
-const HEADING_SIZES: [usize; 6] = [36, 30, 26, 24, 22, 22];
+/// Heading sizes in half-points, for levels 1–6 (22pt title, 15pt sections…).
+const HEADING_SIZES: [usize; 6] = [44, 30, 25, 22, 21, 21];
 
 fn fonts(name: &str) -> RunFonts {
     RunFonts::new()
@@ -46,39 +57,63 @@ fn styles(docx: Docx) -> Docx {
                 .next("Normal")
                 .size(*size)
                 .bold()
-                .color("1F2328")
+                .color(if level == 2 { ACCENT } else { INK })
                 .outline_lvl(i)
                 .line_spacing(
                     LineSpacing::new()
-                        .before(if level <= 2 { 360 } else { 240 })
-                        .after(120),
+                        .before(match level {
+                            1 => 0,
+                            2 => 400,
+                            _ => 280,
+                        })
+                        .after(if level == 1 { 240 } else { 120 }),
                 ),
         );
     }
 
+    // Code blocks: one paragraph per line in a light box (shading + border).
     let mut code = Style::new("Code", StyleType::Paragraph)
         .name("Code")
         .based_on("Normal")
         .fonts(fonts(MONO_FONT))
-        .size(19)
-        .line_spacing(LineSpacing::new().before(0).after(0));
+        .size(18)
+        .color(INK)
+        .indent(Some(120), None, Some(120), None)
+        .line_spacing(LineSpacing::new().before(0).after(0).line(240));
     code.paragraph_property = code
         .paragraph_property
         .shading(Shading::new().shd_type(ShdType::Clear).fill(CODE_FILL));
+    for position in [
+        ParagraphBorderPosition::Top,
+        ParagraphBorderPosition::Bottom,
+        ParagraphBorderPosition::Left,
+        ParagraphBorderPosition::Right,
+    ] {
+        code.paragraph_property = code.paragraph_property.set_border(
+            ParagraphBorder::new(position)
+                .val(BorderType::Single)
+                .size(4)
+                .space(4)
+                .color(RULE),
+        );
+    }
 
+    // Quotes render as a tinted callout with a blue bar, like AI-generated notes.
     let mut quote = Style::new("Quote", StyleType::Paragraph)
         .name("Quote")
         .based_on("Normal")
-        .italic()
-        .color("555555")
-        .indent(Some(360), None, None, None);
-    quote.paragraph_property = quote.paragraph_property.set_border(
-        ParagraphBorder::new(ParagraphBorderPosition::Left)
-            .val(BorderType::Single)
-            .size(12)
-            .space(8)
-            .color("BBBBBB"),
-    );
+        .color(INK)
+        .indent(Some(200), None, Some(120), None);
+    quote.paragraph_property = quote
+        .paragraph_property
+        .shading(Shading::new().shd_type(ShdType::Clear).fill(QUOTE_FILL))
+        .set_border(
+            ParagraphBorder::new(ParagraphBorderPosition::Left)
+                .val(BorderType::Single)
+                .size(24)
+                .space(8)
+                .color(LINK_COLOR),
+        );
 
     docx.add_style(code).add_style(quote)
 }
@@ -159,12 +194,14 @@ impl<'a> Writer<'a> {
             run = run.strike();
         }
         if fmt.code {
-            run = run
-                .fonts(fonts(MONO_FONT))
-                .shading(Shading::new().shd_type(ShdType::Clear).fill(CODE_FILL));
+            run = run.fonts(fonts(MONO_FONT)).size(19).shading(
+                Shading::new()
+                    .shd_type(ShdType::Clear)
+                    .fill(INLINE_CODE_FILL),
+            );
         }
         if fmt.link {
-            run = run.color(LINK_COLOR).underline("single");
+            run = run.color(LINK_COLOR);
         }
         run
     }
@@ -377,11 +414,16 @@ impl<'a> Writer<'a> {
                                 bold: header,
                                 ..Format::default()
                             };
-                            let p = self.inline_paragraph(cell, Paragraph::new().align(align), fmt);
+                            // Tight cell text: no paragraph spacing inside tables.
+                            let cell_p = Paragraph::new()
+                                .align(align)
+                                .size(20)
+                                .line_spacing(LineSpacing::new().before(0).after(0));
+                            let p = self.inline_paragraph(cell, cell_p, fmt);
                             let mut c = TableCell::new().add_paragraph(p);
                             if header {
                                 c = c.shading(
-                                    Shading::new().shd_type(ShdType::Clear).fill(CODE_FILL),
+                                    Shading::new().shd_type(ShdType::Clear).fill(HEADER_FILL),
                                 );
                             }
                             c
@@ -389,9 +431,27 @@ impl<'a> Writer<'a> {
                         .collect();
                     rows.push(TableRow::new(cells));
                 }
-                self.blocks.push(Block::Table(Box::new(
-                    Table::new(rows).width(5000, WidthType::Pct),
-                )));
+                let mut borders = TableBorders::new();
+                for position in [
+                    TableBorderPosition::Top,
+                    TableBorderPosition::Bottom,
+                    TableBorderPosition::Left,
+                    TableBorderPosition::Right,
+                    TableBorderPosition::InsideH,
+                    TableBorderPosition::InsideV,
+                ] {
+                    borders = borders.set(
+                        TableBorder::new(position)
+                            .border_type(BorderType::Single)
+                            .size(4)
+                            .color(RULE),
+                    );
+                }
+                let table = Table::new(rows)
+                    .width(5000, WidthType::Pct)
+                    .set_borders(borders)
+                    .margins(TableCellMargins::new().margin(80, 140, 80, 140));
+                self.blocks.push(Block::Table(Box::new(table)));
                 self.blocks.push(para(Paragraph::new()));
             }
             NodeValue::ThematicBreak => {
@@ -400,7 +460,7 @@ impl<'a> Writer<'a> {
                     ParagraphBorder::new(ParagraphBorderPosition::Bottom)
                         .val(BorderType::Single)
                         .size(6)
-                        .color("BBBBBB"),
+                        .color(RULE),
                 );
                 self.blocks.push(para(p));
             }
@@ -462,19 +522,28 @@ pub fn render(root: Node<'_>, _title: &str) -> AppResult<Vec<u8>> {
     let footer = Footer::new().add_paragraph(
         Paragraph::new()
             .align(AlignmentType::Center)
+            .size(17)
+            .color("59636E")
             .add_page_num(PageNum::new()),
     );
     let mut docx = Docx::new()
         .default_fonts(fonts(BODY_FONT))
         .default_size(22)
+        // 1.15 line spacing, 8pt after paragraphs (Word's modern default look).
+        .default_line_spacing(
+            LineSpacing::new()
+                .line_rule(LineSpacingType::Auto)
+                .line(276)
+                .after(160),
+        )
         .page_size(11906, 16838) // A4
         .page_margin(PageMargin {
-            top: 1440,
-            left: 1300,
-            bottom: 1440,
-            right: 1300,
+            top: 1247,
+            left: 1247,
+            bottom: 1361,
+            right: 1247,
             header: 720,
-            footer: 720,
+            footer: 600,
             gutter: 0,
         })
         .footer(footer);

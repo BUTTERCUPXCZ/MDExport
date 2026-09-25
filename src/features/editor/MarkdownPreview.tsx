@@ -39,7 +39,7 @@ export function MarkdownPreview({ preview }: MarkdownPreviewProps) {
     <article
       aria-label="Preview"
       aria-busy={preview.status === "loading"}
-      className="markdown-preview mx-auto max-w-[900px] px-8 py-6"
+      className="markdown-preview"
       onClick={onClick}
       dangerouslySetInnerHTML={{ __html: preview.status === "ready" ? preview.html : "" }}
     />

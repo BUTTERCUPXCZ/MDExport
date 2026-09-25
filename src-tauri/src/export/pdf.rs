@@ -20,26 +20,49 @@ use typst_layout::PagedDocument;
 use super::plain_text;
 use crate::models::error::{AppError, AppResult};
 
-/// Page, typography and element styles. Uses fonts bundled with typst-assets.
+/// "Modern document" style (the look of ChatGPT / Claude generated documents):
+/// sans-serif, left-aligned, clear title and section headings, shaded table
+/// headers, rounded code boxes, callout quotes, page numbers.
+/// Mirrors `.markdown-preview` in `src/styles/globals.css` and the DOCX styles.
 const PREAMBLE: &str = r##"
-#set page(paper: "a4", margin: (x: 2.3cm, y: 2.5cm), numbering: "1 / 1", number-align: center)
-#set text(font: ("Libertinus Serif", "New Computer Modern"), size: 11pt, lang: "en")
-#set par(justify: true, leading: 0.62em, spacing: 1.1em)
-#show heading: set block(above: 1.5em, below: 0.75em)
+#let ink = rgb("#1f2328")
+#let muted = rgb("#59636e")
+#let accent = rgb("#1f3a5f")
+#let link-blue = rgb("#0969da")
+#let rule = rgb("#d0d7de")
+#let tint = rgb("#f6f8fa")
+#set page(
+  paper: "a4",
+  margin: (x: 2.2cm, top: 2.2cm, bottom: 2.4cm),
+  footer: context align(center, text(size: 8.5pt, fill: muted, counter(page).display("1 of 1", both: true))),
+)
+#set text(font: ("Noto Sans", "Noto Emoji"), size: 10.5pt, fill: ink, lang: "en")
+#set par(justify: false, leading: 0.72em, spacing: 1.05em)
+#show heading: set text(fill: ink, weight: "bold")
+#show heading: set block(above: 1.6em, below: 0.7em)
 #show heading.where(level: 1): set text(size: 22pt)
-#show heading.where(level: 2): it => { set text(size: 15pt); it; v(-0.45em); line(length: 100%, stroke: 0.4pt + luma(190)) }
+#show heading.where(level: 1): set block(above: 0em, below: 1em)
+#show heading.where(level: 2): set text(size: 15pt, fill: accent)
 #show heading.where(level: 3): set text(size: 12.5pt)
-#show raw: set text(font: "DejaVu Sans Mono", size: 8.8pt)
-#show raw.where(block: false): box.with(fill: luma(243), inset: (x: 3pt), outset: (y: 3pt), radius: 2pt)
-#show raw.where(block: true): block.with(fill: luma(246), stroke: 0.5pt + luma(215), inset: 9pt, radius: 3pt, width: 100%)
-#show link: set text(fill: rgb("#1a5fb4"))
-#show link: underline
-#show quote.where(block: true): it => block(stroke: (left: 2pt + luma(170)), inset: (left: 10pt, y: 3pt), text(fill: luma(70), style: "italic", it.body))
-#set table(stroke: (_, y) => (bottom: if y == 0 { 0.8pt } else { 0.4pt + luma(200) }), inset: (x: 6pt, y: 5pt))
+#show heading.where(level: 4): set text(size: 11pt)
+#show raw: set text(font: ("DejaVu Sans Mono", "Noto Emoji"), size: 8.8pt)
+#show raw.where(block: false): box.with(fill: rgb("#eff1f3"), inset: (x: 3pt), outset: (y: 3pt), radius: 3pt)
+#show raw.where(block: true): block.with(fill: tint, stroke: 0.5pt + rule, inset: 10pt, radius: 6pt, width: 100%)
+#show link: set text(fill: link-blue)
+#show quote.where(block: true): it => block(
+  fill: rgb("#f3f6fa"), stroke: (left: 3pt + link-blue), inset: (x: 12pt, y: 9pt),
+  radius: (right: 4pt), width: 100%, it.body,
+)
+#set table(
+  stroke: 0.5pt + rule,
+  inset: (x: 8pt, y: 6pt),
+  fill: (_, y) => if y == 0 { rgb("#f0f3f6") },
+)
 #show table.cell.where(y: 0): strong
-#set list(indent: 0.6em)
-#set enum(indent: 0.6em)
-#let checkbox(checked) = box(width: 0.75em, height: 0.75em, stroke: 0.6pt + luma(60), baseline: 0.08em, if checked { align(center + horizon, square(size: 0.42em, fill: luma(40))) })
+#show table: set text(size: 9.5pt)
+#set list(indent: 0.4em, body-indent: 0.55em, spacing: 0.65em)
+#set enum(indent: 0.4em, body-indent: 0.55em, spacing: 0.65em)
+#let checkbox(checked) = box(width: 0.8em, height: 0.8em, stroke: 0.7pt + muted, radius: 2pt, baseline: 0.1em, fill: if checked { link-blue } else { none }, if checked { align(center + horizon, text(fill: white, size: 0.62em, weight: "bold", "✓")) })
 "##;
 
 struct Fonts {
@@ -47,8 +70,21 @@ struct Fonts {
     fonts: Vec<Font>,
 }
 
+/// Bundled document fonts (SIL OFL, see `fonts/OFL.txt`).
+const DOCUMENT_FONTS: [&[u8]; 6] = [
+    include_bytes!("../../fonts/NotoSans-Regular.ttf"),
+    include_bytes!("../../fonts/NotoSans-Italic.ttf"),
+    include_bytes!("../../fonts/NotoSans-SemiBold.ttf"),
+    include_bytes!("../../fonts/NotoSans-Bold.ttf"),
+    include_bytes!("../../fonts/NotoSans-BoldItalic.ttf"),
+    include_bytes!("../../fonts/NotoEmoji.ttf"),
+];
+
 static FONTS: LazyLock<Fonts> = LazyLock::new(|| {
-    let fonts: Vec<Font> = typst_assets::fonts()
+    // Noto Sans + Noto Emoji for text; typst-assets for DejaVu Sans Mono (code).
+    let fonts: Vec<Font> = DOCUMENT_FONTS
+        .into_iter()
+        .chain(typst_assets::fonts())
         .flat_map(|data| Font::iter(Bytes::new(data)))
         .collect();
     Fonts {
@@ -239,9 +275,14 @@ impl<'a> Writer<'a> {
                         cells.extend(row_cells);
                     }
                 }
+                // Full page width: content-sized columns, the last one takes the rest.
+                let n = table.num_columns.max(1);
+                let columns: Vec<&str> = (0..n)
+                    .map(|i| if i + 1 == n { "1fr" } else { "auto" })
+                    .collect();
                 format!(
-                    "table(columns: {}, align: ({},), {})",
-                    table.num_columns.max(1),
+                    "table(columns: ({},), align: ({},), {})",
+                    columns.join(", "),
                     align.join(", "),
                     cells.join(", ")
                 )

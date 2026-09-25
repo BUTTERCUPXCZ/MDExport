@@ -126,13 +126,16 @@ mod tests {
     }
 
     /// Writes sample exports for manual inspection:
-    /// `MDFORGE_EXPORT_DIR=/tmp/out cargo test write_sample_exports -- --ignored`
+    /// `MDFORGE_EXPORT_DIR=/tmp/out [MDFORGE_EXPORT_INPUT=doc.md] cargo test write_sample_exports -- --ignored`
     #[test]
     #[ignore]
     fn write_sample_exports() {
         let dir = std::env::var("MDFORGE_EXPORT_DIR").expect("set MDFORGE_EXPORT_DIR");
+        let input = std::env::var("MDFORGE_EXPORT_INPUT")
+            .map(|path| std::fs::read_to_string(path).unwrap())
+            .unwrap_or_else(|_| SAMPLE.to_string());
         for format in [ExportFormat::Pdf, ExportFormat::Docx, ExportFormat::Html] {
-            let bytes = export(SAMPLE, format, "sample").unwrap();
+            let bytes = export(&input, format, "sample").unwrap();
             let path = std::path::Path::new(&dir).join(format!("sample.{}", format.extension()));
             std::fs::write(path, bytes).unwrap();
         }
