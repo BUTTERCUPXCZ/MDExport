@@ -1,4 +1,5 @@
 mod commands;
+mod export;
 mod markdown;
 mod models;
 mod repositories;
@@ -20,7 +21,11 @@ pub fn run() {
             let config_path = app.path().app_config_dir()?.join("config.json");
             let library = LibraryService::new(config_path);
             let scope = AccessScope::new(library.location());
-            app.manage(AppState { scope, library });
+            app.manage(AppState {
+                scope,
+                library,
+                exported: Default::default(),
+            });
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -39,6 +44,8 @@ pub fn run() {
             commands::document::save_document_as,
             commands::document::delete_document,
             commands::document::rename_document,
+            commands::export::export_document,
+            commands::export::open_exported,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

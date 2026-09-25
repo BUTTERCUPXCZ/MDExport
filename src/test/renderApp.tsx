@@ -62,6 +62,8 @@ export function setupApp({
     shortcutsOpen: false,
     createFolderOpen: false,
     renamingPath: null,
+    exportMenuOpen: false,
+    exporting: null,
     viewMode: "split",
   });
 

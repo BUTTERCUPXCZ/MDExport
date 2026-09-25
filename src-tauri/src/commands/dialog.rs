@@ -56,6 +56,22 @@ pub async fn pick_save_path(
     run(move || dialog.blocking_save_file()).await
 }
 
+/// Save dialog for an export, filtered to one file type (e.g. "PDF document", "pdf").
+pub async fn pick_export_path(
+    app: &AppHandle,
+    window: &Window,
+    start_dir: Option<&Path>,
+    suggested_name: &str,
+    label: &str,
+    extension: &str,
+) -> AppResult<Option<PathBuf>> {
+    let dialog = builder(app, window, start_dir)
+        .set_title(format!("Export as {label}"))
+        .set_file_name(suggested_name)
+        .add_filter(label, &[extension]);
+    run(move || dialog.blocking_save_file()).await
+}
+
 pub async fn pick_folder(
     app: &AppHandle,
     window: &Window,

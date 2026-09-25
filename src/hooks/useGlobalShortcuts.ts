@@ -82,6 +82,10 @@ export function useGlobalShortcuts() {
             if (event.shiftKey) return false;
             void openDocument();
             return true;
+          case "e":
+            if (!latest.current.activePath) return false;
+            ui.setExportMenuOpen(true);
+            return true;
           case "s":
             return true;
           default:

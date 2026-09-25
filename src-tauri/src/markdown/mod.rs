@@ -19,7 +19,8 @@ static HIGHLIGHTER: LazyLock<SyntectAdapter> = LazyLock::new(|| {
         .build()
 });
 
-fn options() -> Options<'static> {
+/// Parser options shared by the preview and every export format.
+pub(crate) fn options() -> Options<'static> {
     let mut options = Options::default();
 
     // GitHub Flavored Markdown
@@ -33,6 +34,14 @@ fn options() -> Options<'static> {
     options.render.r#unsafe = false;
 
     options
+}
+
+/// Parses Markdown into comrak's AST and hands the root node to `f`.
+/// The AST is the document representation shared by the PDF and DOCX exporters.
+pub(crate) fn with_ast<R>(markdown: &str, f: impl for<'a> FnOnce(comrak::Node<'a>) -> R) -> R {
+    let arena = comrak::Arena::new();
+    let root = comrak::parse_document(&arena, markdown, &options());
+    f(root)
 }
 
 /// Renders Markdown to an HTML fragment for the preview.

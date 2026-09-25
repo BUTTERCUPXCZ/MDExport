@@ -1,8 +1,10 @@
 import { create } from "zustand";
 
 export interface Notice {
-  kind: "error" | "info";
+  kind: "error" | "info" | "success";
   message: string;
+  /** Optional button, e.g. "Open" after an export. */
+  action?: { label: string; run: () => void };
 }
 
 interface NoticeState {
@@ -20,3 +22,9 @@ export const useNoticeStore = create<NoticeState>((set) => ({
 
 export const showError = (message: string) =>
   useNoticeStore.getState().show({ kind: "error", message });
+
+export const showInfo = (message: string) =>
+  useNoticeStore.getState().show({ kind: "info", message });
+
+export const showSuccess = (message: string, action?: Notice["action"]) =>
+  useNoticeStore.getState().show({ kind: "success", message, action });

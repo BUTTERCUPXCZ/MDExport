@@ -19,6 +19,7 @@ export const SHORTCUT_GROUPS = [
       ["Save", ["Ctrl", "S"]],
       ["Save as", ["Ctrl", "Shift", "S"]],
       ["Rename document", ["F2"]],
+      ["Export (PDF, Word, HTML)", ["Ctrl", "E"]],
     ],
   },
   {

@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useDocumentsStore } from "@/features/documents/documentsStore";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
+import { EXPORT_FORMATS, useExport } from "@/features/export/useExport";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useUiStore } from "@/features/ui/uiStore";
 
@@ -16,6 +17,7 @@ export interface Command {
 export function useCommands(): Command[] {
   const navigate = useNavigate();
   const { newDocument, openDocument } = useDocumentCommands();
+  const exportDocument = useExport();
   const { documentId } = useParams({ strict: false });
   const documentPath = useDocumentsStore((s) =>
     documentId ? s.documents[documentId]?.path : undefined,
@@ -62,6 +64,14 @@ export function useCommands(): Command[] {
           shortcut: "F2",
           run: () => setRenamingPath(documentPath ?? null),
         },
+        ...EXPORT_FORMATS.map(({ format, label }) => ({
+          id: `export-${format}`,
+          label: `Export as ${label}`,
+          run: () => {
+            const doc = useDocumentsStore.getState().documents[documentId];
+            if (doc) void exportDocument(doc, format);
+          },
+        })),
         { id: "view-editor", label: "View: Editor only", run: () => setViewMode("editor") },
         { id: "view-split", label: "View: Split", run: () => setViewMode("split") },
         { id: "view-preview", label: "View: Preview only", run: () => setViewMode("preview") },
@@ -71,6 +81,7 @@ export function useCommands(): Command[] {
   }, [
     documentId,
     documentPath,
+    exportDocument,
     hasDocument,
     navigate,
     newDocument,

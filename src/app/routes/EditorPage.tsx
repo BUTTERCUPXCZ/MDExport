@@ -13,6 +13,7 @@ import {
   type OpenDocument,
 } from "@/features/documents/documentsStore";
 import { EditorActions } from "@/features/documents/EditorActions";
+import { ExportMenu } from "@/features/export/ExportMenu";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { MarkdownEditor } from "@/features/editor/MarkdownEditor";
 import { MarkdownPreview } from "@/features/editor/MarkdownPreview";
@@ -81,6 +82,8 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
               onRename={() => useUiStore.getState().setRenamingPath(doc.path)}
               onDelete={() => setConfirmDelete(true)}
             />
+            <span aria-hidden className="h-6 w-px bg-surface-selected" />
+            <ExportMenu doc={doc} />
           </>
         }
       />

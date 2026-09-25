@@ -61,10 +61,15 @@ fn temp_path_for(path: &Path) -> PathBuf {
 /// Writes atomically: temp file in the same folder, fsync, then rename over the target.
 /// A crash mid-save never leaves a half-written document. Keeps existing permissions.
 pub fn write_text_atomic(path: &Path, content: &str) -> AppResult<FileVersion> {
+    write_bytes_atomic(path, content.as_bytes())
+}
+
+/// Same as `write_text_atomic`, for binary files (exports).
+pub fn write_bytes_atomic(path: &Path, content: &[u8]) -> AppResult<FileVersion> {
     let temp = temp_path_for(path);
     let result = (|| {
         let mut file = fs::File::create(&temp)?;
-        file.write_all(content.as_bytes())?;
+        file.write_all(content)?;
         file.sync_all()?;
         if let Ok(meta) = fs::metadata(path) {
             fs::set_permissions(&temp, meta.permissions())?;
@@ -76,7 +81,7 @@ pub fn write_text_atomic(path: &Path, content: &str) -> AppResult<FileVersion> {
         let _ = fs::remove_file(&temp);
         return Err(AppError::from_io(e, path));
     }
-    version_of(path, content.as_bytes())
+    version_of(path, content)
 }
 
 /// Creates a new file, failing if it already exists.

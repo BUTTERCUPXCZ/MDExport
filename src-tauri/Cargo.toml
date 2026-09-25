@@ -27,6 +27,11 @@ tauri-plugin-dialog = "2.7.3"
 trash = "5.2.9"
 sha2 = "0.11.0"
 thiserror = "2.0.21"
+docx-rs = "0.4.22"
+typst = "0.15.1"
+typst-pdf = "0.15.1"
+typst-assets = { version = "0.15.1", features = ["fonts"] }
+typst-layout = "0.15.1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
