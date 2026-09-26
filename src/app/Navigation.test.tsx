@@ -100,7 +100,7 @@ describe("Library index", () => {
     const dialog = screen.getByRole("alertdialog", { name: "Create a folder" });
     await user.type(within(dialog).getByLabelText("Folder name"), "frontend{Enter}");
 
-    expect(createFolder).toHaveBeenCalledWith("frontend");
+    expect(createFolder).toHaveBeenCalledWith("frontend", "");
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(list.mock.calls.length).toBeGreaterThan(scans);
   });
@@ -117,6 +117,110 @@ describe("Library index", () => {
     await user.type(screen.getByLabelText("Folder name"), "backend{Enter}");
 
     expect(await screen.findByText("Already exists: backend")).toBeInTheDocument();
+  });
+});
+
+describe("Library index menus", () => {
+  beforeEach(() => setupApp());
+  afterEach(() => vi.restoreAllMocks());
+
+  async function rightClick(user: ReturnType<typeof userEvent.setup>, target: HTMLElement) {
+    await user.pointer({ keys: "[MouseRight]", target });
+    return within(screen.getByRole("menu"));
+  }
+
+  it("a folder's menu creates a folder inside it", async () => {
+    const user = userEvent.setup();
+    const createFolder = vi
+      .spyOn(libraryService, "createFolder")
+      .mockResolvedValue("backend/archive");
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: /^backend/ }));
+    await user.click(menu.getByRole("menuitem", { name: "New folder inside" }));
+    const dialog = screen.getByRole("alertdialog", { name: "New folder in backend" });
+    await user.type(within(dialog).getByLabelText("Folder name"), "archive{Enter}");
+
+    expect(createFolder).toHaveBeenCalledWith("archive", "backend");
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("the library name's menu creates a top-level folder", async () => {
+    const user = userEvent.setup();
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("link", { name: "MDForge" }));
+    await user.click(menu.getByRole("menuitem", { name: "New folder" }));
+
+    expect(screen.getByRole("alertdialog", { name: "Create a folder" })).toBeInTheDocument();
+  });
+
+  it("moves a folder to trash after confirmation, closing its open documents", async () => {
+    const user = userEvent.setup();
+    const deleteFolder = vi.spyOn(libraryService, "deleteFolder").mockResolvedValue();
+    const { router } = await renderEditor(
+      docFile({ path: `${LIBRARY}/backend/api.md`, name: "api.md" }),
+    );
+    const id = Object.keys(useDocumentsStore.getState().documents)[0]!;
+    useDocumentsStore.getState().setContent(id, "unsaved");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: /^backend/ }));
+    await user.click(menu.getByRole("menuitem", { name: "Move folder to trash" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Move “backend” to trash?" });
+    expect(dialog).toHaveTextContent("It contains 2 documents");
+    expect(within(dialog).getByRole("alert")).toHaveTextContent(
+      "Unsaved changes in 1 open document will be lost.",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Move to trash" }));
+
+    expect(deleteFolder).toHaveBeenCalledWith("backend");
+    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+    expect(useDocumentsStore.getState().documents).toEqual({});
+  });
+
+  it("cancelling keeps the folder", async () => {
+    const user = userEvent.setup();
+    const deleteFolder = vi.spyOn(libraryService, "deleteFolder").mockResolvedValue();
+    await renderAt("/");
+
+    const menu = await rightClick(
+      user,
+      within(index()).getByRole("button", { name: /^handovers/ }),
+    );
+    await user.click(menu.getByRole("menuitem", { name: "Move folder to trash" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(deleteFolder).not.toHaveBeenCalled();
+  });
+
+  it("shows an error when the folder can't be trashed", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(libraryService, "deleteFolder").mockRejectedValue({
+      kind: "notFound",
+      message: "Not found: backend",
+    });
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: /^backend/ }));
+    await user.click(menu.getByRole("menuitem", { name: "Move folder to trash" }));
+    await user.click(screen.getByRole("button", { name: "Move to trash" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Couldn't move the folder to trash: Not found: backend",
+    );
+  });
+
+  it("moves a document to trash from its menu", async () => {
+    const user = userEvent.setup();
+    const del = vi.spyOn(documentService, "delete").mockResolvedValue();
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: "Readme" }));
+    await user.click(menu.getByRole("menuitem", { name: "Move to trash" }));
+    const dialog = screen.getByRole("alertdialog", { name: "Move “Readme.md” to trash?" });
+    await user.click(within(dialog).getByRole("button", { name: "Move to trash" }));
+
+    expect(del).toHaveBeenCalledWith(`${LIBRARY}/Readme.md`);
   });
 });
 

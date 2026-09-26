@@ -26,8 +26,13 @@ export const libraryService = {
     return invoke("list_library");
   },
 
-  /** Creates a top-level folder. Resolves its relative path. */
-  createFolder(name: string): Promise<string> {
-    return invoke("create_folder", { name });
+  /** Creates a folder inside `parent` (relative; library root if omitted). Resolves its relative path. */
+  createFolder(name: string, parent?: string): Promise<string> {
+    return invoke("create_folder", { name, parent: parent || null });
+  },
+
+  /** Moves a library folder and everything in it to the system trash. */
+  deleteFolder(folder: string): Promise<void> {
+    return invoke("delete_folder", { folder });
   },
 };

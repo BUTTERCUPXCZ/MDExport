@@ -1,6 +1,11 @@
-import { Copy, ExternalLink, FileText, Pencil } from "lucide-react";
+import { Copy, ExternalLink, FileText, Pencil, Trash2 } from "lucide-react";
 import { ContextMenu } from "radix-ui";
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import {
+  IndexMenuContent,
+  IndexMenuItem,
+  IndexMenuSeparator,
+} from "@/components/library-index/IndexMenu";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { stem } from "@/features/library/libraryModel";
 import { showError } from "@/features/notices/noticeStore";
@@ -9,31 +14,6 @@ import { cn } from "@/lib/utils";
 
 const rowClass =
   "relative flex h-[30px] w-full items-center gap-2 rounded-md pr-2 text-left text-[13.5px]";
-
-export const menuItemClass =
-  "flex h-8 cursor-pointer items-center justify-between gap-6 rounded-md px-2 text-[13px] text-text-2 outline-none data-highlighted:bg-accent-soft data-highlighted:text-text [&_svg]:size-4 [&_svg]:text-muted";
-
-function MenuItem({
-  icon,
-  hint,
-  children,
-  onSelect,
-}: {
-  icon: ReactNode;
-  hint?: string;
-  children: ReactNode;
-  onSelect: () => void;
-}) {
-  return (
-    <ContextMenu.Item onSelect={onSelect} className={menuItemClass}>
-      <span className="flex items-center gap-2">
-        {icon}
-        {children}
-      </span>
-      {hint && <kbd className="text-muted">{hint}</kbd>}
-    </ContextMenu.Item>
-  );
-}
 
 /** Inline name editor. Enter saves, Esc cancels, errors stay visible to fix. */
 function RenameField({
@@ -113,9 +93,11 @@ interface DocumentRowProps {
   /** Left padding in px (nesting depth). */
   indent?: number;
   onOpen: () => void;
+  /** Asks to move the document to the trash (confirmation is up to the caller). */
+  onTrash?: () => void;
 }
 
-/** A document in the library index. Right-click for Open / Rename / Copy path; F2 renames. */
+/** A document in the library index. Right-click for Open / Rename / Copy path / Move to trash; F2 renames. */
 export function DocumentRow({
   fileName,
   path,
@@ -125,6 +107,7 @@ export function DocumentRow({
   unsaved,
   indent = 8,
   onOpen,
+  onTrash,
 }: DocumentRowProps) {
   const renaming = useUiStore((s) => s.renamingPath === path);
   const setRenamingPath = useUiStore((s) => s.setRenamingPath);
@@ -166,20 +149,25 @@ export function DocumentRow({
           )}
         </button>
       </ContextMenu.Trigger>
-      <ContextMenu.Portal>
-        <ContextMenu.Content className="z-50 w-[210px] rounded-lg border border-line bg-raised p-1 shadow-float">
-          <MenuItem icon={<ExternalLink />} onSelect={onOpen}>
-            Open
-          </MenuItem>
-          <MenuItem icon={<Pencil />} hint="F2" onSelect={() => setRenamingPath(path)}>
-            Rename
-          </MenuItem>
-          <ContextMenu.Separator className="mx-1 my-1 h-px bg-line" />
-          <MenuItem icon={<Copy />} onSelect={copyPath}>
-            Copy path
-          </MenuItem>
-        </ContextMenu.Content>
-      </ContextMenu.Portal>
+      <IndexMenuContent>
+        <IndexMenuItem icon={<ExternalLink />} onSelect={onOpen}>
+          Open
+        </IndexMenuItem>
+        <IndexMenuItem icon={<Pencil />} hint="F2" onSelect={() => setRenamingPath(path)}>
+          Rename
+        </IndexMenuItem>
+        <IndexMenuItem icon={<Copy />} onSelect={copyPath}>
+          Copy path
+        </IndexMenuItem>
+        {onTrash && (
+          <>
+            <IndexMenuSeparator />
+            <IndexMenuItem icon={<Trash2 />} danger onSelect={onTrash}>
+              Move to trash
+            </IndexMenuItem>
+          </>
+        )}
+      </IndexMenuContent>
     </ContextMenu.Root>
   );
 }

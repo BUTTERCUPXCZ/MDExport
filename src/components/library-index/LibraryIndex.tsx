@@ -1,8 +1,23 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ChevronRight, FolderPlus, Plus, Search, Settings } from "lucide-react";
+import {
+  ChevronRight,
+  Copy,
+  FilePlus2,
+  FolderPlus,
+  Plus,
+  Search,
+  Settings,
+  Trash2,
+} from "lucide-react";
+import { ContextMenu } from "radix-ui";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DocumentRow } from "@/components/library-index/DocumentRow";
+import {
+  IndexMenuContent,
+  IndexMenuItem,
+  IndexMenuSeparator,
+} from "@/components/library-index/IndexMenu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDirty, useDocumentsStore } from "@/features/documents/documentsStore";
 import { useActiveDocument } from "@/features/documents/useActiveDocument";
@@ -13,7 +28,11 @@ import {
   shortAge,
   type FolderNode,
 } from "@/features/library/libraryModel";
+import { DeleteDocumentDialog } from "@/features/documents/DeleteDocumentDialog";
+import { DeleteFolderDialog } from "@/features/library/DeleteFolderDialog";
 import { useLibraryStore } from "@/features/library/libraryStore";
+import { folderPrefix, useLibraryTrash } from "@/features/library/useLibraryTrash";
+import { showError } from "@/features/notices/noticeStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { useNow } from "@/hooks/useNow";
 import { cn } from "@/lib/utils";
@@ -33,11 +52,22 @@ function useDirtyPaths(): Set<string> {
 const INDENT = 14;
 const heading = "px-2 pt-5 pb-1.5 text-[12px] font-medium text-muted";
 
+/** What the user asked to move to the trash, waiting for confirmation. */
+type TrashTarget =
+  { kind: "document"; path: string; name: string } | { kind: "folder"; node: FolderNode };
+
 interface TreeProps {
   activePath: string | null;
   dirty: Set<string>;
   collapsed: Set<string>;
   onToggle: (path: string) => void;
+  onTrash: (target: TrashTarget) => void;
+}
+
+function copyToClipboard(text: string) {
+  navigator.clipboard
+    ?.writeText(text)
+    .catch(() => showError("Couldn't copy the path to the clipboard."));
 }
 
 function FolderHeading({
@@ -45,46 +75,76 @@ function FolderHeading({
   depth,
   collapsed,
   onToggle,
+  onTrash,
 }: {
   node: FolderNode;
   depth: number;
   collapsed: boolean;
   onToggle: () => void;
+  onTrash: () => void;
 }) {
   const { newDocument } = useDocumentCommands();
+  const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
+  const root = useLibraryStore((s) => s.listing?.root);
   return (
-    <div className="group flex h-[30px] items-center rounded-md pr-1 hover:bg-raised">
-      <button
-        type="button"
-        aria-expanded={!collapsed}
-        onClick={onToggle}
-        style={{ paddingLeft: 4 + depth * INDENT }}
-        className="flex h-full min-w-0 flex-1 items-center gap-1 text-left text-[13px] font-medium text-text-2 hover:text-text"
-      >
-        <ChevronRight
-          aria-hidden
-          className={cn(
-            "size-3.5 shrink-0 text-muted transition-transform duration-150",
-            !collapsed && "rotate-90",
-          )}
-        />
-        <span className="truncate">{node.name}</span>
-        <span className="ml-1 text-[11.5px] font-normal text-muted tabular-nums">{node.total}</span>
-      </button>
-      <Tooltip>
-        <TooltipTrigger asChild>
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <div className="group flex h-[30px] items-center rounded-md pr-1 hover:bg-raised data-[state=open]:bg-raised">
           <button
             type="button"
-            aria-label={`New document in ${node.name}`}
-            onClick={() => void newDocument(node.path)}
-            className="flex size-6 items-center justify-center rounded-md text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-accent-soft hover:text-text"
+            aria-expanded={!collapsed}
+            onClick={onToggle}
+            style={{ paddingLeft: 4 + depth * INDENT }}
+            className="flex h-full min-w-0 flex-1 items-center gap-1 text-left text-[13px] font-medium text-text-2 hover:text-text"
           >
-            <Plus className="size-3.5" />
+            <ChevronRight
+              aria-hidden
+              className={cn(
+                "size-3.5 shrink-0 text-muted transition-transform duration-150",
+                !collapsed && "rotate-90",
+              )}
+            />
+            <span className="truncate">{node.name}</span>
+            <span className="ml-1 text-[11.5px] font-normal text-muted tabular-nums">
+              {node.total}
+            </span>
           </button>
-        </TooltipTrigger>
-        <TooltipContent side="right">New document here</TooltipContent>
-      </Tooltip>
-    </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={`New document in ${node.name}`}
+                onClick={() => void newDocument(node.path)}
+                className="flex size-6 items-center justify-center rounded-md text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-accent-soft hover:text-text"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">New document here</TooltipContent>
+          </Tooltip>
+        </div>
+      </ContextMenu.Trigger>
+      <IndexMenuContent>
+        <IndexMenuItem icon={<FilePlus2 />} onSelect={() => void newDocument(node.path)}>
+          New document
+        </IndexMenuItem>
+        <IndexMenuItem icon={<FolderPlus />} onSelect={() => setCreateFolderOpen(true, node.path)}>
+          New folder inside
+        </IndexMenuItem>
+        {root && (
+          <IndexMenuItem
+            icon={<Copy />}
+            onSelect={() => copyToClipboard(folderPrefix(root, node.path).slice(0, -1))}
+          >
+            Copy path
+          </IndexMenuItem>
+        )}
+        <IndexMenuSeparator />
+        <IndexMenuItem icon={<Trash2 />} danger onSelect={onTrash}>
+          Move folder to trash
+        </IndexMenuItem>
+      </IndexMenuContent>
+    </ContextMenu.Root>
   );
 }
 
@@ -105,6 +165,7 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
           active={doc.path === tree.activePath}
           unsaved={tree.dirty.has(doc.path)}
           onOpen={() => void openPath(doc.path)}
+          onTrash={() => tree.onTrash({ kind: "document", path: doc.path, name: doc.name })}
         />
       ))}
       {node.folders.map((folder) => {
@@ -116,6 +177,7 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
               depth={depth}
               collapsed={isCollapsed}
               onToggle={() => tree.onToggle(folder.path)}
+              onTrash={() => tree.onTrash({ kind: "folder", node: folder })}
             />
             {!isCollapsed &&
               (folder.total === 0 ? (
@@ -163,29 +225,6 @@ function OutsideLibrary({ activePath, dirty }: { activePath: string | null; dirt
   );
 }
 
-function FooterButton({
-  label,
-  hint,
-  children,
-  ...props
-}: { label: string; hint: string; children: React.ReactNode } & React.ComponentProps<"button">) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={label}
-          className="flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-raised hover:text-text"
-          {...props}
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent side="top">{hint}</TooltipContent>
-    </Tooltip>
-  );
-}
-
 /**
  * The left column: one continuous index of the library. Folders are text
  * headings with counts, documents show how long ago they changed.
@@ -198,6 +237,8 @@ export function LibraryIndex() {
   const setQuickSwitcherOpen = useUiStore((s) => s.setQuickSwitcherOpen);
   const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
   const dirty = useDirtyPaths();
+  const { trashDocument, trashFolder } = useLibraryTrash();
+  const [trash, setTrash] = useState<TrashTarget | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggle = (path: string) =>
@@ -238,14 +279,26 @@ export function LibraryIndex() {
       </div>
 
       <nav aria-label="Documents" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
-        <Link
-          to="/"
-          activeOptions={{ exact: true }}
-          className="mt-3 flex h-[30px] items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[status=active]:bg-accent-soft"
-          title={listing?.root}
-        >
-          <span className="truncate">{libraryName}</span>
-        </Link>
+        <ContextMenu.Root>
+          <ContextMenu.Trigger asChild>
+            <Link
+              to="/"
+              activeOptions={{ exact: true }}
+              className="mt-3 flex h-[30px] items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[state=open]:bg-raised data-[status=active]:bg-accent-soft"
+              title={listing?.root}
+            >
+              <span className="truncate">{libraryName}</span>
+            </Link>
+          </ContextMenu.Trigger>
+          <IndexMenuContent>
+            <IndexMenuItem icon={<FilePlus2 />} hint="Ctrl N" onSelect={() => void newDocument()}>
+              New document
+            </IndexMenuItem>
+            <IndexMenuItem icon={<FolderPlus />} onSelect={() => setCreateFolderOpen(true)}>
+              New folder
+            </IndexMenuItem>
+          </IndexMenuContent>
+        </ContextMenu.Root>
 
         {status === "loading" && !tree && (
           <p className="px-2 py-2 text-[13px] text-muted">Reading the library…</p>
@@ -265,6 +318,7 @@ export function LibraryIndex() {
               dirty={dirty}
               collapsed={collapsed}
               onToggle={toggle}
+              onTrash={setTrash}
             />
           </div>
         )}
@@ -276,13 +330,14 @@ export function LibraryIndex() {
       </nav>
 
       <div className="flex h-11 shrink-0 items-center justify-between border-t border-line px-2.5">
-        <FooterButton
-          label="New folder"
-          hint="New folder"
+        <button
+          type="button"
           onClick={() => setCreateFolderOpen(true)}
+          className="flex h-8 items-center gap-2 rounded-md px-2 text-[13px] text-text-2 transition-colors hover:bg-raised hover:text-text"
         >
-          <FolderPlus className="size-4" />
-        </FooterButton>
+          <FolderPlus aria-hidden className="size-4 text-muted" />
+          New folder
+        </button>
         <Tooltip>
           <TooltipTrigger asChild>
             <Link
@@ -296,6 +351,32 @@ export function LibraryIndex() {
           <TooltipContent side="top">Settings (Ctrl+,)</TooltipContent>
         </Tooltip>
       </div>
+
+      <DeleteDocumentDialog
+        open={trash?.kind === "document"}
+        fileName={trash?.kind === "document" ? trash.name : ""}
+        onCancel={() => setTrash(null)}
+        onConfirm={async () => {
+          if (trash?.kind === "document") await trashDocument(trash.path);
+          setTrash(null);
+        }}
+      />
+      <DeleteFolderDialog
+        open={trash?.kind === "folder"}
+        name={trash?.kind === "folder" ? trash.node.name : ""}
+        documents={trash?.kind === "folder" ? trash.node.total : 0}
+        unsaved={
+          trash?.kind === "folder" && listing
+            ? [...dirty].filter((p) => p.startsWith(folderPrefix(listing.root, trash.node.path)))
+                .length
+            : 0
+        }
+        onCancel={() => setTrash(null)}
+        onConfirm={async () => {
+          if (trash?.kind === "folder") await trashFolder(trash.node.path);
+          setTrash(null);
+        }}
+      />
     </aside>
   );
 }

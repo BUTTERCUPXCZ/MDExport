@@ -141,15 +141,38 @@ pub fn resolve_folder(library: &Path, folder: &str) -> AppResult<PathBuf> {
     Ok(path)
 }
 
-/// Creates a new top-level folder in the library and returns its relative path.
-pub fn create_folder(library: &Path, name: &str) -> AppResult<String> {
+/// Creates a folder named `name` inside `parent` (relative to the library,
+/// `""` for the root) and returns the new folder's relative path.
+pub fn create_folder(library: &Path, parent: &str, name: &str) -> AppResult<String> {
     let name = validate_name(name)?;
-    let path = library.join(name);
+    let parent_dir = resolve_folder(library, parent)?;
+    if !parent_dir.is_dir() {
+        return Err(AppError::NotFound(parent.to_string()));
+    }
+    let path = parent_dir.join(name);
     if path.exists() {
         return Err(AppError::AlreadyExists(name.to_string()));
     }
     fs::create_dir(&path).map_err(|e| AppError::from_io(e, &path))?;
-    Ok(name.to_string())
+    let parent = parent.trim_matches('/');
+    Ok(if parent.is_empty() {
+        name.to_string()
+    } else {
+        format!("{parent}/{name}")
+    })
+}
+
+/// Resolves a folder that may be moved to the trash: inside the library, not
+/// the library itself, and an existing directory.
+pub fn resolve_trashable_folder(library: &Path, folder: &str) -> AppResult<PathBuf> {
+    if folder.trim_matches('/').is_empty() {
+        return Err(AppError::NotAllowed(folder.to_string()));
+    }
+    let path = resolve_folder(library, folder)?;
+    if !path.is_dir() {
+        return Err(AppError::NotFound(folder.to_string()));
+    }
+    Ok(path)
 }
 
 #[cfg(test)]
@@ -275,17 +298,65 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let library = dir.path();
 
-        assert_eq!(create_folder(library, "  Backend ").unwrap(), "Backend");
+        assert_eq!(create_folder(library, "", "  Backend ").unwrap(), "Backend");
         assert!(library.join("Backend").is_dir());
         assert!(matches!(
-            create_folder(library, "Backend"),
+            create_folder(library, "", "Backend"),
             Err(AppError::AlreadyExists(_))
         ));
         for bad in ["", "   ", "a/b", ".git", "x:y", &"a".repeat(65)] {
             assert!(
-                matches!(create_folder(library, bad), Err(AppError::InvalidName(_))),
+                matches!(
+                    create_folder(library, "", bad),
+                    Err(AppError::InvalidName(_))
+                ),
                 "{bad:?} should be rejected"
             );
         }
+    }
+
+    #[test]
+    fn create_folder_nests_inside_existing_folders_only() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = dir.path();
+        fs::create_dir_all(library.join("backend/handovers")).unwrap();
+
+        assert_eq!(
+            create_folder(library, "backend/handovers", "old").unwrap(),
+            "backend/handovers/old"
+        );
+        assert!(library.join("backend/handovers/old").is_dir());
+        assert!(matches!(
+            create_folder(library, "missing", "x"),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            create_folder(library, "../escape", "x"),
+            Err(AppError::NotAllowed(_))
+        ));
+    }
+
+    #[test]
+    fn only_existing_subfolders_can_be_trashed() {
+        let dir = tempfile::tempdir().unwrap();
+        let library = dir.path();
+        fs::create_dir_all(library.join("notes")).unwrap();
+        touch(&library.join("Readme.md"));
+
+        assert!(resolve_trashable_folder(library, "notes").is_ok());
+        for refused in ["", "/", ".."] {
+            assert!(matches!(
+                resolve_trashable_folder(library, refused),
+                Err(AppError::NotAllowed(_))
+            ));
+        }
+        assert!(matches!(
+            resolve_trashable_folder(library, "Readme.md"),
+            Err(AppError::NotFound(_))
+        ));
+        assert!(matches!(
+            resolve_trashable_folder(library, "gone"),
+            Err(AppError::NotFound(_))
+        ));
     }
 }

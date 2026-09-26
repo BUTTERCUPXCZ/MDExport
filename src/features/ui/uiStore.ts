@@ -17,6 +17,8 @@ interface UiState {
   quickSwitcherOpen: boolean;
   shortcutsOpen: boolean;
   createFolderOpen: boolean;
+  /** Folder the new folder goes into (relative; `""` = library root). */
+  createFolderParent: string;
   /** Path of the document whose name is being edited in the library, if any. */
   renamingPath: string | null;
   /** Format currently being exported, if any. */
@@ -27,7 +29,7 @@ interface UiState {
   exportFormat: ExportFormat;
   setQuickSwitcherOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
-  setCreateFolderOpen: (open: boolean) => void;
+  setCreateFolderOpen: (open: boolean, parent?: string) => void;
   setRenamingPath: (path: string | null) => void;
   setExporting: (format: ExportFormat | null) => void;
   setStage: (stage: Stage) => void;
@@ -40,13 +42,15 @@ export const useUiStore = create<UiState>((set) => ({
   quickSwitcherOpen: false,
   shortcutsOpen: false,
   createFolderOpen: false,
+  createFolderParent: "",
   renamingPath: null,
   exporting: null,
   stage: "proof",
   exportFormat: "pdf",
   setQuickSwitcherOpen: (quickSwitcherOpen) => set({ quickSwitcherOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
-  setCreateFolderOpen: (createFolderOpen) => set({ createFolderOpen }),
+  setCreateFolderOpen: (createFolderOpen, parent = "") =>
+    set({ createFolderOpen, createFolderParent: parent }),
   setRenamingPath: (renamingPath) => set({ renamingPath }),
   setExporting: (exporting) => set({ exporting }),
   setStage: (stage) => set({ stage }),

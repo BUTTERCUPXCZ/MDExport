@@ -37,6 +37,7 @@ pub fn run() {
             commands::library::choose_library_location,
             commands::library::list_library,
             commands::library::create_folder,
+            commands::library::delete_folder,
             commands::document::open_document_dialog,
             commands::document::open_document,
             commands::document::create_document,

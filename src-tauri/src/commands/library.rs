@@ -5,6 +5,7 @@ use tauri::{AppHandle, Manager, State, Window};
 use crate::commands::dialog;
 use crate::models::error::{AppError, AppResult};
 use crate::models::library::LibraryListing;
+use crate::repositories::file_repository;
 use crate::services::library_tree;
 use crate::state::AppState;
 
@@ -68,12 +69,28 @@ pub fn list_library(state: State<'_, AppState>) -> AppResult<LibraryListing> {
     library_tree::scan(&library)
 }
 
-/// Creates a top-level folder in the library. Returns its relative path.
+/// Creates a folder in the library, inside `parent` (relative; root if omitted).
+/// Returns the new folder's relative path.
 #[tauri::command]
-pub fn create_folder(state: State<'_, AppState>, name: String) -> AppResult<String> {
+pub fn create_folder(
+    state: State<'_, AppState>,
+    name: String,
+    parent: Option<String>,
+) -> AppResult<String> {
     let library = state
         .scope
         .library()
         .ok_or(AppError::LibraryNotConfigured)?;
-    library_tree::create_folder(&library, &name)
+    library_tree::create_folder(&library, parent.as_deref().unwrap_or(""), &name)
+}
+
+/// Moves a library folder, with everything inside it, to the OS trash.
+#[tauri::command]
+pub fn delete_folder(state: State<'_, AppState>, folder: String) -> AppResult<()> {
+    let library = state
+        .scope
+        .library()
+        .ok_or(AppError::LibraryNotConfigured)?;
+    let path = library_tree::resolve_trashable_folder(&library, &folder)?;
+    file_repository::move_to_trash(&path)
 }

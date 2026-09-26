@@ -6,7 +6,7 @@ import { useUiStore } from "@/features/ui/uiStore";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
 
-/** Library footer / command: creates a top-level folder in the library. */
+/** New folder: in the library root, or inside a folder (from its right-click menu). */
 export function CreateFolderDialog() {
   const open = useUiStore((s) => s.createFolderOpen);
   // Mounted only while open, so the form starts empty every time.
@@ -15,6 +15,7 @@ export function CreateFolderDialog() {
 
 function CreateFolderModal() {
   const setOpen = useUiStore((s) => s.setCreateFolderOpen);
+  const parent = useUiStore((s) => s.createFolderParent);
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -24,7 +25,7 @@ function CreateFolderModal() {
     setBusy(true);
     setError(null);
     try {
-      await libraryService.createFolder(name);
+      await libraryService.createFolder(name, parent);
       await refreshLibrary();
       setOpen(false);
     } catch (e) {
@@ -37,9 +38,13 @@ function CreateFolderModal() {
   return (
     <Modal
       open
-      onOpenChange={setOpen}
-      title="Create a folder"
-      description="Folders group related documents, e.g. one per project. It appears in the library index."
+      onOpenChange={(next) => setOpen(next)}
+      title={parent ? `New folder in ${parent.split("/").pop()}` : "Create a folder"}
+      description={
+        parent
+          ? `It goes inside ${parent.split("/").join(" / ")}.`
+          : "Folders group related documents, e.g. one per project. It appears in the library index."
+      }
       footer={
         <>
           <ModalCancel onClick={() => setOpen(false)} />

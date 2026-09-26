@@ -61,6 +61,7 @@ export function setupApp({
     quickSwitcherOpen: false,
     shortcutsOpen: false,
     createFolderOpen: false,
+    createFolderParent: "",
     renamingPath: null,
     exporting: null,
     stage: "proof",
