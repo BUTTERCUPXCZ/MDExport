@@ -9,7 +9,8 @@ It wears the app's own "Proof" theme (slate ink neutrals, one glacier accent, In
 and JetBrains Mono). The product pictures in `src/mocks/` are HTML/CSS copies of the real
 app UI that scale with their container, so they stay sharp at any size.
 
-One React app with two routes (React Router): the landing page (`/`) and the docs (`/docs`).
+One React app with React Router, one route per page: `/` (home), `/how-it-works`,
+`/features`, `/download` and `/docs`. Old `/#section` links forward to the matching page.
 `vercel.json` serves `index.html` for every route and redirects the old `/docs.html` to `/docs`.
 
 Download buttons read the latest published release from the GitHub API and fall back to the
@@ -35,8 +36,8 @@ It is deployed on Vercel from this repo with **Root Directory** set to `mdforge-
 
 ```
 src/
-├── App.tsx                  router + shared layout: Navbar → route → Footer
-├── pages/                   route pages: HomePage, NotFoundPage
+├── App.tsx                  routes + shared layout: Navbar → page → Footer
+├── pages/                   Home, HowItWorks, Features, Download, NotFound
 ├── docs/                    the /docs route: DocsPage, content, prose components
 ├── components/              page sections + shadcn ui/
 ├── mocks/                   product pictures (AppWindow, Editor, Page, ExportPanel, LibraryTree)

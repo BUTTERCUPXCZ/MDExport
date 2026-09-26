@@ -3,10 +3,13 @@ import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { ScrollManager } from "@/components/ScrollManager";
 import { DocsPage } from "@/docs/DocsPage";
+import { DownloadPage } from "@/pages/DownloadPage";
+import { FeaturesPage } from "@/pages/FeaturesPage";
 import { HomePage } from "@/pages/HomePage";
+import { HowItWorksPage } from "@/pages/HowItWorksPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 
-/** One React app, two pages: the landing page (/) and the docs (/docs). */
+/** One React app: home, how it works, features, download and docs, each its own route. */
 export function App() {
   return (
     <BrowserRouter>
@@ -21,6 +24,9 @@ export function App() {
       <div id="main">
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/how-it-works" element={<HowItWorksPage />} />
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/download" element={<DownloadPage />} />
           <Route path="/docs" element={<DocsPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

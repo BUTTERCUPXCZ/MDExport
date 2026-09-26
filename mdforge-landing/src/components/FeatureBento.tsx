@@ -9,6 +9,7 @@ import {
 } from "@/mocks/AppMocks";
 import { cn } from "@/lib/utils";
 import { Keycap } from "@/components/Keycap";
+import { PageIntro } from "@/components/PageIntro";
 
 /** A bento tile: product UI on top (most of the tile), one title and one line below. */
 function BentoCard({
@@ -52,17 +53,12 @@ const SHORTCUTS: [string, string[]][] = [
 
 export function FeatureBento() {
   return (
-    <section id="features" className="scroll-mt-20 py-24 sm:py-32">
+    <section className="pt-28 pb-24 sm:pt-32">
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
-        <div className="max-w-[640px]">
-          <h2 className="text-[clamp(32px,4.4vw,46px)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance text-text">
-            Built for the docs you already write.
-          </h2>
-          <p className="mt-4 text-[17px] leading-relaxed text-text-2">
-            Handover notes, specs, READMEs and incident write-ups. Keep them as Markdown, ship
-            them as documents.
-          </p>
-        </div>
+        <PageIntro title="Built for the docs you already write.">
+          Handover notes, specs, READMEs and incident write-ups. Keep them as Markdown, ship them
+          as documents.
+        </PageIntro>
 
         <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-12 lg:gap-6">
           <BentoCard

@@ -1,14 +1,13 @@
-import { Hero } from "@/components/Hero";
+import { DownloadSection } from "@/components/DownloadSection";
 import { useLatestRelease } from "@/lib/release";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
-export function HomePage() {
+export function DownloadPage() {
   const release = useLatestRelease();
-  useDocumentTitle("MDForge: Markdown in, polished documents out");
-
+  useDocumentTitle("Download · MDForge");
   return (
     <main>
-      <Hero version={release.version} />
+      <DownloadSection release={release} />
     </main>
   );
 }

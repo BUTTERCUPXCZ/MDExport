@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import { CopyButton } from "@/components/CopyButton";
+import { PageIntro } from "@/components/PageIntro";
 import {
   formatSize,
   RELEASES_URL,
@@ -53,17 +54,12 @@ pnpm tauri build`;
 
 export function DownloadSection({ release }: { release: Release }) {
   return (
-    <section id="download" className="scroll-mt-20 border-t border-line py-24 sm:py-32">
+    <section className="pt-28 pb-24 sm:pt-32">
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
-        <div className="max-w-[640px]">
-          <h2 className="text-[clamp(32px,4.4vw,46px)] leading-[1.05] font-semibold tracking-[-0.03em] text-text">
-            Download MDForge
-          </h2>
-          <p className="mt-4 text-[17px] leading-relaxed text-text-2">
-            {release.version ?? "Latest release"} for Windows, macOS and Linux. Free, open source,
-            and it works offline.
-          </p>
-        </div>
+        <PageIntro title="Download MDForge">
+          {release.version ?? "Latest release"} for Windows, macOS and Linux. Free, open source,
+          and it works offline.
+        </PageIntro>
 
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
           {PLATFORMS.map((platform) => {
