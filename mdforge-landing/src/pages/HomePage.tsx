@@ -1,3 +1,5 @@
+import { DownloadSection } from "@/components/DownloadSection";
+import { FeatureBento } from "@/components/FeatureBento";
 import { Hero } from "@/components/Hero";
 import { useLatestRelease } from "@/lib/release";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
@@ -9,6 +11,8 @@ export function HomePage() {
   return (
     <main>
       <Hero version={release.version} />
+      <FeatureBento />
+      <DownloadSection release={release} />
     </main>
   );
 }

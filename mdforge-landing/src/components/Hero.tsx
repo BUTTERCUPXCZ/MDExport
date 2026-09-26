@@ -1,20 +1,24 @@
-import { ArrowRight } from "lucide-react";
-import { Link } from "react-router";
-import { AppPreview } from "@/components/AppPreview";
+import { ArrowDown } from "lucide-react";
+import { useState } from "react";
 import { GitHubMark } from "@/components/GitHubMark";
 import { Button } from "@/components/ui/button";
+import { AppWindow, Shot, STAGES, type Stage } from "@/mocks/AppMocks";
 import { REPO_URL } from "@/lib/release";
+import { cn } from "@/lib/utils";
 
-const NEXT = [
-  { to: "/how-it-works", label: "How it works" },
-  { to: "/features", label: "Features" },
-  { to: "/docs", label: "Read the docs" },
-];
+const STAGE_TEXT: Record<Stage, string> = {
+  write: "Write. The editor, full width, with find and replace and the shortcuts you know.",
+  proof: "Proof. The rendered page beside your Markdown, following your scroll.",
+  deliver: "Deliver. The finished page with PDF, Word and HTML export one click away.",
+};
 
 export function Hero({ version }: { version: string | null }) {
+  const [stage, setStage] = useState<Stage>("proof");
+
   return (
-    <section className="pt-28 pb-24 sm:pt-32">
-      <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
+    <section id="top" className="relative overflow-hidden pt-28 pb-20 sm:pt-32">
+
+      <div className="relative mx-auto max-w-[1200px] px-5 sm:px-8">
         <div className="max-w-[920px]">
           <a
             href={`${REPO_URL}/releases`}
@@ -39,10 +43,10 @@ export function Hero({ version }: { version: string | null }) {
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button size="cta" asChild>
-              <Link to="/download">
+              <a href="#download">
                 Download MDForge
-                <ArrowRight />
-              </Link>
+                <ArrowDown />
+              </a>
             </Button>
             <Button size="cta" variant="outline" asChild>
               <a href={REPO_URL}>
@@ -54,25 +58,52 @@ export function Hero({ version }: { version: string | null }) {
           <p className="mt-4 text-sm text-muted-foreground">Windows · macOS · Linux</p>
         </div>
 
-        <div className="mt-12 sm:mt-14">
-          <AppPreview stage="proof" />
-        </div>
+        <div
+          id="how-it-works"
+          className="mt-12 scroll-mt-24 sm:mt-14"
+          aria-label="How MDForge works"
+        >
+          {/* On phones the window keeps a readable size and scrolls sideways. */}
+          <div className="overflow-x-auto rounded-3xl border border-line-strong">
+            <div className="min-w-[760px]">
+            <Shot label={`The MDForge window in the ${stage} stage: library on the left, ${
+              stage === "write"
+                ? "the Markdown editor"
+                : stage === "proof"
+                  ? "the Markdown editor beside the rendered page"
+                  : "the rendered page beside the export panel"
+            }.`}>
+              <AppWindow stage={stage} />
+            </Shot>
+            </div>
+          </div>
 
-        <nav aria-label="Learn more" className="mt-8">
-          <ul className="flex flex-wrap gap-x-8 gap-y-3">
-            {NEXT.map((item) => (
-              <li key={item.to}>
-                <Link
-                  to={item.to}
-                  className="group inline-flex items-center gap-1.5 text-[15px] font-medium text-text-2 transition-colors duration-150 hover:text-text"
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div
+              role="group"
+              aria-label="Show stage"
+              className="flex w-fit rounded-[10px] border border-line bg-panel p-1"
+            >
+              {STAGES.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  aria-pressed={stage === s.id}
+                  onClick={() => setStage(s.id)}
+                  className={cn(
+                    "h-9 rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:text-text",
+                    stage === s.id && "bg-raised text-text shadow-[0_1px_2px_rgb(0_0_0/0.25)]",
+                  )}
                 >
-                  {item.label}
-                  <ArrowRight className="size-4 text-muted-foreground transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <p aria-live="polite" className="text-[15px] text-text-2">
+              {STAGE_TEXT[stage]}
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );
