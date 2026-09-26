@@ -196,9 +196,10 @@
     padding: clamp(24px, 7%, 64px);
     border-radius: 4px;
     background: #ffffff;
-    box-shadow:
-      0 1px 3px rgb(0 0 0 / 0.2),
-      0 8px 24px rgb(0 0 0 / 0.14);
+    /* A crisp edge, never a blurred shadow: WebKitGTK repaints a blur across
+       the whole page height on every scroll frame (measured 24 fps vs 62 fps
+       on a 14k px document). */
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
     color: var(--doc-ink);
     font-family: "Noto Sans Variable", "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
