@@ -1,0 +1,90 @@
+# Builds MDForge for Windows, macOS (Apple Silicon + Intel) and Linux and
+# attaches the installers to a draft GitHub Release.
+#
+# Release: bump "version" in package.json and src-tauri/tauri.conf.json, then
+#   git tag v0.1.0 && git push origin v0.1.0
+# Review the draft under Releases and click Publish.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - name: macOS Intel
+            platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - name: Linux
+            platform: ubuntu-22.04
+            args: ""
+          - name: Windows
+            platform: windows-latest
+            args: ""
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system libraries
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev \
+            librsvg2-dev libxdo-dev libssl-dev patchelf
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          # Both macOS architectures build on the same runner.
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          key: ${{ matrix.args }}
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: MDForge v__VERSION__
+          releaseBody: |
+            Local-first Markdown desktop app: write, proof and export to PDF, Word or HTML.
+
+            **Downloads**
+            - **Windows:** `MDForge_x.y.z_x64-setup.exe` (or the `.msi`)
+            - **macOS:** `.dmg`, `aarch64` for Apple Silicon (M1 and newer), `x64` for Intel
+            - **Linux:** `.AppImage` (any distro), `.deb` (Ubuntu/Debian) or `.rpm` (Fedora)
+
+            These builds are not code-signed yet:
+            - Windows SmartScreen: click **More info → Run anyway**.
+            - macOS: right-click the app → **Open** the first time.
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
