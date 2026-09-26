@@ -1,18 +1,10 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  ChevronRight,
-  Copy,
-  FilePlus2,
-  FolderPlus,
-  Plus,
-  Search,
-  Settings,
-  Trash2,
-} from "lucide-react";
+import { ChevronRight, Copy, FilePlus2, FolderPlus, Search, Settings, Trash2 } from "lucide-react";
 import { ContextMenu } from "radix-ui";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { CreateField } from "@/components/library-index/CreateField";
+import { CreateMenu } from "@/components/library-index/CreateMenu";
 import { DocumentRow } from "@/components/library-index/DocumentRow";
 import {
   IndexMenuContent,
@@ -28,6 +20,7 @@ import {
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import {
   entryForPath,
+  folderOf,
   libraryTree,
   shortAge,
   type FolderNode,
@@ -292,13 +285,16 @@ export function LibraryIndex() {
 
   const tree = useMemo(() => (listing ? libraryTree(listing) : null), [listing]);
   const libraryName = listing?.root.split(/[\\/]/).pop() || "Library";
+  // "+" creates next to the open document (like VS Code's selected folder), else at the top.
+  const activeEntry = active ? entryForPath(listing, active.path) : null;
+  const createFolder = activeEntry ? folderOf(activeEntry.relativePath) : "";
 
   return (
     <aside
       aria-label="Library"
       className="flex w-[264px] shrink-0 flex-col border-r border-line bg-panel"
     >
-      <div className="flex flex-col gap-1 px-2.5 pt-3">
+      <div className="px-2.5 pt-3">
         <button
           type="button"
           onClick={() => setQuickSwitcherOpen(true)}
@@ -308,14 +304,6 @@ export function LibraryIndex() {
           <span className="flex-1 truncate text-left">Find a document</span>
           <kbd className="font-sans text-[11.5px]">Ctrl K</kbd>
         </button>
-        <button
-          type="button"
-          onClick={() => startCreating("document")}
-          className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[13px] font-medium text-text-2 transition-colors hover:bg-raised hover:text-text"
-        >
-          <Plus aria-hidden className="size-3.5 shrink-0 text-accent" />
-          <span className="flex-1 text-left">New document</span>
-        </button>
       </div>
 
       {/* Right-click on empty space: create at the top of the library. Rows and
@@ -323,26 +311,29 @@ export function LibraryIndex() {
       <ContextMenu.Root>
         <ContextMenu.Trigger asChild>
           <nav aria-label="Documents" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
-            <ContextMenu.Root>
-              <ContextMenu.Trigger asChild>
-                <Link
-                  to="/"
-                  activeOptions={{ exact: true }}
-                  className="mt-3 flex h-[30px] items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[state=open]:bg-raised data-[status=active]:bg-accent-soft"
-                  title={listing?.root}
-                >
-                  <span className="truncate">{libraryName}</span>
-                </Link>
-              </ContextMenu.Trigger>
-              <IndexMenuContent>
-                <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document")}>
-                  New document
-                </IndexMenuItem>
-                <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder")}>
-                  New folder
-                </IndexMenuItem>
-              </IndexMenuContent>
-            </ContextMenu.Root>
+            <div className="mt-3 flex items-center gap-1">
+              <ContextMenu.Root>
+                <ContextMenu.Trigger asChild>
+                  <Link
+                    to="/"
+                    activeOptions={{ exact: true }}
+                    className="flex h-[30px] min-w-0 flex-1 items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[state=open]:bg-raised data-[status=active]:bg-accent-soft"
+                    title={listing?.root}
+                  >
+                    <span className="truncate">{libraryName}</span>
+                  </Link>
+                </ContextMenu.Trigger>
+                <IndexMenuContent>
+                  <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document")}>
+                    New document
+                  </IndexMenuItem>
+                  <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder")}>
+                    New folder
+                  </IndexMenuItem>
+                </IndexMenuContent>
+              </ContextMenu.Root>
+              <CreateMenu folder={createFolder} />
+            </div>
 
             {status === "loading" && !tree && (
               <p className="px-2 py-2 text-[13px] text-muted">Reading the library…</p>
@@ -385,15 +376,7 @@ export function LibraryIndex() {
         </IndexMenuContent>
       </ContextMenu.Root>
 
-      <div className="flex h-11 shrink-0 items-center justify-between border-t border-line px-2.5">
-        <button
-          type="button"
-          onClick={() => startCreating("folder")}
-          className="flex h-8 items-center gap-2 rounded-md px-2 text-[13px] text-text-2 transition-colors hover:bg-raised hover:text-text"
-        >
-          <FolderPlus aria-hidden className="size-4 text-muted" />
-          New folder
-        </button>
+      <div className="flex h-11 shrink-0 items-center justify-end border-t border-line px-2.5">
         <Tooltip>
           <TooltipTrigger asChild>
             <Link

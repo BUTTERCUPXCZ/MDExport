@@ -8,6 +8,13 @@ import { docFile, LIBRARY, renderAt, renderEditor, setupApp } from "@/test/rende
 
 const index = () => screen.getByRole("navigation", { name: "Documents" });
 
+/** Opens the "+" at the top of the library index and picks an item. */
+async function createFromPlus(user: ReturnType<typeof userEvent.setup>, item: string) {
+  await user.click(screen.getByRole("button", { name: "Create" }));
+  await user.click(screen.getByRole("menuitem", { name: item }));
+  await waitFor(() => expect(within(index()).getByRole("textbox")).toHaveFocus());
+}
+
 /** Makes documentService.open return a file for whatever path is requested. */
 function openAnyPath() {
   return vi
@@ -99,14 +106,14 @@ describe("Library index", () => {
     expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("New folder at the bottom names the folder in place at the top level", async () => {
+  it("the + menu names a new folder in place at the top level", async () => {
     const user = userEvent.setup();
     const createFolder = vi.spyOn(libraryService, "createFolder").mockResolvedValue("frontend");
     const list = vi.spyOn(libraryService, "list");
     await renderAt("/");
     const scans = list.mock.calls.length;
 
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await createFromPlus(user, "New folder");
     await user.type(
       within(index()).getByRole("textbox", { name: "New folder name" }),
       "frontend{Enter}",
@@ -118,16 +125,40 @@ describe("Library index", () => {
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
+  it("the + menu creates next to the open document", async () => {
+    const user = userEvent.setup();
+    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
+    await renderEditor(
+      docFile({ path: `${LIBRARY}/backend/handovers/auth-flow.md`, name: "auth-flow.md" }),
+    );
+
+    await createFromPlus(user, "New document");
+    expect(within(index()).getByRole("group", { name: "handovers" })).toContainElement(
+      within(index()).getByRole("textbox", { name: "New document name" }),
+    );
+    await user.keyboard("login{Enter}");
+
+    expect(create).toHaveBeenCalledWith("backend/handovers", "login");
+  });
+
+  it("there are no separate New document / New folder buttons", async () => {
+    await renderAt("/");
+    const library = screen.getByRole("complementary", { name: "Library" });
+
+    expect(within(library).queryByRole("button", { name: "New document" })).not.toBeInTheDocument();
+    expect(within(library).queryByRole("button", { name: "New folder" })).not.toBeInTheDocument();
+  });
+
   it("Esc or an empty name cancels", async () => {
     const user = userEvent.setup();
     const createFolder = vi.spyOn(libraryService, "createFolder");
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await createFromPlus(user, "New folder");
     await user.type(within(index()).getByRole("textbox"), "draft{Escape}");
     expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await createFromPlus(user, "New folder");
     await user.type(within(index()).getByRole("textbox"), "{Enter}");
     expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
     expect(createFolder).not.toHaveBeenCalled();
@@ -141,7 +172,7 @@ describe("Library index", () => {
     });
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await createFromPlus(user, "New folder");
     await user.type(within(index()).getByRole("textbox"), "backend{Enter}");
 
     expect(await within(index()).findByRole("alert")).toHaveTextContent("Already exists: backend");
