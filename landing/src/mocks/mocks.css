@@ -1,0 +1,541 @@
+/*
+ * Product pictures: static HTML copies of MDForge's real UI, drawn in em units
+ * inside an inline-size container, so every shot scales like an image and
+ * stays crisp. `--shot` sets how many container-widths one em is.
+ */
+.shot {
+  container-type: inline-size;
+}
+
+.screen {
+  --shot: 1.26cqw;
+  font-size: var(--shot);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--canvas);
+  font-family: var(--font-sans);
+  overflow: hidden;
+  user-select: none;
+}
+.screen * {
+  box-sizing: border-box;
+}
+
+/* ---------- window ---------- */
+.m-window {
+  display: grid;
+  grid-template-columns: 17.5em 1fr;
+  grid-template-rows: 2.4em 3.9em minmax(0, 1fr) 1.9em;
+  aspect-ratio: 16 / 10;
+}
+.m-titlebar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  padding: 0 0 0 1.1em;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  font-size: 0.95em;
+}
+.m-titlebar .brand {
+  font-weight: 600;
+  color: var(--text-2);
+}
+.m-titlebar .ctx {
+  flex: 1;
+  text-align: center;
+  color: var(--muted);
+}
+.m-titlebar .win {
+  display: flex;
+  height: 100%;
+}
+.m-titlebar .win span {
+  width: 3.6em;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+/* ---------- library tree ---------- */
+.m-tree {
+  grid-row: 2 / 5;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  padding: 0.9em 0.8em;
+  position: relative;
+}
+.m-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  height: 2.5em;
+  padding: 0 0.8em;
+  border: 1px solid var(--line);
+  border-radius: 0.5em;
+  background: var(--canvas);
+  color: var(--muted);
+}
+.m-search kbd {
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 0.88em;
+}
+.m-libhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1em 0 0.2em;
+  padding: 0 0.2em 0 0.6em;
+  font-weight: 600;
+}
+.m-plus {
+  width: 2em;
+  height: 2em;
+  display: grid;
+  place-items: center;
+  border-radius: 0.45em;
+  color: var(--muted);
+}
+.m-plus.open {
+  background: var(--raised);
+  color: var(--text);
+}
+.m-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  height: 2.3em;
+  padding-right: 0.6em;
+  border-radius: 0.45em;
+  color: var(--text-2);
+}
+.m-row .age {
+  margin-left: auto;
+  font-size: 0.88em;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.m-row.on {
+  background: var(--accent-soft);
+  color: var(--text);
+  font-weight: 500;
+}
+.m-row.on svg {
+  color: var(--accent);
+}
+.m-row.folder {
+  font-weight: 500;
+}
+.m-row .count {
+  font-size: 0.88em;
+  color: var(--muted);
+  font-weight: 400;
+}
+.m-row svg {
+  width: 1.05em;
+  height: 1.05em;
+  flex: none;
+  color: var(--muted);
+}
+.m-dot {
+  margin-left: auto;
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 50%;
+  background: var(--warning);
+}
+.m-field {
+  display: flex;
+  align-items: center;
+  gap: 0.55em;
+  height: 2.3em;
+}
+.m-field span {
+  flex: 1;
+  height: 2.1em;
+  display: flex;
+  align-items: center;
+  padding: 0 0.6em;
+  border: 1px solid var(--accent);
+  border-radius: 0.45em;
+  background: var(--canvas);
+}
+.m-field svg {
+  width: 1.05em;
+  height: 1.05em;
+  color: var(--accent);
+}
+.m-caret {
+  width: 1px;
+  height: 1.1em;
+  margin-left: 1px;
+  background: var(--accent);
+}
+.m-menu {
+  position: absolute;
+  z-index: 2;
+  top: 6.8em;
+  right: 0.8em;
+  width: 13em;
+  padding: 0.3em;
+  border: 1px solid var(--line);
+  border-radius: 0.6em;
+  background: var(--raised);
+  box-shadow: 0 0.4em 1em rgb(0 0 0 / 0.35);
+}
+.m-menu div {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  height: 2.4em;
+  padding: 0 0.6em;
+  border-radius: 0.4em;
+  color: var(--text-2);
+}
+.m-menu div.hi {
+  background: var(--accent-soft);
+  color: var(--text);
+}
+.m-menu svg {
+  width: 1.1em;
+  height: 1.1em;
+  color: var(--muted);
+}
+
+/* ---------- stage bar ---------- */
+.m-stagebar {
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  padding: 0 1.2em;
+  border-bottom: 1px solid var(--line);
+}
+.m-stagebar .doc {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+}
+.m-stagebar .doc b {
+  display: block;
+  font-weight: 600;
+}
+.m-stagebar .doc small {
+  font-size: 0.86em;
+  color: var(--muted);
+}
+.m-tabs {
+  display: flex;
+  height: 2.4em;
+  padding: 0.18em;
+  border: 1px solid var(--line);
+  border-radius: 0.6em;
+  background: var(--panel);
+}
+.m-tabs > * {
+  display: grid;
+  place-items: center;
+  padding: 0 1.1em;
+  border-radius: 0.45em;
+  color: var(--muted);
+  font: inherit;
+  font-weight: 500;
+  background: none;
+  border: 0;
+}
+.m-tabs > .on {
+  background: var(--raised);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+}
+.m-stagebar .more {
+  flex: 1;
+  text-align: right;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+}
+
+/* ---------- work area ---------- */
+.m-work {
+  display: flex;
+  min-height: 0;
+}
+.m-editor {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+}
+.m-editor + .m-page {
+  border-left: 1px solid var(--line);
+}
+.m-code {
+  flex: 1;
+  padding: 1.2em 0;
+  font-family: var(--font-mono);
+  font-size: 0.95em;
+  line-height: 1.85;
+  overflow: hidden;
+}
+.m-line {
+  display: flex;
+  white-space: pre;
+}
+.m-line .n {
+  width: 3.4em;
+  flex: none;
+  padding-right: 0.9em;
+  text-align: right;
+  color: var(--muted);
+  opacity: 0.8;
+}
+.m-line.active {
+  background: var(--accent-soft);
+}
+.m-line.active .n {
+  color: var(--text);
+  opacity: 1;
+}
+.m-line .t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+}
+.tk-mark {
+  color: var(--hl-markup);
+}
+.tk-h {
+  font-weight: 700;
+}
+.tk-str {
+  color: var(--hl-string);
+}
+.tk-kw {
+  color: var(--hl-keyword);
+}
+.tk-fn {
+  color: var(--hl-function);
+}
+.tk-acc {
+  color: var(--accent);
+}
+.tk-match {
+  background: rgb(227 187 107 / 0.28);
+  outline: 1px solid rgb(227 187 107 / 0.55);
+}
+.tk-match.sel {
+  background: var(--selection);
+  outline-color: var(--accent);
+}
+.m-find {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
+  padding: 0.6em 1em;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-size: 0.92em;
+}
+.m-find .input {
+  width: 13em;
+  height: 2.2em;
+  display: flex;
+  align-items: center;
+  padding: 0 0.6em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.45em;
+  background: var(--canvas);
+  font-family: var(--font-mono);
+}
+.m-find .input.focus {
+  border-color: var(--accent);
+}
+.m-find .input.empty {
+  color: var(--muted);
+}
+.m-find .btn {
+  height: 2.2em;
+  display: grid;
+  place-items: center;
+  padding: 0 0.8em;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.45em;
+  background: var(--raised);
+}
+.m-find .hits {
+  color: var(--muted);
+  margin-left: 0.4em;
+}
+
+/* ---------- the white page (as rendered in Proof / exported) ---------- */
+.m-page {
+  flex: 1;
+  min-width: 0;
+  background: var(--sunken);
+  padding: 1.6em 1.8em 0;
+  overflow: hidden;
+}
+.m-paper {
+  background: #fff;
+  color: #1f2328;
+  border-radius: 0.3em;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35);
+  padding: 2.4em 2.6em 3em;
+  font-family: var(--font-doc);
+  font-size: 0.95em;
+  line-height: 1.55;
+}
+.m-paper .h1 {
+  font-weight: 700;
+  margin: 0 0 0.55em;
+  font-size: 1.9em;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.m-paper .h2 {
+  font-weight: 700;
+  margin: 1.1em 0 0.35em;
+  font-size: 1.28em;
+  color: #1f3a5f;
+}
+.m-paper p {
+  margin: 0 0 0.6em;
+}
+.m-paper ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.4em;
+  list-style: decimal;
+}
+.m-paper code {
+  padding: 0.1em 0.35em;
+  border-radius: 0.3em;
+  background: #eff1f3;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+.m-paper table {
+  width: 100%;
+  margin: 0.6em 0;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.m-paper th,
+.m-paper td {
+  padding: 0.4em 0.7em;
+  border: 1px solid #d0d7de;
+  text-align: left;
+}
+.m-paper th {
+  background: #f6f8fa;
+}
+.m-paper pre {
+  margin: 0.6em 0 0;
+  padding: 0.8em 1em;
+  border: 1px solid #e3e7eb;
+  border-radius: 0.4em;
+  background: #f6f8fa;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  white-space: pre;
+  overflow: hidden;
+}
+.m-paper pre .kw {
+  color: #cf222e;
+}
+.m-paper pre .fn {
+  color: #8250df;
+}
+
+/* ---------- export panel ---------- */
+.m-export {
+  width: 21em;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 1.3em 1.2em;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+.m-export .title {
+  display: block;
+  margin: 0;
+  font-size: 1.12em;
+  font-weight: 600;
+}
+.m-export p {
+  margin: 0 0 0.6em;
+  color: var(--text-2);
+  font-size: 0.92em;
+}
+.m-fmt {
+  display: flex;
+  gap: 0.7em;
+  padding: 0.7em 0.8em;
+  border: 1px solid var(--line);
+  border-radius: 0.6em;
+  background: var(--canvas);
+}
+.m-fmt.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.m-fmt .radio {
+  width: 1em;
+  height: 1em;
+  margin-top: 0.2em;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+}
+.m-fmt.on .radio {
+  border: 0.3em solid var(--accent);
+}
+.m-fmt b {
+  font-weight: 500;
+}
+.m-fmt b i {
+  margin-left: 0.4em;
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  color: var(--text-2);
+  font-weight: 400;
+}
+.m-fmt small {
+  display: block;
+  color: var(--text-2);
+  font-size: 0.86em;
+}
+.m-export .go {
+  height: 2.8em;
+  display: grid;
+  place-items: center;
+  margin-top: 0.5em;
+  border-radius: 0.5em;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+.m-export .note {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.86em;
+}
+
+/* ---------- status bar ---------- */
+.m-status {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1.6em;
+  padding: 0 1.2em;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.88em;
+  font-variant-numeric: tabular-nums;
+}
