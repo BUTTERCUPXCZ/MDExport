@@ -1,10 +1,11 @@
 import { FilePlus2, FolderOpen, Keyboard, Search } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Button } from "@/components/ui/button";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { folderOf, recentDocuments, relativeTime, stem } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { useNow } from "@/hooks/useNow";
 
@@ -40,6 +41,9 @@ export function HomePage() {
   const recent = recentDocuments(listing?.documents ?? [], 8);
   const libraryName = listing?.root.split(/[\\/]/).pop() || "Library";
   const now = useNow();
+
+  // Closing the app from here reopens it here.
+  useEffect(() => usePrefsStore.getState().setLastDocumentPath(null), []);
 
   if (listing && listing.documents.length === 0) {
     return (

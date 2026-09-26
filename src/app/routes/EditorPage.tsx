@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { FolderOpen } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ConflictDialog } from "@/features/documents/ConflictDialog";
@@ -13,15 +13,47 @@ import {
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { MarkdownEditor } from "@/features/editor/MarkdownEditor";
 import { MarkdownPreview } from "@/features/editor/MarkdownPreview";
-import { useMarkdownPreview } from "@/features/editor/useMarkdownPreview";
+import { collectAnchors, previewScrollFor, type Anchor } from "@/features/editor/scrollSync";
+import { useMarkdownPreview, type PreviewState } from "@/features/editor/useMarkdownPreview";
 import { entryForPath } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
 import { showError } from "@/features/notices/noticeStore";
 import { DeliverPanel } from "@/features/stages/DeliverPanel";
 import { StageBar } from "@/features/stages/StageBar";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { cn } from "@/lib/utils";
 import { toAppError } from "@/types/document";
+
+/**
+ * Proof stage: the preview follows the editor's scroll. Block positions are
+ * measured once per rendered preview (and again after a resize), not per frame.
+ */
+function useScrollSync(preview: PreviewState, previewShown: boolean) {
+  const previewRef = useRef<HTMLElement>(null);
+  const anchors = useRef<Anchor[] | null>(null);
+
+  useEffect(() => {
+    anchors.current = null;
+  }, [preview]);
+
+  useEffect(() => {
+    const el = previewRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => (anchors.current = null));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [previewShown]);
+
+  const follow = useCallback((line: number) => {
+    const el = previewRef.current;
+    if (!el) return;
+    anchors.current ??= collectAnchors(el);
+    el.scrollTop = previewScrollFor(line, anchors.current, el.scrollHeight - el.clientHeight);
+  }, []);
+
+  return { previewRef, follow };
+}
 
 function DocumentEditor({ doc }: { doc: OpenDocument }) {
   const navigate = useNavigate();
@@ -32,6 +64,13 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
   const location = entry ? entry.relativePath.split("/").join(" / ") : doc.path;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const preview = useMarkdownPreview(doc.content, stage !== "write");
+  const { previewRef, follow } = useScrollSync(preview, stage !== "write");
+
+  // Remember library documents so the next launch reopens this one.
+  const inLibrary = entry !== null;
+  useEffect(() => {
+    if (inLibrary) usePrefsStore.getState().setLastDocumentPath(doc.path);
+  }, [doc.path, inLibrary]);
 
   const onChange = useCallback((value: string) => setContent(doc.id, value), [doc.id, setContent]);
 
@@ -82,10 +121,12 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
             key={`${doc.id}:${doc.revision}`}
             initialValue={doc.content}
             onChange={onChange}
+            onScrollLine={stage === "proof" ? follow : undefined}
           />
         </section>
         {stage !== "write" && (
           <section
+            ref={previewRef}
             aria-label="Rendered preview"
             className="min-w-0 flex-1 overflow-y-auto bg-sunken px-6"
           >

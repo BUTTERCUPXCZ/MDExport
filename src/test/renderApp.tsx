@@ -6,6 +6,7 @@ import { createAppRouter } from "@/app/router";
 import { useDocumentsStore } from "@/features/documents/documentsStore";
 import { useLibraryStore } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { useNoticeStore } from "@/features/notices/noticeStore";
 import { appService } from "@/services/tauri/app";
@@ -57,10 +58,13 @@ export function setupApp({
   useNoticeStore.setState({ notice: null });
   useLibraryLocation.setState({ location: undefined });
   useLibraryStore.setState({ listing: null, status: "idle" });
+  window.localStorage.clear();
+  usePrefsStore.setState({ autosave: false, lastDocumentPath: null, lastStage: "proof" });
   useUiStore.setState({
     quickSwitcherOpen: false,
     shortcutsOpen: false,
     createFolderOpen: false,
+    closeGuardOpen: false,
     createFolderParent: "",
     renamingPath: null,
     exporting: null,

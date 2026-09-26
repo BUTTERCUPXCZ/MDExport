@@ -6,6 +6,10 @@ import { LibrarySetupDialog } from "@/features/library/LibrarySetupDialog";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { QuickSwitcher } from "@/features/quick-switcher/QuickSwitcher";
+import { CloseGuardDialog } from "@/features/session/CloseGuardDialog";
+import { useAutosave } from "@/features/session/useAutosave";
+import { useCloseGuard } from "@/features/session/useCloseGuard";
+import { useSessionRestore } from "@/features/session/useSessionRestore";
 import { ShortcutsDialog } from "@/features/shortcuts/ShortcutsDialog";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
@@ -34,6 +38,9 @@ function useLibrarySync() {
 export function RootLayout() {
   useGlobalShortcuts();
   useLibrarySync();
+  useAutosave();
+  useCloseGuard();
+  useSessionRestore();
   return (
     <>
       <div className="flex h-screen flex-col">
@@ -46,6 +53,7 @@ export function RootLayout() {
       <QuickSwitcher />
       <ShortcutsDialog />
       <CreateFolderDialog />
+      <CloseGuardDialog />
     </>
   );
 }

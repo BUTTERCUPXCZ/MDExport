@@ -6,6 +6,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { showError } from "@/features/notices/noticeStore";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { ShortcutList } from "@/features/shortcuts/ShortcutsDialog";
 import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
@@ -58,6 +59,30 @@ function LibrarySection() {
           Change…
         </Button>
       </div>
+    </Section>
+  );
+}
+
+function EditingSection() {
+  const autosave = usePrefsStore((s) => s.autosave);
+  const setAutosave = usePrefsStore((s) => s.setAutosave);
+
+  return (
+    <Section title="Editing">
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          checked={autosave}
+          onChange={(e) => setAutosave(e.target.checked)}
+          className="mt-0.5 size-4 accent-(--accent)"
+        />
+        <span>
+          <span className="block text-[13.5px] text-text">Save automatically</span>
+          <span className="block text-[12.5px] text-text-2">
+            Saves a second after you stop typing, and before the app closes.
+          </span>
+        </span>
+      </label>
     </Section>
   );
 }
@@ -118,6 +143,7 @@ export function SettingsPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[680px] px-8 py-8">
           <LibrarySection />
+          <EditingSection />
           <Section title="Keyboard shortcuts">
             <ShortcutList />
           </Section>

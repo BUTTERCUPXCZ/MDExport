@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import type { ExportFormat } from "@/services/tauri/export";
 
 /**
@@ -17,6 +18,8 @@ interface UiState {
   quickSwitcherOpen: boolean;
   shortcutsOpen: boolean;
   createFolderOpen: boolean;
+  /** "You have unsaved changes" dialog shown when closing the window. */
+  closeGuardOpen: boolean;
   /** Folder the new folder goes into (relative; `""` = library root). */
   createFolderParent: string;
   /** Path of the document whose name is being edited in the library, if any. */
@@ -30,6 +33,7 @@ interface UiState {
   setQuickSwitcherOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
   setCreateFolderOpen: (open: boolean, parent?: string) => void;
+  setCloseGuardOpen: (open: boolean) => void;
   setRenamingPath: (path: string | null) => void;
   setExporting: (format: ExportFormat | null) => void;
   setStage: (stage: Stage) => void;
@@ -42,18 +46,27 @@ export const useUiStore = create<UiState>((set) => ({
   quickSwitcherOpen: false,
   shortcutsOpen: false,
   createFolderOpen: false,
+  closeGuardOpen: false,
   createFolderParent: "",
   renamingPath: null,
   exporting: null,
-  stage: "proof",
+  // Documents reopen in the stage used last.
+  stage: usePrefsStore.getState().lastStage,
   exportFormat: "pdf",
   setQuickSwitcherOpen: (quickSwitcherOpen) => set({ quickSwitcherOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
+  setCloseGuardOpen: (closeGuardOpen) => set({ closeGuardOpen }),
   setCreateFolderOpen: (createFolderOpen, parent = "") =>
     set({ createFolderOpen, createFolderParent: parent }),
   setRenamingPath: (renamingPath) => set({ renamingPath }),
   setExporting: (exporting) => set({ exporting }),
-  setStage: (stage) => set({ stage }),
-  toggleWriteProof: () => set((s) => ({ stage: s.stage === "proof" ? "write" : "proof" })),
+  setStage: (stage) => {
+    set({ stage });
+    usePrefsStore.getState().setLastStage(stage);
+  },
+  toggleWriteProof: () => {
+    const stage = useUiStore.getState().stage === "proof" ? "write" : "proof";
+    useUiStore.getState().setStage(stage);
+  },
   setExportFormat: (exportFormat) => set({ exportFormat }),
 }));

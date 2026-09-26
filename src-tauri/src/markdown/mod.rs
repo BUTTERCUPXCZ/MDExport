@@ -44,17 +44,38 @@ pub(crate) fn with_ast<R>(markdown: &str, f: impl for<'a> FnOnce(comrak::Node<'a
     f(root)
 }
 
-/// Renders Markdown to an HTML fragment for the preview.
+/// Renders Markdown to an HTML fragment (used by the HTML export).
 pub fn render_html(markdown: &str) -> String {
+    render_with(markdown, options())
+}
+
+/// Renders Markdown for the live preview. Block elements carry
+/// `data-sourcepos="line:col-line:col"` so the preview can follow the editor's scroll.
+pub fn render_preview_html(markdown: &str) -> String {
+    let mut options = options();
+    options.render.sourcepos = true;
+    render_with(markdown, options)
+}
+
+fn render_with(markdown: &str, options: Options) -> String {
     let mut plugins = Plugins::default();
     plugins.render.codefence_syntax_highlighter = Some(&*HIGHLIGHTER);
 
-    markdown_to_html_with_plugins(markdown, &options(), &plugins)
+    markdown_to_html_with_plugins(markdown, &options, &plugins)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::render_html;
+    use super::{render_html, render_preview_html};
+
+    #[test]
+    fn preview_marks_source_lines_but_exports_do_not() {
+        let md = "# Title\n\nFirst paragraph.\n\n- item";
+        let preview = render_preview_html(md);
+        assert!(preview.contains(r#"data-sourcepos="1:1-1:7""#), "{preview}");
+        assert!(preview.contains(r#"data-sourcepos="3:1-3:16""#), "{preview}");
+        assert!(!render_html(md).contains("data-sourcepos"));
+    }
 
     #[test]
     fn renders_headings_with_ids() {

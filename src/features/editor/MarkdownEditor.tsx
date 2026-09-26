@@ -2,6 +2,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { bracketMatching, indentOnInput } from "@codemirror/language";
 import { languages } from "@codemirror/language-data";
+import { openSearchPanel, search, searchKeymap } from "@codemirror/search";
 import { EditorState } from "@codemirror/state";
 import {
   drawSelection,
@@ -22,6 +23,21 @@ interface MarkdownEditorProps {
   /** Initial content. The editor owns the text afterwards; changes are reported via onChange. */
   initialValue: string;
   onChange: (value: string) => void;
+  /**
+   * Called as the editor scrolls with the source line at the top of the view
+   * (fractional: 12.5 = halfway through line 12), or `Infinity` at the very end.
+   */
+  onScrollLine?: (line: number) => void;
+}
+
+/** Fractional source line at the top of the editor's viewport. */
+function topLine(view: EditorView): number {
+  const scroller = view.scrollDOM;
+  if (scroller.scrollTop + scroller.clientHeight >= scroller.scrollHeight - 2) return Infinity;
+  const block = view.lineBlockAtHeight(scroller.scrollTop);
+  const line = view.state.doc.lineAt(block.from).number;
+  const within = block.height > 0 ? (scroller.scrollTop - block.top) / block.height : 0;
+  return line + Math.min(Math.max(within, 0), 1);
 }
 
 /** How long typing must pause before words are recounted (counting scans the whole text). */
@@ -33,13 +49,15 @@ function cursorStatus(state: EditorState, words: number) {
   editorStatusStore.set({ line: line.number, column: head - line.from + 1, words });
 }
 
-export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) {
+export function MarkdownEditor({ initialValue, onChange, onScrollLine }: MarkdownEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
+  const onScrollLineRef = useRef(onScrollLine);
 
   useEffect(() => {
     onChangeRef.current = onChange;
-  }, [onChange]);
+    onScrollLineRef.current = onScrollLine;
+  }, [onChange, onScrollLine]);
 
   useEffect(() => {
     let words = wordCount(initialValue);
@@ -57,12 +75,26 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
         bracketMatching(),
         EditorView.lineWrapping,
         markdown({ base: markdownLanguage, codeLanguages: languages }),
+        search({ top: true }),
+        EditorState.phrases.of({
+          next: "Next",
+          previous: "Previous",
+          all: "All",
+          "match case": "Match case",
+          regexp: "Regex",
+          "by word": "Whole word",
+          replace: "Replace",
+          "replace all": "Replace all",
+          close: "Close",
+        }),
         editorTheme,
         editorHighlighting,
         placeholder("Start writing Markdown…"),
         keymap.of([
           { key: "Mod-b", run: toggleBold },
           { key: "Mod-i", run: toggleItalic },
+          { key: "Mod-h", run: openSearchPanel, preventDefault: true },
+          ...searchKeymap,
           indentWithTab,
           ...defaultKeymap,
           ...historyKeymap,
@@ -87,8 +119,20 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
     cursorStatus(view.state, words);
     view.focus();
 
+    let frame = 0;
+    const onScroll = () => {
+      if (!onScrollLineRef.current || frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        onScrollLineRef.current?.(topLine(view));
+      });
+    };
+    view.scrollDOM.addEventListener("scroll", onScroll, { passive: true });
+
     return () => {
       window.clearTimeout(countTimer);
+      cancelAnimationFrame(frame);
+      view.scrollDOM.removeEventListener("scroll", onScroll);
       view.destroy();
       editorStatusStore.set(null);
     };

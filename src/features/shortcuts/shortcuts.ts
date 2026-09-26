@@ -26,6 +26,8 @@ export const SHORTCUT_GROUPS = [
     title: "Editor",
     items: [
       ["Switch between Write and Proof", ["Ctrl", "\\"]],
+      ["Find", ["Ctrl", "F"]],
+      ["Find and replace", ["Ctrl", "H"]],
       ["Bold", ["Ctrl", "B"]],
       ["Italic", ["Ctrl", "I"]],
       ["Undo", ["Ctrl", "Z"]],
