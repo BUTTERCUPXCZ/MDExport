@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Footer } from "@/components/Footer";
-import { Navbar } from "@/components/Navbar";
 import { DOC_SECTIONS, DocsContent } from "@/docs/content";
 import { REPO_URL } from "@/lib/release";
 import { cn } from "@/lib/utils";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 /** Id of the last section whose heading has scrolled past the top band of the screen. */
 function useActiveSection(): string {
@@ -60,11 +59,10 @@ function Toc({ active, onPick }: { active: string; onPick?: () => void }) {
 export function DocsPage() {
   const active = useActiveSection();
   const [tocOpen, setTocOpen] = useState(false);
+  useDocumentTitle("Documentation · MDForge");
 
   return (
-    <>
-      <Navbar page="docs" />
-      <main className="mx-auto max-w-[1200px] px-5 pt-28 pb-24 sm:px-8 sm:pt-32">
+    <main className="mx-auto max-w-[1200px] px-5 pt-28 pb-24 sm:px-8 sm:pt-32">
         <header className="max-w-[72ch]">
           <h1 className="text-[clamp(36px,5vw,52px)] leading-[1.02] font-semibold tracking-[-0.035em] text-text">
             Documentation
@@ -111,8 +109,6 @@ export function DocsPage() {
             <DocsContent />
           </article>
         </div>
-      </main>
-      <Footer />
-    </>
+    </main>
   );
 }

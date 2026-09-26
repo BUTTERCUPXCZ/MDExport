@@ -1,9 +1,9 @@
+import { Link } from "react-router";
 import { REPO_URL } from "@/lib/release";
 
 const LINKS = [
   { href: REPO_URL, label: "GitHub" },
   { href: `${REPO_URL}/releases`, label: "Releases" },
-  { href: "./docs.html", label: "Docs" },
   { href: `${REPO_URL}/issues`, label: "Report an issue" },
 ];
 
@@ -16,6 +16,14 @@ export function Footer() {
           React.
         </p>
         <ul className="flex flex-wrap gap-x-6 gap-y-2 sm:ml-auto">
+          <li>
+            <Link
+              to="/docs"
+              className="text-sm text-muted-foreground transition-colors duration-150 hover:text-text"
+            >
+              Docs
+            </Link>
+          </li>
           {LINKS.map((link) => (
             <li key={link.label}>
               <a
