@@ -1,10 +1,47 @@
 # MDForge
 
-Local-first Markdown workspace for developers. Create, edit, organize, version, and
-export Markdown documents to PDF and DOCX — no account, cloud, or internet required.
-Documents stay as plain `.md` files.
+MDForge is a local-first Markdown workspace for people who write a lot: handover notes,
+specs, docs and long drafts. Your documents stay plain `.md` files in a folder you choose.
+There's no account, no cloud and no internet needed.
 
-**Stack:** Tauri 2 · Rust · React 19 · TypeScript · Vite · Tailwind CSS v4 · shadcn/ui
+Every document moves through three stages:
+
+- **Write**: a focused Markdown editor (CodeMirror) with find and replace.
+- **Proof**: the editor beside the rendered page, which scrolls along as you write.
+- **Deliver**: the finished page beside an export panel for PDF, Word (.docx) or HTML.
+
+**Stack:** Tauri 2 · Rust (comrak, syntect, Typst, docx-rs) · React 19 · TypeScript ·
+Vite · Tailwind CSS v4 · CodeMirror 6 · Zustand · TanStack Router
+
+## Features
+
+- **Library index**: the whole library folder as one tree. A `+` menu and right-click menus
+  create, rename and trash documents and folders, named inline like VS Code's explorer.
+- **Never lose work**: autosave (can be turned off in Settings), a prompt before closing
+  with unsaved changes, and a conflict dialog when a file changed outside the app.
+- **Exports that match the preview**: PDF (embedded Typst, fonts bundled), Word and HTML,
+  all built from the same Markdown parser as the preview. Unsaved and pasted text is included.
+- **Keyboard first**: quick switcher, stage switching, shortcut sheet (see below).
+- **Picks up where you left off**: reopens the last document in the last-used stage.
+- **Dark first**, with a light theme that follows the system. Tuned to stay smooth on
+  modest hardware: adaptive preview rendering and a code-split editor.
+
+### Keyboard shortcuts
+
+| Shortcut               | Action                             |
+| ---------------------- | ---------------------------------- |
+| Ctrl+K / Ctrl+P        | Quick switcher (`>` for commands)  |
+| Ctrl+N / Ctrl+O        | New document / Open file           |
+| Ctrl+S / Ctrl+Shift+S  | Save / Save as                     |
+| F2                     | Rename document                    |
+| Ctrl+\\                | Switch between Write and Proof     |
+| Ctrl+E                 | Deliver (export PDF, Word or HTML) |
+| Ctrl+F / Ctrl+H        | Find / Find and replace            |
+| Ctrl+PageUp / PageDown | Previous / next document           |
+| Ctrl+,                 | Settings                           |
+| Ctrl+/                 | All keyboard shortcuts             |
+
+Ctrl is Cmd on macOS.
 
 ## Prerequisites (Ubuntu / Debian)
 
@@ -38,23 +75,26 @@ pnpm tauri build    # build a release bundle
 
 ```
 src/                      React frontend
-├── app/                  router, root layout, route pages
-├── components/           layout (shell, modal, header), sidebar, shadcn/ui
-├── features/             documents (store, dialogs), editor, library, notices
-├── services/tauri/       typed wrappers around Tauri IPC (only place invoke() is used)
+├── app/                  router, root layout, pages (home, editor, settings)
+├── components/           app shell, library index (file tree), shared UI
+├── features/             documents, editor, stages (Write/Proof/Deliver), export,
+│                         library, session (autosave, close guard, restore), prefs,
+│                         quick switcher, shortcuts, notices
+├── services/tauri/       typed wrappers around Tauri IPC (the only place invoke() is used)
+├── hooks/                app-wide hooks (global shortcuts, timers, focus)
 ├── types/                TypeScript types mirroring Rust models
-├── lib/                  small utilities (theme, cn)
-└── styles/globals.css    design tokens (dark + light), preview + syntax styles
+└── styles/globals.css    design tokens (dark + light), document page and syntax styles
 
 src-tauri/src/            Rust application core
 ├── commands/             thin Tauri commands (+ native dialogs)
-├── services/             business logic, AccessScope (path authorization)
-├── repositories/         persistence (files, config; SQLite from Phase 6)
+├── services/             business logic, AccessScope (path authorization), library tree
+├── repositories/         file and config persistence
 ├── markdown/             the single Markdown parser (comrak + syntect)
+├── export/               PDF (Typst), DOCX and HTML exporters
 └── models/               domain types and AppError
 ```
 
-## File access
+## File access and safety
 
 - The frontend has no filesystem or dialog permissions. Open / Save As / folder
   pickers run in Rust.
@@ -64,7 +104,8 @@ src-tauri/src/            Rust application core
 - Saves are atomic (temp file + rename) and send the last-seen content hash;
   if the file changed on disk, the save is refused and the user chooses
   overwrite / reload / save a copy.
-- Delete moves files to the OS trash.
+- Deleting documents or folders moves them to the OS trash. The library folder itself
+  can't be deleted from the app.
 - The library folder is stored in `<app config dir>/config.json`
   (Linux: `~/.config/dev.mdforge.app/`).
 
@@ -72,8 +113,8 @@ Request flow: `React → services/tauri → Tauri command → service → reposi
 
 ## Architecture rules
 
-- Markdown files on disk are the source of truth; SQLite only stores metadata.
+- Markdown files on disk are the source of truth.
 - Tauri commands stay thin; business logic lives in services.
 - No raw `invoke()` in components.
 - Minimal Tauri capabilities and a strict CSP; the frontend has no direct filesystem access.
-- Every phase ships with its own tests.
+- Every feature ships with its own tests.
