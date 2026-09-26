@@ -1,5 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { TitleBar } from "@/components/layout/TitleBar";
 import { CreateFolderDialog } from "@/features/library/CreateFolderDialog";
 import { LibrarySetupDialog } from "@/features/library/LibrarySetupDialog";
 import { refreshLibrary } from "@/features/library/libraryStore";
@@ -27,7 +28,12 @@ export function RootLayout() {
   useLibrarySync();
   return (
     <>
-      <Outlet />
+      <div className="flex h-screen flex-col">
+        <TitleBar />
+        <div className="min-h-0 flex-1">
+          <Outlet />
+        </div>
+      </div>
       <LibrarySetupDialog />
       <QuickSwitcher />
       <ShortcutsDialog />

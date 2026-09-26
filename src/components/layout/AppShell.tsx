@@ -10,7 +10,7 @@ import { NoticeBar } from "@/features/notices/NoticeBar";
  */
 export function AppShell() {
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full">
       <ServerRail />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col bg-surface-primary">

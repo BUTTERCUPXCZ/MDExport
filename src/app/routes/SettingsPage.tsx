@@ -104,7 +104,7 @@ export function SettingsPage() {
   }, [close]);
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full">
       <aside className="flex flex-[1_0_218px] justify-end overflow-y-auto bg-surface-secondary">
         <nav aria-label="Settings" className="w-[218px] py-[60px] pr-1.5 pl-5">
           <h2 className="px-2.5 pb-1.5 text-xs font-bold tracking-wide text-channel-default uppercase">
