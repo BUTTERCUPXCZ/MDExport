@@ -27,8 +27,8 @@ pnpm preview    # serve dist/
 ## Deploy
 
 `dist/` is a static site with relative paths, so it works on any static host.
-`.github/workflows/pages.yml` publishes it with GitHub Pages on every push to `main`
-(enable once: Settings → Pages → Source: "GitHub Actions").
+It is deployed on Vercel from this repo with **Root Directory** set to `mdforge-landing`
+(framework preset Vite, build `pnpm build`, output `dist`).
 
 ## Layout
 

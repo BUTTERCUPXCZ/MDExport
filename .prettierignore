@@ -2,3 +2,4 @@ dist
 coverage
 src-tauri
 pnpm-lock.yaml
+mdforge-landing

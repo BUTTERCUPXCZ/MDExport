@@ -1,5 +1,8 @@
 # MDForge
 
+**Download:** [latest release](https://github.com/BUTTERCUPXCZ/MDforge/releases/latest) ·
+**Website:** source in [`mdforge-landing/`](mdforge-landing/)
+
 MDForge is a local-first Markdown workspace for people who write a lot: handover notes,
 specs, docs and long drafts. Your documents stay plain `.md` files in a folder you choose.
 There's no account, no cloud and no internet needed.
