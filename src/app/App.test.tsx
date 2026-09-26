@@ -58,7 +58,7 @@ describe("Home", () => {
 
     expect(create).toHaveBeenCalledWith(undefined);
     expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
-    expect(screen.getByRole("heading", { level: 1, name: "Untitled" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Untitled" })).toBeInTheDocument();
   });
 
   it("Open file opens the picked file; cancelling stays on Home", async () => {

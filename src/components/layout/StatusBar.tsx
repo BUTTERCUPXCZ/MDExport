@@ -1,10 +1,10 @@
 import { useEditorStatus } from "@/features/editor/editorStatus";
-import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import { useActiveDocumentInfo } from "@/features/documents/useActiveDocument";
 
 /** Slim footer while a document is open: cursor position and length. */
 export function StatusBar() {
   const editor = useEditorStatus();
-  const doc = useActiveDocument();
+  const doc = useActiveDocumentInfo();
   if (!doc || !editor) return null;
 
   const minutes = Math.max(1, Math.round(editor.words / 230));

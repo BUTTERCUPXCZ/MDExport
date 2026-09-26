@@ -54,7 +54,7 @@ describe("Library index", () => {
 
     await user.click(within(index()).getByRole("button", { name: "auth-flow" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "auth-flow" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "auth-flow" })).toBeInTheDocument();
     expect(screen.getByText("backend / handovers / auth-flow.md")).toBeInTheDocument();
     expect(within(index()).getByRole("button", { name: "auth-flow" })).toHaveAttribute(
       "aria-current",
@@ -67,6 +67,7 @@ describe("Library index", () => {
     const open = openAnyPath();
     await renderAt("/");
     await user.click(within(index()).getByRole("button", { name: "api" }));
+    await screen.findByRole("heading", { level: 1, name: "api" });
     const id = Object.keys(useDocumentsStore.getState().documents)[0]!;
     useDocumentsStore.getState().setContent(id, "unsaved edit");
 

@@ -31,7 +31,7 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
   const entry = entryForPath(listing, doc.path);
   const location = entry ? entry.relativePath.split("/").join(" / ") : doc.path;
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const preview = useMarkdownPreview(doc.content);
+  const preview = useMarkdownPreview(doc.content, stage !== "write");
 
   const onChange = useCallback((value: string) => setContent(doc.id, value), [doc.id, setContent]);
 

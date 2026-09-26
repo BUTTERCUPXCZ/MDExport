@@ -24,14 +24,13 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
 }
 
-function reportStatus(state: EditorState) {
+/** How long typing must pause before words are recounted (counting scans the whole text). */
+const WORD_COUNT_DELAY_MS = 300;
+
+function cursorStatus(state: EditorState, words: number) {
   const head = state.selection.main.head;
   const line = state.doc.lineAt(head);
-  editorStatusStore.set({
-    line: line.number,
-    column: head - line.from + 1,
-    words: wordCount(state.doc.toString()),
-  });
+  editorStatusStore.set({ line: line.number, column: head - line.from + 1, words });
 }
 
 export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) {
@@ -43,6 +42,9 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
   }, [onChange]);
 
   useEffect(() => {
+    let words = wordCount(initialValue);
+    let countTimer: number | undefined;
+
     const state = EditorState.create({
       doc: initialValue,
       extensions: [
@@ -67,17 +69,26 @@ export function MarkdownEditor({ initialValue, onChange }: MarkdownEditorProps) 
         ]),
         EditorView.contentAttributes.of({ "aria-label": "Markdown editor" }),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) onChangeRef.current(update.state.doc.toString());
-          if (update.docChanged || update.selectionSet) reportStatus(update.state);
+          if (update.docChanged) {
+            onChangeRef.current(update.state.doc.toString());
+            window.clearTimeout(countTimer);
+            countTimer = window.setTimeout(() => {
+              words = wordCount(view.state.doc.toString());
+              cursorStatus(view.state, words);
+            }, WORD_COUNT_DELAY_MS);
+          }
+          // Cursor moves only update Ln/Col; the word count is reused.
+          if (update.docChanged || update.selectionSet) cursorStatus(update.state, words);
         }),
       ],
     });
 
     const view = new EditorView({ state, parent: containerRef.current! });
-    reportStatus(view.state);
+    cursorStatus(view.state, words);
     view.focus();
 
     return () => {
+      window.clearTimeout(countTimer);
       view.destroy();
       editorStatusStore.set(null);
     };

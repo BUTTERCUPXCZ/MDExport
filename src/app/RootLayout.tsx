@@ -9,6 +9,9 @@ import { QuickSwitcher } from "@/features/quick-switcher/QuickSwitcher";
 import { ShortcutsDialog } from "@/features/shortcuts/ShortcutsDialog";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
+/** Focus rescans closer together than this are skipped (alt-tabbing back and forth). */
+const FOCUS_RESCAN_MS = 3000;
+
 /** Scans the library once it's known, and again whenever the window regains focus
  *  (picks up files added or renamed outside MDForge). */
 function useLibrarySync() {
@@ -17,7 +20,12 @@ function useLibrarySync() {
   useEffect(() => {
     if (!location) return;
     void refreshLibrary();
-    const onFocus = () => void refreshLibrary();
+    let last = Date.now();
+    const onFocus = () => {
+      if (Date.now() - last < FOCUS_RESCAN_MS) return;
+      last = Date.now();
+      void refreshLibrary();
+    };
     window.addEventListener("focus", onFocus);
     return () => window.removeEventListener("focus", onFocus);
   }, [location]);

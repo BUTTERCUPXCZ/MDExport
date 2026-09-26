@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { useDocumentsStore } from "@/features/documents/documentsStore";
-import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import { useActiveDocumentInfo } from "@/features/documents/useActiveDocument";
 import { refreshLibrary, useLibraryStore } from "@/features/library/libraryStore";
 import { showError } from "@/features/notices/noticeStore";
 import { documentService } from "@/services/tauri/documents";
@@ -21,7 +21,7 @@ export function folderPrefix(root: string, folder: string): string {
  */
 export function useLibraryTrash() {
   const navigate = useNavigate();
-  const visible = useActiveDocument()?.id;
+  const visible = useActiveDocumentInfo()?.id;
 
   /** Closes open documents matching `gone`; returns true if the visible one was among them. */
   const closeOpen = useCallback(

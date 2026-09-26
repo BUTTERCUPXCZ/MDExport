@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { ContextMenu } from "radix-ui";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { DocumentRow } from "@/components/library-index/DocumentRow";
 import {
@@ -20,7 +20,10 @@ import {
 } from "@/components/library-index/IndexMenu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { isDirty, useDocumentsStore } from "@/features/documents/documentsStore";
-import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import {
+  useActiveDocumentInfo,
+  useOpenDocumentInfos,
+} from "@/features/documents/useActiveDocument";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import {
   entryForPath,
@@ -62,6 +65,8 @@ interface TreeProps {
   collapsed: Set<string>;
   onToggle: (path: string) => void;
   onTrash: (target: TrashTarget) => void;
+  /** Current time for age labels; one timer for the whole tree. */
+  now: number;
 }
 
 function copyToClipboard(text: string) {
@@ -150,7 +155,6 @@ function FolderHeading({
 
 function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode; depth: number }) {
   const { openPath } = useDocumentCommands();
-  const now = useNow();
 
   return (
     <>
@@ -160,7 +164,7 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
           fileName={doc.name}
           path={doc.path}
           title={doc.relativePath}
-          age={shortAge(doc.modifiedMs, now)}
+          age={shortAge(doc.modifiedMs, tree.now)}
           indent={8 + depth * INDENT + (depth > 0 ? 4 : 0)}
           active={doc.path === tree.activePath}
           unsaved={tree.dirty.has(doc.path)}
@@ -201,7 +205,7 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
 function OutsideLibrary({ activePath, dirty }: { activePath: string | null; dirty: Set<string> }) {
   const navigate = useNavigate();
   const listing = useLibraryStore((s) => s.listing);
-  const documents = useDocumentsStore(useShallow((s) => Object.values(s.documents)));
+  const documents = useOpenDocumentInfos();
   const outside = documents.filter((d) => !entryForPath(listing, d.path));
   if (outside.length === 0) return null;
 
@@ -232,13 +236,14 @@ function OutsideLibrary({ activePath, dirty }: { activePath: string | null; dirt
 export function LibraryIndex() {
   const listing = useLibraryStore((s) => s.listing);
   const status = useLibraryStore((s) => s.status);
-  const active = useActiveDocument();
+  const active = useActiveDocumentInfo();
   const { newDocument } = useDocumentCommands();
   const setQuickSwitcherOpen = useUiStore((s) => s.setQuickSwitcherOpen);
   const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
   const dirty = useDirtyPaths();
   const { trashDocument, trashFolder } = useLibraryTrash();
   const [trash, setTrash] = useState<TrashTarget | null>(null);
+  const now = useNow();
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const toggle = (path: string) =>
@@ -249,7 +254,7 @@ export function LibraryIndex() {
       return next;
     });
 
-  const tree = listing ? libraryTree(listing) : null;
+  const tree = useMemo(() => (listing ? libraryTree(listing) : null), [listing]);
   const libraryName = listing?.root.split(/[\\/]/).pop() || "Library";
 
   return (
@@ -319,6 +324,7 @@ export function LibraryIndex() {
               collapsed={collapsed}
               onToggle={toggle}
               onTrash={setTrash}
+              now={now}
             />
           </div>
         )}

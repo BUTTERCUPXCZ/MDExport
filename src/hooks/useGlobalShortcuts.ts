@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
-import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import { useActiveDocumentInfo } from "@/features/documents/useActiveDocument";
 import { libraryOrder } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
 import { useUiStore } from "@/features/ui/uiStore";
@@ -15,7 +15,7 @@ import { useUiStore } from "@/features/ui/uiStore";
 export function useGlobalShortcuts() {
   const navigate = useNavigate();
   const { newDocument, openDocument, openPath } = useDocumentCommands();
-  const activePath = useActiveDocument()?.path ?? null;
+  const activePath = useActiveDocumentInfo()?.path ?? null;
 
   // Latest values for the long-lived listener.
   const latest = useRef({ activePath, openPath });

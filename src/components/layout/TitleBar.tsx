@@ -1,6 +1,6 @@
 import { Copy, Minus, Square, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import { useActiveDocumentInfo } from "@/features/documents/useActiveDocument";
 import { stem } from "@/features/library/libraryModel";
 import { cn } from "@/lib/utils";
 import { windowService } from "@/services/tauri/window";
@@ -34,7 +34,7 @@ function WindowButton({
 
 /** What the window is showing, for the centre of the title bar. */
 function useContextLabel(): string | null {
-  const doc = useActiveDocument();
+  const doc = useActiveDocumentInfo();
   return doc ? stem(doc.name) : null;
 }
 
