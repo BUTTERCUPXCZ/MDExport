@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/instrument-sans";
+@import "@fontsource-variable/jetbrains-mono";
+@import "@fontsource-variable/noto-sans";
+
+/*
+ * The landing page wears MDForge's own "Proof" theme (see the app's
+ * src/styles/globals.css, .dark): slate ink neutrals, one glacier accent,
+ * Instrument Sans for UI, JetBrains Mono for code, Noto Sans for the page.
+ */
+@theme inline {
+  --font-sans: "Instrument Sans Variable", "Segoe UI", "Helvetica Neue", sans-serif;
+  --font-heading: var(--font-sans);
+  --font-mono: "JetBrains Mono Variable", "Cascadia Code", Consolas, monospace;
+  --font-doc: "Noto Sans Variable", "Helvetica Neue", Arial, sans-serif;
+
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  /* shadcn: "muted" is a background; muted text is text-muted-foreground */
+  --color-muted: var(--raised);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  /* shadcn names → Proof tokens */
+  --color-background: var(--sunken);
+  --color-foreground: var(--text);
+  --color-card: var(--panel);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--raised);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-ink);
+  --color-secondary: var(--raised);
+  --color-secondary-foreground: var(--text);
+  --color-muted-foreground: var(--muted);
+  --color-border: var(--line);
+  --color-input: var(--line-strong);
+  --color-ring: var(--accent);
+  --color-destructive: var(--danger);
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-3xl: 24px;
+}
+
+:root {
+  color-scheme: dark;
+  --canvas: #181c22;
+  --panel: #1e232b;
+  --raised: #262c35;
+  --sunken: #12151a;
+  --line: #2b323c;
+  --line-strong: #3a4350;
+  --text: #dde2ea;
+  --text-2: #bcc4cf;
+  --muted: #95a0ae;
+  --accent: #86c8ec;
+  --accent-hover: #a3d6f2;
+  --accent-ink: #0d1822;
+  --accent-soft: rgb(134 200 236 / 0.14);
+  --success: #74c69d;
+  --warning: #e3bb6b;
+  --danger: #ef8a80;
+  --selection: rgb(134 200 236 / 0.26);
+
+  /* Syntax colors, as in the editor */
+  --hl-keyword: #f09a8e;
+  --hl-string: #9fd3c7;
+  --hl-function: #c9b2f0;
+  --hl-markup: #6f7a88;
+}
+
+@layer base {
+  * {
+    @apply border-line;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 72px;
+  }
+  body {
+    @apply bg-sunken font-sans text-text antialiased;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  ::selection {
+    background: var(--selection);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
