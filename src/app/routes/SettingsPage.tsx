@@ -2,6 +2,7 @@ import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { showError } from "@/features/notices/noticeStore";
@@ -10,14 +11,21 @@ import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="border-b border-border pb-5">
-      <h2 className="mb-2 text-xs font-bold tracking-wide text-header-secondary uppercase">
-        {label}
-      </h2>
-      {children}
-    </div>
+    <section aria-label={title} className="border-t border-line py-7 first:border-t-0 first:pt-0">
+      <h2 className="text-[15px] font-semibold text-text">{title}</h2>
+      {description && <p className="mt-1 text-[13px] text-text-2">{description}</p>}
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
 
@@ -38,19 +46,19 @@ function LibrarySection() {
   };
 
   return (
-    <Field label="Library folder">
-      <p className="mb-3 text-sm text-text-muted">
-        New documents are created here. Top-level folders appear as icons in the left rail.
-      </p>
+    <Section
+      title="Library folder"
+      description="MDForge lists every Markdown file in this folder and its subfolders. New documents are created here."
+    >
       <div className="flex items-center gap-3">
-        <code className="min-w-0 flex-1 rounded-[3px] bg-surface-tertiary px-2.5 py-2 font-mono text-sm break-all text-text-normal">
+        <code className="min-w-0 flex-1 rounded-md border border-line bg-sunken px-3 py-2 font-mono text-[12.5px] break-all text-text">
           {location || "Not set"}
         </code>
         <Button variant="secondary" onClick={() => void change()}>
           Change…
         </Button>
       </div>
-    </Field>
+    </Section>
   );
 }
 
@@ -64,28 +72,19 @@ function AboutSection() {
   }, []);
 
   return (
-    <Field label="MDForge">
-      <p className="text-sm text-text-normal">Version {version ?? "unknown"}</p>
-      <p className="mt-1 text-sm text-text-muted">
-        Local-first Markdown workspace. Your documents are plain .md files on your disk.
+    <Section title="About">
+      <p className="text-[13px] text-text">
+        MDForge <span data-testid="app-version">{version ? `v${version}` : ""}</span>
       </p>
-    </Field>
+      <p className="mt-1 text-[13px] text-text-2">
+        Your documents stay plain .md files on your disk. Nothing leaves this computer.
+      </p>
+    </Section>
   );
 }
 
-const SECTIONS = [
-  { id: "library", label: "Library", render: () => <LibrarySection /> },
-  { id: "keybinds", label: "Keybinds", render: () => <ShortcutList /> },
-  { id: "about", label: "About", render: () => <AboutSection /> },
-] as const;
-
-type SectionId = (typeof SECTIONS)[number]["id"];
-
-/** Full-screen settings layer (Discord's User Settings layout). Esc closes it. */
+/** Settings, shown in the main column. Esc closes it. */
 export function SettingsPage() {
-  const [sectionId, setSectionId] = useState<SectionId>("library");
-  const section = SECTIONS.find((s) => s.id === sectionId) ?? SECTIONS[0];
-
   const router = useRouter();
   const navigate = useNavigate();
   const canGoBack = useCanGoBack();
@@ -97,53 +96,34 @@ export function SettingsPage() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
+      if (event.key === "Escape" && !event.defaultPrevented) close();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [close]);
 
   return (
-    <div className="flex h-full">
-      <aside className="flex flex-[1_0_218px] justify-end overflow-y-auto bg-surface-secondary">
-        <nav aria-label="Settings" className="w-[218px] py-[60px] pr-1.5 pl-5">
-          <h2 className="px-2.5 pb-1.5 text-xs font-bold tracking-wide text-channel-default uppercase">
-            App Settings
-          </h2>
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              aria-current={s.id === sectionId ? "page" : undefined}
-              onClick={() => setSectionId(s.id)}
-              className="mb-0.5 block w-full rounded-md px-2.5 py-1.5 text-left text-base font-medium text-interactive-normal hover:bg-surface-hover hover:text-interactive-hover aria-[current=page]:bg-surface-selected aria-[current=page]:text-interactive-active"
-            >
-              {s.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <div className="flex flex-[1_1_800px] items-start overflow-y-auto bg-surface-primary">
-        <section className="max-w-[740px] min-w-[460px] flex-1 px-10 pt-[60px] pb-20">
-          <h1 className="mb-5 text-xl font-semibold text-header-primary">{section.label}</h1>
-          {section.render()}
-        </section>
-
-        <div className="sticky top-0 flex-none pt-[60px] pr-5">
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close settings"
-            className="group flex flex-col items-center gap-2"
-          >
-            <span className="flex size-9 items-center justify-center rounded-full border-2 border-interactive-normal text-interactive-normal transition-colors group-hover:bg-surface-hover">
-              <X className="size-[18px]" />
-            </span>
-            <span className="text-[13px] font-semibold text-interactive-normal">ESC</span>
-          </button>
+    <>
+      <header className="flex h-[52px] shrink-0 items-center justify-between border-b border-line px-4">
+        <h1 className="text-[14.5px] font-semibold text-text">Settings</h1>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Close settings" onClick={close}>
+              <X />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Close (Esc)</TooltipContent>
+        </Tooltip>
+      </header>
+      <div className="flex-1 overflow-y-auto">
+        <div className="mx-auto max-w-[680px] px-8 py-8">
+          <LibrarySection />
+          <Section title="Keyboard shortcuts">
+            <ShortcutList />
+          </Section>
+          <AboutSection />
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -27,8 +27,8 @@ export function ConflictDialog({
       title="File changed on disk"
       description={
         <>
-          <strong className="text-header-primary">{fileName}</strong> was modified outside MDForge
-          after you opened it. Choose which version to keep.
+          <strong className="text-text">{fileName}</strong> was modified outside MDForge after you
+          opened it. Choose which version to keep.
         </>
       }
       footer={
@@ -46,15 +46,15 @@ export function ConflictDialog({
         </>
       }
     >
-      <ul className="list-disc space-y-1 pt-1 pl-5 text-sm text-text-muted">
+      <ul className="mt-4 space-y-1.5 text-[13px] text-text-2">
         <li>
-          <b className="text-text-normal">Reload from disk</b> discards your unsaved changes.
+          <b className="font-medium text-text">Reload from disk</b> discards your unsaved changes.
         </li>
         <li>
-          <b className="text-text-normal">Save as copy</b> keeps both versions.
+          <b className="font-medium text-text">Save as copy</b> keeps both versions.
         </li>
         <li>
-          <b className="text-text-normal">Overwrite</b> replaces the other changes with yours.
+          <b className="font-medium text-text">Overwrite</b> replaces the other changes with yours.
         </li>
       </ul>
     </Modal>

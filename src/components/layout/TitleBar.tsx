@@ -1,7 +1,6 @@
-import { useParams } from "@tanstack/react-router";
 import { Copy, Minus, Square, X } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { useOpenDocument } from "@/features/documents/documentsStore";
+import { useActiveDocument } from "@/features/documents/useActiveDocument";
 import { stem } from "@/features/library/libraryModel";
 import { cn } from "@/lib/utils";
 import { windowService } from "@/services/tauri/window";
@@ -24,10 +23,8 @@ function WindowButton({
       title={label}
       onClick={onClick}
       className={cn(
-        "flex h-full w-[46px] items-center justify-center text-interactive-normal transition-colors [&_svg]:size-4",
-        danger
-          ? "hover:bg-destructive hover:text-white"
-          : "hover:bg-surface-hover hover:text-interactive-hover",
+        "flex h-full w-[46px] items-center justify-center text-muted transition-colors duration-150 [&_svg]:size-4",
+        danger ? "hover:bg-[#c42b1c] hover:text-white" : "hover:bg-raised hover:text-text",
       )}
     >
       {children}
@@ -37,17 +34,14 @@ function WindowButton({
 
 /** What the window is showing, for the centre of the title bar. */
 function useContextLabel(): string | null {
-  const { documentId, folder } = useParams({ strict: false });
-  const doc = useOpenDocument(documentId ?? "");
-  if (doc) return stem(doc.name);
-  if (folder) return folder;
-  return null;
+  const doc = useActiveDocument();
+  return doc ? stem(doc.name) : null;
 }
 
 /**
- * Discord-style window title bar (the system one is turned off in tauri.conf.json).
- * Drag it to move the window, double-click to maximize. Same color as the rail,
- * so it blends into the app.
+ * Window title bar (the system one is turned off in tauri.conf.json).
+ * Drag it to move the window, double-click to maximize. Same color as the
+ * library index, so the two read as one column.
  */
 export function TitleBar() {
   const [maximized, setMaximized] = useState(false);
@@ -77,23 +71,17 @@ export function TitleBar() {
   return (
     <header
       data-tauri-drag-region
-      className="flex h-[30px] shrink-0 items-center bg-surface-tertiary select-none"
+      className="flex h-[32px] shrink-0 items-center border-b border-line bg-panel select-none"
     >
       <div data-tauri-drag-region className="flex items-center gap-2 pl-3">
-        <span
-          data-tauri-drag-region
-          className="flex size-[18px] items-center justify-center rounded-md bg-primary text-[9px] font-extrabold text-white"
-        >
-          MD
-        </span>
-        <span data-tauri-drag-region className="text-xs font-bold text-header-secondary">
+        <span data-tauri-drag-region className="text-[12.5px] font-semibold text-text-2">
           MDForge
         </span>
       </div>
 
       <div
         data-tauri-drag-region
-        className="min-w-0 flex-1 truncate px-4 text-center text-xs font-semibold text-text-muted"
+        className="min-w-0 flex-1 truncate px-4 text-center text-[12.5px] text-muted"
       >
         {context}
       </div>

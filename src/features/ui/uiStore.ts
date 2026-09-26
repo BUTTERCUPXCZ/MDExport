@@ -1,28 +1,39 @@
 import { create } from "zustand";
-import type { ViewMode } from "@/features/editor/ViewModeToggle";
 import type { ExportFormat } from "@/services/tauri/export";
 
-const VIEW_MODES: ViewMode[] = ["editor", "split", "preview"];
+/**
+ * The three stages a document moves through:
+ * write (editor only) → proof (editor beside the page) → deliver (page + export).
+ */
+export type Stage = "write" | "proof" | "deliver";
+
+export const STAGES: { stage: Stage; label: string }[] = [
+  { stage: "write", label: "Write" },
+  { stage: "proof", label: "Proof" },
+  { stage: "deliver", label: "Deliver" },
+];
 
 interface UiState {
   quickSwitcherOpen: boolean;
   shortcutsOpen: boolean;
   createFolderOpen: boolean;
-  /** Path of the document whose name is being edited in the sidebar, if any. */
+  /** Path of the document whose name is being edited in the library, if any. */
   renamingPath: string | null;
-  exportMenuOpen: boolean;
   /** Format currently being exported, if any. */
   exporting: ExportFormat | null;
-  /** Editor layout, shared so the quick switcher and shortcuts can change it. */
-  viewMode: ViewMode;
+  /** Current stage of the open document; shared so shortcuts and commands can change it. */
+  stage: Stage;
+  /** Format picked in the Deliver stage. */
+  exportFormat: ExportFormat;
   setQuickSwitcherOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
   setCreateFolderOpen: (open: boolean) => void;
   setRenamingPath: (path: string | null) => void;
-  setExportMenuOpen: (open: boolean) => void;
   setExporting: (format: ExportFormat | null) => void;
-  setViewMode: (mode: ViewMode) => void;
-  cycleViewMode: () => void;
+  setStage: (stage: Stage) => void;
+  /** Ctrl+\: flips between Write and Proof (from Deliver it returns to Proof). */
+  toggleWriteProof: () => void;
+  setExportFormat: (format: ExportFormat) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -30,18 +41,15 @@ export const useUiStore = create<UiState>((set) => ({
   shortcutsOpen: false,
   createFolderOpen: false,
   renamingPath: null,
-  exportMenuOpen: false,
   exporting: null,
-  viewMode: "split",
+  stage: "proof",
+  exportFormat: "pdf",
   setQuickSwitcherOpen: (quickSwitcherOpen) => set({ quickSwitcherOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   setCreateFolderOpen: (createFolderOpen) => set({ createFolderOpen }),
   setRenamingPath: (renamingPath) => set({ renamingPath }),
-  setExportMenuOpen: (exportMenuOpen) => set({ exportMenuOpen }),
   setExporting: (exporting) => set({ exporting }),
-  setViewMode: (viewMode) => set({ viewMode }),
-  cycleViewMode: () =>
-    set((s) => ({
-      viewMode: VIEW_MODES[(VIEW_MODES.indexOf(s.viewMode) + 1) % VIEW_MODES.length],
-    })),
+  setStage: (stage) => set({ stage }),
+  toggleWriteProof: () => set((s) => ({ stage: s.stage === "proof" ? "write" : "proof" })),
+  setExportFormat: (exportFormat) => set({ exportFormat }),
 }));

@@ -1,15 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  channelGroups,
   folderOf,
-  HOME,
-  initials,
+  libraryOrder,
+  libraryTree,
   recentDocuments,
   relativeTime,
-  serverOf,
-  sidebarOrder,
+  shortAge,
   stem,
-  topLevelFolders,
 } from "@/features/library/libraryModel";
 import type { LibraryEntry, LibraryListing } from "@/types/library";
 
@@ -35,39 +32,45 @@ const listing: LibraryListing = {
 };
 
 describe("libraryModel", () => {
-  it("splits relative paths into folder and server", () => {
+  it("splits relative paths", () => {
     expect(folderOf("a/b/c.md")).toBe("a/b");
     expect(folderOf("c.md")).toBe("");
-    expect(serverOf("backend/bugs/x.md")).toBe("backend");
-    expect(serverOf("Readme.md")).toBe(HOME);
   });
 
-  it("lists top-level folders as servers", () => {
-    expect(topLevelFolders(listing)).toEqual(["backend", "frontend"]);
-  });
+  it("builds the whole library as a sorted tree with totals, keeping empty folders", () => {
+    const root = libraryTree(listing);
 
-  it("groups a server's files into uncategorized + categories, including empty ones", () => {
-    const groups = channelGroups(listing, "backend");
+    expect(root.documents.map((d) => d.name)).toEqual(["Readme.md"]);
+    expect(root.folders.map((f) => f.name)).toEqual(["backend", "frontend"]);
+    expect(root.total).toBe(6);
 
-    expect(groups.map((g) => [g.category, g.folder, g.documents.map((d) => d.name)])).toEqual([
-      [null, "backend", ["api.md"]],
-      ["bugs", "backend/bugs", ["login-500.md"]],
-      ["empty", "backend/empty", []],
-      ["handovers", "backend/handovers", ["auth-flow.md", "Payments.md"]],
+    const backend = root.folders[0]!;
+    expect(backend.documents.map((d) => d.name)).toEqual(["api.md"]);
+    expect(backend.folders.map((f) => [f.name, f.total])).toEqual([
+      ["bugs", 1],
+      ["empty", 0],
+      ["handovers", 2],
     ]);
+    expect(backend.folders[2]!.documents.map((d) => d.name)).toEqual([
+      "auth-flow.md",
+      "Payments.md",
+    ]);
+    expect(backend.total).toBe(4);
   });
 
-  it("Home shows only root files", () => {
-    const groups = channelGroups(listing, HOME);
-    expect(groups).toEqual([{ category: null, folder: "", documents: [listing.documents[0]] }]);
+  it("creates parent folders that the listing did not name", () => {
+    const root = libraryTree({ ...listing, folders: [], documents: [doc("a/b/c.md")] });
+    expect(root.folders[0]!.folders[0]!.path).toBe("a/b");
   });
 
-  it("gives sidebar order for keyboard navigation", () => {
-    expect(sidebarOrder(listing, "backend").map((d) => d.name)).toEqual([
+  it("gives index order for keyboard navigation", () => {
+    expect(libraryOrder(listing).map((d) => d.name)).toEqual([
+      "Readme.md",
       "api.md",
       "login-500.md",
       "auth-flow.md",
       "Payments.md",
+      "ui.md",
     ]);
   });
 
@@ -78,20 +81,15 @@ describe("libraryModel", () => {
     ]);
   });
 
-  it("formats names", () => {
+  it("formats names and ages", () => {
+    const now = 1_000_000_000_000;
     expect(stem("auth-flow.md")).toBe("auth-flow");
     expect(stem("notes.markdown")).toBe("notes");
-    expect(initials("backend")).toBe("B");
-    expect(initials("only-automation")).toBe("OA");
-    expect(initials("Ride Flow API v2")).toBe("RFA");
-  });
-
-  it("formats relative times", () => {
-    const now = 1_000_000_000_000;
+    expect(shortAge(now - 20_000, now)).toBe("now");
+    expect(shortAge(now - 5 * 60_000, now)).toBe("5m");
+    expect(shortAge(now - 3 * 3_600_000, now)).toBe("3h");
+    expect(shortAge(now - 2 * 86_400_000, now)).toBe("2d");
     expect(relativeTime(now - 10_000, now)).toBe("just now");
-    expect(relativeTime(now - 5 * 60_000, now)).toBe("5 min ago");
-    expect(relativeTime(now - 3 * 3_600_000, now)).toBe("3 h ago");
     expect(relativeTime(now - 26 * 3_600_000, now)).toBe("yesterday");
-    expect(relativeTime(now - 3 * 86_400_000, now)).toBe("3 days ago");
   });
 });

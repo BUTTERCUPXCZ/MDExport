@@ -3,10 +3,9 @@ import { X } from "lucide-react";
 import { SHORTCUT_GROUPS } from "@/features/shortcuts/shortcuts";
 import { useUiStore } from "@/features/ui/uiStore";
 
-/** Discord-style keycap. */
 export function Keycap({ children }: { children: string }) {
   return (
-    <kbd className="inline-flex h-6 min-w-6 items-center justify-center rounded-[4px] bg-surface-tertiary px-1.5 font-sans text-xs font-semibold text-interactive-hover shadow-[inset_0_-2px_0_rgb(0_0_0/0.35)]">
+    <kbd className="inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-sm border border-line-strong bg-canvas px-1.5 font-sans text-[11.5px] font-medium text-text-2">
       {children}
     </kbd>
   );
@@ -14,20 +13,15 @@ export function Keycap({ children }: { children: string }) {
 
 export function ShortcutList() {
   return (
-    <div className="space-y-6">
+    <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
       {SHORTCUT_GROUPS.map((group) => (
         <section key={group.title}>
-          <h3 className="mb-2 text-xs font-bold tracking-wide text-header-secondary uppercase">
-            {group.title}
-          </h3>
+          <h3 className="mb-1 text-[12.5px] font-medium text-muted">{group.title}</h3>
           <ul>
             {group.items.map(([label, keys]) => (
-              <li
-                key={label}
-                className="flex items-center justify-between gap-4 border-b border-border py-2 last:border-b-0"
-              >
-                <span className="text-sm text-text-normal">{label}</span>
-                <span className="flex items-center gap-1">
+              <li key={label} className="flex h-8 items-center justify-between gap-4">
+                <span className="truncate text-[13px] text-text">{label}</span>
+                <span className="flex shrink-0 items-center gap-1">
                   {keys.map((key) => (
                     <Keycap key={key}>{key}</Keycap>
                   ))}
@@ -49,23 +43,25 @@ export function ShortcutsDialog() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[80vh] w-[560px] max-w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg bg-surface-primary shadow-elevation-high data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95">
-          <div className="flex items-center justify-between p-4 pb-2">
-            <Dialog.Title className="text-xl font-bold text-header-primary">
-              Keyboard shortcuts
-            </Dialog.Title>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[80vh] w-[720px] max-w-[calc(100vw-32px)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl border border-line bg-raised shadow-float data-[state=open]:animate-in data-[state=open]:fade-in-0">
+          <div className="flex items-start justify-between border-b border-line px-6 pt-5 pb-4">
+            <div>
+              <Dialog.Title className="text-[17px] font-semibold text-text">
+                Keyboard shortcuts
+              </Dialog.Title>
+              <Dialog.Description className="mt-1 text-[13px] text-text-2">
+                Ctrl is Cmd on macOS.
+              </Dialog.Description>
+            </div>
             <Dialog.Close
               aria-label="Close"
-              className="flex size-8 items-center justify-center rounded-md text-interactive-normal hover:bg-surface-hover hover:text-interactive-hover"
+              className="flex size-8 items-center justify-center rounded-md text-muted transition-colors hover:bg-accent-soft hover:text-text"
             >
-              <X className="size-5" />
+              <X className="size-4" />
             </Dialog.Close>
           </div>
-          <Dialog.Description className="px-4 text-sm text-text-muted">
-            Ctrl is Cmd on macOS.
-          </Dialog.Description>
-          <div className="overflow-y-auto p-4">
+          <div className="overflow-y-auto px-6 py-5">
             <ShortcutList />
           </div>
         </Dialog.Content>

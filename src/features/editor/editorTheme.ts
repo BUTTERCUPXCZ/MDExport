@@ -2,54 +2,53 @@ import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { EditorView } from "@codemirror/view";
 import { tags as t } from "@lezer/highlight";
 
-/** Discord-styled CodeMirror theme. Colors come from CSS variables, so it follows light/dark. */
+/** CodeMirror theme for the "Proof" design system. Colors come from CSS tokens, so it follows light/dark. */
 export const editorTheme = EditorView.theme({
   "&": {
     height: "100%",
-    color: "var(--text-normal)",
-    backgroundColor: "var(--surface-primary)",
-    fontSize: "15px",
+    color: "var(--text)",
+    backgroundColor: "var(--canvas)",
+    fontSize: "14px",
   },
   "&.cm-focused": { outline: "none" },
   ".cm-scroller": {
-    fontFamily: '"Source Code Pro Variable", Consolas, "Andale Mono WT", monospace',
-    lineHeight: "1.6",
+    fontFamily: '"JetBrains Mono Variable", "Cascadia Code", Consolas, monospace',
+    lineHeight: "1.75",
   },
-  ".cm-content": { padding: "16px 0", caretColor: "var(--header-primary)" },
-  ".cm-line": { padding: "0 16px" },
-  ".cm-cursor, .cm-dropCursor": { borderLeftColor: "var(--header-primary)" },
+  ".cm-content": { padding: "20px 0 40px", caretColor: "var(--accent)" },
+  ".cm-line": { padding: "0 28px 0 12px" },
+  ".cm-cursor, .cm-dropCursor": { borderLeft: "2px solid var(--accent)" },
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection":
-    { backgroundColor: "var(--editor-selection)" },
-  ".cm-activeLine": { backgroundColor: "var(--surface-hover)" },
+    { backgroundColor: "var(--selection)" },
+  ".cm-activeLine": { backgroundColor: "var(--accent-soft)" },
   ".cm-gutters": {
-    backgroundColor: "var(--surface-primary)",
-    color: "var(--channel-default)",
+    backgroundColor: "var(--canvas)",
+    color: "var(--muted)",
     border: "none",
   },
-  ".cm-activeLineGutter": {
-    backgroundColor: "transparent",
-    color: "var(--interactive-hover)",
+  ".cm-activeLineGutter": { backgroundColor: "transparent", color: "var(--text)" },
+  ".cm-lineNumbers .cm-gutterElement": {
+    padding: "0 8px 0 20px",
+    minWidth: "44px",
+    fontSize: "12px",
+    fontVariantNumeric: "tabular-nums",
   },
-  ".cm-lineNumbers .cm-gutterElement": { padding: "0 4px 0 12px", minWidth: "32px" },
-  ".cm-placeholder": { color: "var(--text-muted)" },
-  ".cm-matchingBracket": {
-    backgroundColor: "var(--surface-selected)",
-    outline: "none",
-  },
+  ".cm-placeholder": { color: "var(--muted)" },
+  ".cm-matchingBracket": { backgroundColor: "var(--sunken)", outline: "none" },
 });
 
 const highlightStyle = HighlightStyle.define([
-  // Markdown structure
-  { tag: t.heading, color: "var(--header-primary)", fontWeight: "700" },
-  { tag: t.strong, color: "var(--header-primary)", fontWeight: "700" },
+  // Markdown structure: markup recedes, content stays in the text color.
+  { tag: t.heading, color: "var(--text)", fontWeight: "700" },
+  { tag: t.strong, fontWeight: "700" },
   { tag: t.emphasis, fontStyle: "italic" },
-  { tag: t.strikethrough, textDecoration: "line-through" },
-  { tag: t.link, color: "var(--text-link)" },
-  { tag: t.url, color: "var(--text-link)", textDecoration: "underline" },
-  { tag: t.quote, color: "var(--text-muted)" },
+  { tag: t.strikethrough, textDecoration: "line-through", color: "var(--muted)" },
+  { tag: t.link, color: "var(--accent)" },
+  { tag: t.url, color: "var(--muted)", textDecoration: "underline" },
+  { tag: t.quote, color: "var(--text-2)", fontStyle: "italic" },
   { tag: t.monospace, color: "var(--hl-string)" },
   { tag: [t.processingInstruction, t.contentSeparator], color: "var(--hl-markup)" },
-  { tag: t.list, color: "var(--primary)" },
+  { tag: t.list, color: "var(--accent)" },
 
   // Code inside fenced blocks
   { tag: t.comment, color: "var(--hl-comment)", fontStyle: "italic" },

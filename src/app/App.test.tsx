@@ -1,35 +1,34 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { appService } from "@/services/tauri/app";
 import { documentService } from "@/services/tauri/documents";
-import { docFile, renderAt, setupApp } from "@/test/renderApp";
+import { docFile, renderAt, renderEditor, setupApp } from "@/test/renderApp";
+
+const start = () => within(screen.getByRole("region", { name: "Start" }));
 
 describe("Home", () => {
   beforeEach(() => setupApp());
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows quick actions, recent documents and the version from Rust", async () => {
+  it("shows the library name, start actions and recent documents, newest first", async () => {
     await renderAt("/");
 
-    expect(screen.getByRole("heading", { level: 1, name: "Home" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^New document\s*Ctrl\+N$/ })).toBeInTheDocument();
-    const recent = screen.getByRole("heading", { name: "Recently edited — 4" }).parentElement!;
-    const names = within(recent)
+    expect(screen.getByRole("heading", { level: 1, name: "MDForge" })).toBeInTheDocument();
+    expect(start().getByRole("button", { name: /^New document\s*Ctrl N$/ })).toBeInTheDocument();
+    const names = within(screen.getByRole("region", { name: "Recently edited" }))
       .getAllByRole("button")
       .map((b) => b.textContent);
-    // Newest first.
+    expect(names).toHaveLength(4);
     expect(names[0]).toMatch(/^auth-flow/);
-    expect(screen.getByRole("status")).toHaveTextContent("No document open");
-    expect(await screen.findByText("v0.1.0 · Local")).toBeInTheDocument();
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
   });
 
-  it("shows a fallback when the version cannot be loaded", async () => {
-    vi.mocked(appService.getInfo).mockRejectedValue(new Error("IPC unavailable"));
-
+  it("offers to start writing when the library is empty", async () => {
+    setupApp({ listing: { root: "/lib", folders: [], documents: [], truncated: false } });
     await renderAt("/");
 
-    expect(await screen.findByTestId("app-version")).toHaveTextContent("Local");
+    expect(screen.getByRole("heading", { name: "Nothing here yet" })).toBeInTheDocument();
   });
 
   it("opens a recent document", async () => {
@@ -40,7 +39,7 @@ describe("Home", () => {
         docFile({ path: "/home/me/Documents/MDForge/backend/api.md", name: "api.md" }),
       );
     const router = await renderAt("/");
-    const recent = screen.getByRole("heading", { name: "Recently edited — 4" }).parentElement!;
+    const recent = screen.getByRole("region", { name: "Recently edited" });
 
     await user.click(within(recent).getByRole("button", { name: /^api/ }));
 
@@ -55,7 +54,7 @@ describe("Home", () => {
       .mockResolvedValue(docFile({ path: "/lib/Untitled.md", name: "Untitled.md", content: "" }));
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: /^New document\s*Ctrl\+N$/ }));
+    await user.click(start().getByRole("button", { name: /^New document/ }));
 
     expect(create).toHaveBeenCalledWith(undefined);
     expect(router.state.location.pathname).toMatch(/^\/editor\/[0-9a-f-]{36}$/);
@@ -67,11 +66,11 @@ describe("Home", () => {
     const openDialog = vi.spyOn(documentService, "openDialog").mockResolvedValueOnce(null);
     const router = await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: /Open file/ }));
+    await user.click(start().getByRole("button", { name: /Open file/ }));
     expect(router.state.location.pathname).toBe("/");
 
     openDialog.mockResolvedValueOnce(docFile());
-    await user.click(screen.getByRole("button", { name: /Open file/ }));
+    await user.click(start().getByRole("button", { name: /Open file/ }));
     expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
   });
 
@@ -83,7 +82,7 @@ describe("Home", () => {
     });
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: /Open file/ }));
+    await user.click(start().getByRole("button", { name: /Open file/ }));
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Couldn't open the file: Permission denied: /root/secret.md",
@@ -105,15 +104,16 @@ describe("Settings", () => {
 
   it("opens with Ctrl+, and closes with Esc back to the previous page", async () => {
     const user = userEvent.setup();
-    const router = await renderAt("/folder/backend");
+    const { router } = await renderEditor();
+    const editorPath = router.state.location.pathname;
 
     await user.keyboard("{Control>},{/Control}");
     expect(router.state.location.pathname).toBe("/settings");
-    expect(screen.getByRole("heading", { level: 1, name: "Library" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
     expect(await screen.findByText("/home/me/Documents/MDForge")).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
-    expect(router.state.location.pathname).toBe("/folder/backend");
+    expect(router.state.location.pathname).toBe(editorPath);
   });
 
   it("closes to Home when opened directly", async () => {
@@ -125,20 +125,22 @@ describe("Settings", () => {
     expect(router.state.location.pathname).toBe("/");
   });
 
-  it("only lists working sections, including every keybind", async () => {
-    const user = userEvent.setup();
+  it("shows the library folder, every keybind and the version from Rust", async () => {
     await renderAt("/settings");
-    const nav = screen.getByRole("navigation", { name: "Settings" });
 
-    expect(
-      within(nav)
-        .getAllByRole("button")
-        .map((b) => b.textContent),
-    ).toEqual(["Library", "Keybinds", "About"]);
-    expect(screen.queryByText(/coming soon/i)).not.toBeInTheDocument();
-
-    await user.click(within(nav).getByRole("button", { name: "Keybinds" }));
+    expect(screen.getAllByRole("region").map((r) => r.getAttribute("aria-label"))).toEqual(
+      expect.arrayContaining(["Library folder", "Keyboard shortcuts", "About"]),
+    );
     expect(screen.getByText("Quick switcher")).toBeInTheDocument();
+    expect(await screen.findByTestId("app-version")).toHaveTextContent("v0.1.0");
+  });
+
+  it("leaves the version out when it cannot be loaded", async () => {
+    vi.mocked(appService.getInfo).mockRejectedValue(new Error("IPC unavailable"));
+
+    await renderAt("/settings");
+
+    await waitFor(() => expect(screen.getByTestId("app-version")).toBeEmptyDOMElement());
   });
 });
 

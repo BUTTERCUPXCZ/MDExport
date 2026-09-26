@@ -50,7 +50,7 @@ export function LibrarySetupDialog() {
             disabled={busy}
             onClick={() => run(libraryService.chooseLocation)}
           >
-            <FolderOpen data-icon="inline-start" />
+            <FolderOpen />
             Choose folder…
           </Button>
           <Button disabled={busy} onClick={() => run(libraryService.useDefaultLocation)}>
@@ -59,15 +59,13 @@ export function LibrarySetupDialog() {
         </>
       }
     >
-      <div className="pt-2">
-        <div className="mb-2 text-xs font-bold tracking-wide text-header-secondary uppercase">
-          Default location
-        </div>
-        <div className="rounded-sm bg-surface-tertiary px-2.5 py-2 font-mono text-sm break-all text-text-normal">
+      <div className="pt-4">
+        <div className="mb-1.5 block text-[12.5px] font-medium text-text-2">Default location</div>
+        <div className="rounded-md border border-line bg-sunken px-3 py-2 font-mono text-[12.5px] break-all text-text">
           {defaultPath ?? "…"}
         </div>
         {error && (
-          <p role="alert" className="mt-2 text-sm text-destructive">
+          <p role="alert" className="mt-2 text-[13px] text-danger">
             {error}
           </p>
         )}

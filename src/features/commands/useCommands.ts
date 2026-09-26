@@ -4,7 +4,7 @@ import { useDocumentsStore } from "@/features/documents/documentsStore";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { EXPORT_FORMATS, useExport } from "@/features/export/useExport";
 import { refreshLibrary } from "@/features/library/libraryStore";
-import { useUiStore } from "@/features/ui/uiStore";
+import { STAGES, useUiStore } from "@/features/ui/uiStore";
 
 export interface Command {
   id: string;
@@ -23,7 +23,7 @@ export function useCommands(): Command[] {
     documentId ? s.documents[documentId]?.path : undefined,
   );
   const hasDocument = Boolean(documentPath);
-  const { setViewMode, setShortcutsOpen, setCreateFolderOpen, setRenamingPath } =
+  const { setStage, setExportFormat, setShortcutsOpen, setCreateFolderOpen, setRenamingPath } =
     useUiStore.getState();
 
   return useMemo(() => {
@@ -31,7 +31,7 @@ export function useCommands(): Command[] {
       { id: "new", label: "New document", shortcut: "Ctrl+N", run: () => void newDocument() },
       { id: "open", label: "Open file…", shortcut: "Ctrl+O", run: () => void openDocument() },
       { id: "folder", label: "New folder…", run: () => setCreateFolderOpen(true) },
-      { id: "home", label: "Go to Home", run: () => void navigate({ to: "/" }) },
+      { id: "home", label: "Go to library home", run: () => void navigate({ to: "/" }) },
       { id: "refresh", label: "Refresh library", run: () => void refreshLibrary() },
       {
         id: "settings",
@@ -69,12 +69,17 @@ export function useCommands(): Command[] {
           label: `Export as ${label}`,
           run: () => {
             const doc = useDocumentsStore.getState().documents[documentId];
-            if (doc) void exportDocument(doc, format);
+            if (!doc) return;
+            setExportFormat(format);
+            setStage("deliver");
+            void exportDocument(doc, format);
           },
         })),
-        { id: "view-editor", label: "View: Editor only", run: () => setViewMode("editor") },
-        { id: "view-split", label: "View: Split", run: () => setViewMode("split") },
-        { id: "view-preview", label: "View: Preview only", run: () => setViewMode("preview") },
+        ...STAGES.map(({ stage, label }) => ({
+          id: `stage-${stage}`,
+          label: `Stage: ${label}`,
+          run: () => setStage(stage),
+        })),
       );
     }
     return commands;
@@ -88,7 +93,8 @@ export function useCommands(): Command[] {
     openDocument,
     setCreateFolderOpen,
     setRenamingPath,
+    setExportFormat,
     setShortcutsOpen,
-    setViewMode,
+    setStage,
   ]);
 }

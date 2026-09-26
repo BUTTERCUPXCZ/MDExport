@@ -1,45 +1,37 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
-import { FileQuestion, FolderOpen, Hash } from "lucide-react";
+import { FolderOpen } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { EmptyState } from "@/components/layout/EmptyState";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ConflictDialog } from "@/features/documents/ConflictDialog";
 import { DeleteDocumentDialog } from "@/features/documents/DeleteDocumentDialog";
 import {
-  isDirty,
   useDocumentsStore,
   useOpenDocument,
   type OpenDocument,
 } from "@/features/documents/documentsStore";
-import { EditorActions } from "@/features/documents/EditorActions";
-import { ExportMenu } from "@/features/export/ExportMenu";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { MarkdownEditor } from "@/features/editor/MarkdownEditor";
 import { MarkdownPreview } from "@/features/editor/MarkdownPreview";
 import { useMarkdownPreview } from "@/features/editor/useMarkdownPreview";
-import { ViewModeToggle } from "@/features/editor/ViewModeToggle";
 import { entryForPath } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
-import { useUiStore } from "@/features/ui/uiStore";
 import { showError } from "@/features/notices/noticeStore";
+import { DeliverPanel } from "@/features/stages/DeliverPanel";
+import { StageBar } from "@/features/stages/StageBar";
+import { useUiStore } from "@/features/ui/uiStore";
 import { cn } from "@/lib/utils";
 import { toAppError } from "@/types/document";
-
-const stripExtension = (name: string) => name.replace(/\.(md|markdown)$/i, "");
 
 function DocumentEditor({ doc }: { doc: OpenDocument }) {
   const navigate = useNavigate();
   const { setContent, save, saveAs, reload, clearConflict, remove } = useDocumentsStore();
-  const viewMode = useUiStore((s) => s.viewMode);
-  const setViewMode = useUiStore((s) => s.setViewMode);
+  const stage = useUiStore((s) => s.stage);
   const listing = useLibraryStore((s) => s.listing);
   const entry = entryForPath(listing, doc.path);
-  // Topic: path inside the library ("backend / handovers / auth-flow.md"), or the full path.
   const location = entry ? entry.relativePath.split("/").join(" / ") : doc.path;
   const [confirmDelete, setConfirmDelete] = useState(false);
   const preview = useMarkdownPreview(doc.content);
-  const dirty = isDirty(doc);
 
   const onChange = useCallback((value: string) => setContent(doc.id, value), [doc.id, setContent]);
 
@@ -67,30 +59,23 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
 
   return (
     <>
-      <PageHeader
-        icon={<Hash />}
-        title={stripExtension(doc.name) + (dirty ? " •" : "")}
-        topic={location}
-        actions={
-          <>
-            <ViewModeToggle value={viewMode} onChange={setViewMode} />
-            <span aria-hidden className="h-6 w-px bg-surface-selected" />
-            <EditorActions
-              canSave={dirty && doc.saveState !== "saving"}
-              onSave={() => void save(doc.id)}
-              onSaveAs={() => void saveAs(doc.id)}
-              onRename={() => useUiStore.getState().setRenamingPath(doc.path)}
-              onDelete={() => setConfirmDelete(true)}
-            />
-            <span aria-hidden className="h-6 w-px bg-surface-selected" />
-            <ExportMenu doc={doc} />
-          </>
-        }
+      <StageBar
+        doc={doc}
+        location={location}
+        onSave={() => void save(doc.id)}
+        onSaveAs={() => void saveAs(doc.id)}
+        onRename={() => useUiStore.getState().setRenamingPath(doc.path)}
+        onDelete={() => setConfirmDelete(true)}
       />
       <div className="flex min-h-0 flex-1">
+        {/* The editor stays mounted in Deliver so undo history and cursor survive. */}
         <section
           aria-label="Markdown source"
-          className={cn("min-w-0 flex-1", viewMode === "preview" && "hidden")}
+          className={cn(
+            "min-w-0 flex-1 bg-canvas",
+            stage === "proof" && "border-r border-line",
+            stage === "deliver" && "hidden",
+          )}
         >
           {/* Remount when content is replaced from disk (reload). */}
           <MarkdownEditor
@@ -99,16 +84,15 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
             onChange={onChange}
           />
         </section>
-        {viewMode === "split" && <div aria-hidden className="w-px shrink-0 bg-surface-selected" />}
-        <section
-          aria-label="Rendered preview"
-          className={cn(
-            "min-w-0 flex-1 overflow-y-auto bg-surface-tertiary px-4",
-            viewMode === "editor" && "hidden",
-          )}
-        >
-          <MarkdownPreview preview={preview} />
-        </section>
+        {stage !== "write" && (
+          <section
+            aria-label="Rendered preview"
+            className="min-w-0 flex-1 overflow-y-auto bg-sunken px-6"
+          >
+            <MarkdownPreview preview={preview} />
+          </section>
+        )}
+        {stage === "deliver" && <DeliverPanel doc={doc} />}
       </div>
 
       <ConflictDialog
@@ -135,22 +119,18 @@ function DocumentEditor({ doc }: { doc: OpenDocument }) {
 function DocumentNotOpen() {
   const { openDocument } = useDocumentCommands();
   return (
-    <>
-      <PageHeader icon={<Hash />} title="No document" />
-      <div className="flex-1 overflow-y-auto">
-        <EmptyState
-          icon={<FileQuestion />}
-          title="This document isn't open"
-          description="It may have been closed or moved to the trash. Open a file to keep working."
-          actions={
-            <Button onClick={() => void openDocument()}>
-              <FolderOpen data-icon="inline-start" />
-              Open file
-            </Button>
-          }
-        />
-      </div>
-    </>
+    <div className="flex-1 overflow-y-auto">
+      <EmptyState
+        title="This document isn't open"
+        description="It may have been closed or moved to the trash. Pick one from the library, or open a file."
+        actions={
+          <Button variant="secondary" onClick={() => void openDocument()}>
+            <FolderOpen />
+            Open file…
+          </Button>
+        }
+      />
+    </div>
   );
 }
 

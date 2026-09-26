@@ -1,4 +1,4 @@
-import { Hash, TerminalSquare } from "lucide-react";
+import { CornerDownRight, FileText, Search } from "lucide-react";
 import { Dialog } from "radix-ui";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useCommands, type Command } from "@/features/commands/useCommands";
@@ -95,47 +95,51 @@ function QuickSwitcherDialog() {
   return (
     <Dialog.Root open onOpenChange={setOpen}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/70" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-overlay" />
         <Dialog.Content
           aria-describedby={undefined}
-          className="fixed top-[18%] left-1/2 z-50 w-[570px] max-w-[calc(100vw-32px)] -translate-x-1/2 rounded-lg bg-surface-secondary p-4 shadow-elevation-high"
+          className="fixed top-[16%] left-1/2 z-50 w-[580px] max-w-[calc(100vw-32px)] -translate-x-1/2 overflow-hidden rounded-xl border border-line bg-raised shadow-float"
         >
           <Dialog.Title className="sr-only">Quick switcher</Dialog.Title>
-          <input
-            autoFocus
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setSelected(0);
-            }}
-            onKeyDown={onKeyDown}
-            placeholder="Where would you like to go?"
-            aria-label="Search documents and commands"
-            role="combobox"
-            aria-expanded
-            aria-controls="quick-switcher-results"
-            aria-activedescendant={results[selected] ? `qs-${selected}` : undefined}
-            className="h-[70px] w-full rounded-md bg-surface-tertiary px-4 text-lg text-header-primary placeholder:text-text-muted focus:outline-none"
-          />
+          <div className="flex items-center gap-3 border-b border-line px-4">
+            <Search aria-hidden className="size-4 shrink-0 text-muted" />
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setSelected(0);
+              }}
+              onKeyDown={onKeyDown}
+              placeholder="Find a document, or type > for commands"
+              aria-label="Search documents and commands"
+              role="combobox"
+              aria-expanded
+              aria-controls="quick-switcher-results"
+              aria-activedescendant={results[selected] ? `qs-${selected}` : undefined}
+              className="h-12 w-full bg-transparent text-[15px] text-text placeholder:text-muted focus-visible:outline-none"
+            />
+          </div>
 
           <ul
             ref={listRef}
             id="quick-switcher-results"
             role="listbox"
             aria-label="Results"
-            className="mt-3 max-h-[340px] overflow-y-auto"
+            className="max-h-[360px] overflow-y-auto p-1.5"
           >
             {results.length === 0 && (
-              <li className="px-2 py-6 text-center text-sm text-text-muted">
-                No documents or commands match “{query}”.
+              <li className="px-3 py-6 text-center text-[13px] text-muted">
+                Nothing matches “{query}”.
               </li>
             )}
             {results.map((result, index) => {
               const isDoc = result.kind === "document";
               const label = isDoc ? stem(result.entry.name) : result.command.label;
               const detail = isDoc
-                ? folderOf(result.entry.relativePath) || "Home"
+                ? folderOf(result.entry.relativePath).split("/").join(" / ")
                 : result.command.shortcut;
+              const Icon = isDoc ? FileText : CornerDownRight;
               return (
                 <li
                   key={isDoc ? result.entry.path : result.command.id}
@@ -146,18 +150,20 @@ function QuickSwitcherDialog() {
                   onMouseMove={() => setSelected(index)}
                   onClick={() => choose(result)}
                   className={cn(
-                    "flex h-[34px] cursor-pointer items-center gap-2 rounded-md px-2 text-base font-medium text-interactive-normal",
-                    index === selected && "bg-surface-selected text-interactive-active",
+                    "flex h-9 cursor-pointer items-center gap-2.5 rounded-md px-2.5 text-[13.5px] text-text-2",
+                    index === selected && "bg-accent-soft text-text",
                   )}
                 >
-                  {isDoc ? (
-                    <Hash className="size-5 shrink-0 text-channel-default" />
-                  ) : (
-                    <TerminalSquare className="size-5 shrink-0 text-channel-default" />
-                  )}
+                  <Icon
+                    aria-hidden
+                    className={cn(
+                      "size-4 shrink-0 text-muted",
+                      index === selected && "text-accent",
+                    )}
+                  />
                   <span className="truncate">{label}</span>
                   {detail && (
-                    <span className="ml-auto shrink-0 truncate pl-4 text-xs font-semibold text-text-muted uppercase">
+                    <span className="ml-auto shrink-0 truncate pl-4 text-[12px] text-muted">
                       {detail}
                     </span>
                   )}
@@ -166,10 +172,11 @@ function QuickSwitcherDialog() {
             })}
           </ul>
 
-          <p className="mt-3 text-xs text-text-muted">
-            <span className="font-bold text-success uppercase">Protip:</span> Start with{" "}
-            <kbd className="font-semibold text-header-secondary">&gt;</kbd> to search commands only.
-            <span className="float-right">↑↓ to navigate · Enter to open · Esc to close</span>
+          <p className="flex justify-between border-t border-line px-4 py-2 text-[12px] text-muted">
+            <span>
+              Start with <kbd className="font-mono text-text-2">&gt;</kbd> for commands only
+            </span>
+            <span>↑↓ move · Enter open · Esc close</span>
           </p>
         </Dialog.Content>
       </Dialog.Portal>

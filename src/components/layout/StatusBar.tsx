@@ -1,42 +1,26 @@
-import { useParams } from "@tanstack/react-router";
-import { isDirty, useOpenDocument, type OpenDocument } from "@/features/documents/documentsStore";
 import { useEditorStatus } from "@/features/editor/editorStatus";
+import { useActiveDocument } from "@/features/documents/useActiveDocument";
 
-function saveLabel(doc: OpenDocument): { text: string; className: string } {
-  if (doc.saveState === "saving") return { text: "Saving…", className: "" };
-  if (doc.saveState === "error") return { text: "Save failed", className: "text-destructive" };
-  if (isDirty(doc)) return { text: "Unsaved changes", className: "text-warning" };
-  return { text: "Saved", className: "text-success" };
-}
-
+/** Slim footer while a document is open: cursor position and length. */
 export function StatusBar() {
   const editor = useEditorStatus();
-  const { documentId } = useParams({ strict: false });
-  const doc = useOpenDocument(documentId ?? "");
-  const save = doc ? saveLabel(doc) : null;
+  const doc = useActiveDocument();
+  if (!doc || !editor) return null;
+
+  const minutes = Math.max(1, Math.round(editor.words / 230));
 
   return (
     <footer
-      role="status"
-      className="flex h-6 shrink-0 items-center justify-between bg-surface-secondary-alt px-3 text-xs text-text-muted"
+      aria-label="Document status"
+      className="flex h-6 shrink-0 items-center justify-end gap-4 border-t border-line bg-canvas px-4 text-[11.5px] text-muted tabular-nums"
     >
-      <span className="flex items-center gap-1.5">
-        <span aria-hidden className="size-2 rounded-full bg-success" />
-        Ready
+      <span>
+        Ln {editor.line}, Col {editor.column}
       </span>
-      {editor && save ? (
-        <span className="flex items-center gap-3">
-          <span>
-            Ln {editor.line}, Col {editor.column}
-          </span>
-          <span>
-            {editor.words} {editor.words === 1 ? "word" : "words"}
-          </span>
-          <span className={save.className}>{save.text}</span>
-        </span>
-      ) : (
-        <span>No document open</span>
-      )}
+      <span>
+        {editor.words} {editor.words === 1 ? "word" : "words"}
+      </span>
+      <span>{minutes} min read</span>
     </footer>
   );
 }

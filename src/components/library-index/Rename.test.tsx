@@ -13,7 +13,7 @@ import {
   setupApp,
 } from "@/test/renderApp";
 
-const sidebar = () => screen.getByRole("navigation", { name: "Main" });
+const sidebar = () => screen.getByRole("navigation", { name: "Documents" });
 const AUTH_FLOW = `${LIBRARY}/backend/handovers/auth-flow.md`;
 const RENAMED = `${LIBRARY}/backend/handovers/login-flow.md`;
 
@@ -50,7 +50,7 @@ describe("Renaming documents", () => {
     const rename = vi
       .spyOn(documentService, "rename")
       .mockResolvedValue({ path: RENAMED, name: "login-flow.md" });
-    await renderAt("/folder/backend");
+    await renderAt("/");
     vi.mocked(libraryService.list).mockResolvedValue(listingAfterRename());
 
     const menu = await openContextMenu(user, "auth-flow");
@@ -71,7 +71,7 @@ describe("Renaming documents", () => {
   it("Esc cancels, and an unchanged name does nothing", async () => {
     const user = userEvent.setup();
     const rename = vi.spyOn(documentService, "rename");
-    await renderAt("/folder/backend");
+    await renderAt("/");
 
     await user.click(
       within(await openContextMenu(user, "api")).getByRole("menuitem", { name: /Rename/ }),
@@ -94,7 +94,7 @@ describe("Renaming documents", () => {
       .spyOn(documentService, "rename")
       .mockRejectedValueOnce({ kind: "alreadyExists", message: "Already exists: payments.md" })
       .mockResolvedValueOnce({ path: RENAMED, name: "login-flow.md" });
-    await renderAt("/folder/backend");
+    await renderAt("/");
 
     await user.click(
       within(await openContextMenu(user, "auth-flow")).getByRole("menuitem", { name: /Rename/ }),
@@ -128,7 +128,7 @@ describe("Renaming documents", () => {
     await user.type(field, "login-flow{Enter}");
 
     await waitFor(() =>
-      expect(screen.getByRole("heading", { level: 1, name: "login-flow •" })).toBeInTheDocument(),
+      expect(screen.getByRole("heading", { level: 1, name: "login-flow" })).toBeInTheDocument(),
     );
     expect(screen.getByText("backend / handovers / login-flow.md")).toBeInTheDocument();
     expect(useDocumentsStore.getState().documents[id]).toMatchObject({
@@ -138,11 +138,12 @@ describe("Renaming documents", () => {
     });
   });
 
-  it("the editor header button and the quick switcher start a rename too", async () => {
+  it("the document actions menu and the quick switcher start a rename too", async () => {
     const user = userEvent.setup();
     await renderEditor(docFile({ path: AUTH_FLOW, name: "auth-flow.md" }));
 
-    await user.click(screen.getByRole("button", { name: "Rename (F2)" }));
+    await user.click(screen.getByRole("button", { name: "Document actions" }));
+    await user.click(screen.getByRole("menuitem", { name: /Rename/ }));
     expect(within(sidebar()).getByRole("textbox", { name: "Document name" })).toHaveValue(
       "auth-flow",
     );
@@ -155,7 +156,7 @@ describe("Renaming documents", () => {
 
   it("Copy path puts the file path on the clipboard", async () => {
     const user = userEvent.setup();
-    await renderAt("/folder/backend");
+    await renderAt("/");
 
     await user.click(
       within(await openContextMenu(user, "api")).getByRole("menuitem", { name: /Copy path/ }),

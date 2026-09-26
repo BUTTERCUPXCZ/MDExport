@@ -62,9 +62,9 @@ export function setupApp({
     shortcutsOpen: false,
     createFolderOpen: false,
     renamingPath: null,
-    exportMenuOpen: false,
     exporting: null,
-    viewMode: "split",
+    stage: "proof",
+    exportFormat: "pdf",
   });
 
   vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });

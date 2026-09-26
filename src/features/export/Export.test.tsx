@@ -7,22 +7,27 @@ import { docFile, LIBRARY, renderEditor, setupApp } from "@/test/renderApp";
 
 const PATH = `${LIBRARY}/Bug Fix.md`;
 
+const panel = () => within(screen.getByRole("complementary", { name: "Export" }));
+
+async function openDeliver(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("tab", { name: "Deliver" }));
+  return panel();
+}
+
 describe("Export", () => {
   beforeEach(() => setupApp());
   afterEach(() => vi.restoreAllMocks());
 
-  it("the header Export menu offers PDF, Word and HTML", async () => {
+  it("Deliver offers PDF, Word and HTML, with PDF picked", async () => {
     const user = userEvent.setup();
     await renderEditor();
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
+    const deliver = await openDeliver(user);
 
-    const menu = screen.getByRole("menu");
-    expect(
-      within(menu)
-        .getAllByRole("menuitem")
-        .map((i) => i.textContent),
-    ).toEqual(["PDF document.pdf", "Word document.docx", "HTML page.html"]);
+    const radios = deliver.getAllByRole("radio");
+    expect(radios.map((r) => (r as HTMLInputElement).value)).toEqual(["pdf", "docx", "html"]);
+    expect(deliver.getByRole("radio", { name: /PDF document/ })).toBeChecked();
+    expect(deliver.getByRole("button", { name: "Export PDF" })).toBeEnabled();
   });
 
   it("exports the editor's current text, including unsaved or pasted edits", async () => {
@@ -34,8 +39,7 @@ describe("Export", () => {
     const { id } = await renderEditor();
     useDocumentsStore.getState().setContent(id, "# Pasted\n\nFrom the clipboard");
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
-    await user.click(screen.getByRole("menuitem", { name: /PDF document/ }));
+    await user.click((await openDeliver(user)).getByRole("button", { name: "Export PDF" }));
 
     expect(exportFn).toHaveBeenCalledWith(
       "# Pasted\n\nFrom the clipboard",
@@ -50,13 +54,14 @@ describe("Export", () => {
     expect(open).toHaveBeenCalledWith(`${LIBRARY}/Bug Fix.pdf`);
   });
 
-  it("Ctrl+E opens the export menu", async () => {
+  it("Ctrl+E jumps to Deliver; the picked format is exported", async () => {
     const user = userEvent.setup();
     const exportFn = vi.spyOn(exportService, "export").mockResolvedValue(null);
     await renderEditor();
 
     await user.keyboard("{Control>}e{/Control}");
-    await user.click(screen.getByRole("menuitem", { name: /Word document/ }));
+    await user.click(panel().getByRole("radio", { name: /Word document/ }));
+    await user.click(panel().getByRole("button", { name: "Export Word" }));
 
     expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH);
   });
@@ -65,11 +70,12 @@ describe("Export", () => {
     const user = userEvent.setup();
     vi.spyOn(exportService, "export").mockResolvedValue(null);
     await renderEditor();
+    const deliver = await openDeliver(user);
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
-    await user.click(screen.getByRole("menuitem", { name: /HTML page/ }));
+    await user.click(deliver.getByRole("radio", { name: /HTML page/ }));
+    await user.click(deliver.getByRole("button", { name: "Export HTML" }));
 
-    await waitFor(() => expect(screen.getByRole("button", { name: "Export" })).toBeEnabled());
+    await waitFor(() => expect(deliver.getByRole("button", { name: "Export HTML" })).toBeEnabled());
     expect(screen.queryByRole("status", { name: "Notification" })).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
@@ -82,8 +88,7 @@ describe("Export", () => {
     });
     await renderEditor();
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
-    await user.click(screen.getByRole("menuitem", { name: /PDF document/ }));
+    await user.click((await openDeliver(user)).getByRole("button", { name: "Export PDF" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Export failed: Permission denied: /root/out.pdf",
@@ -95,13 +100,13 @@ describe("Export", () => {
     let finish!: (value: null) => void;
     vi.spyOn(exportService, "export").mockReturnValue(new Promise((r) => (finish = r)));
     await renderEditor();
+    const deliver = await openDeliver(user);
 
-    await user.click(screen.getByRole("button", { name: "Export" }));
-    await user.click(screen.getByRole("menuitem", { name: /PDF document/ }));
+    await user.click(deliver.getByRole("button", { name: "Export PDF" }));
 
-    expect(screen.getByRole("button", { name: "Exporting…" })).toBeDisabled();
+    expect(deliver.getByRole("button", { name: "Exporting…" })).toBeDisabled();
     finish(null);
-    await waitFor(() => expect(screen.getByRole("button", { name: "Export" })).toBeEnabled());
+    await waitFor(() => expect(deliver.getByRole("button", { name: "Export PDF" })).toBeEnabled());
   });
 
   it("is also available from the quick switcher", async () => {
@@ -113,5 +118,6 @@ describe("Export", () => {
     await user.type(screen.getByRole("combobox"), ">export word{Enter}");
 
     expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH);
+    expect(screen.getByRole("tab", { name: "Deliver" })).toHaveAttribute("aria-selected", "true");
   });
 });

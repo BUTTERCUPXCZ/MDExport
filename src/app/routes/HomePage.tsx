@@ -1,22 +1,21 @@
-import { FilePlus2, FolderOpen, House, Keyboard, Search } from "lucide-react";
+import { FilePlus2, FolderOpen, Keyboard, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/layout/EmptyState";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
-import { DocumentList } from "@/features/library/DocumentList";
-import { recentDocuments } from "@/features/library/libraryModel";
+import { folderOf, recentDocuments, relativeTime, stem } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
 import { useUiStore } from "@/features/ui/uiStore";
+import { useNow } from "@/hooks/useNow";
 
-function ActionTile({
+function StartAction({
   icon,
-  title,
+  label,
   shortcut,
   onClick,
 }: {
   icon: ReactNode;
-  title: string;
+  label: string;
   shortcut: string;
   onClick: () => void;
 }) {
@@ -24,71 +23,110 @@ function ActionTile({
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center gap-3 rounded-lg bg-surface-secondary p-4 text-left transition-colors hover:bg-surface-hover [&_svg]:size-6"
+      className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-left text-[13.5px] text-text-2 transition-colors hover:bg-panel hover:text-text [&_svg]:size-4 [&_svg]:text-muted"
     >
-      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-tertiary text-interactive-normal">
-        {icon}
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate font-semibold text-header-primary">{title}</span>
-        <span className="block text-xs text-text-muted">{shortcut}</span>
-      </span>
+      {icon}
+      <span className="flex-1">{label}</span>
+      <kbd className="font-sans text-[12px] text-muted">{shortcut}</kbd>
     </button>
   );
 }
 
+/** Library home: start something, or pick up where you left off. */
 export function HomePage() {
-  const { newDocument, openDocument } = useDocumentCommands();
-  const documents = useLibraryStore((s) => s.listing?.documents);
+  const { newDocument, openDocument, openPath } = useDocumentCommands();
+  const listing = useLibraryStore((s) => s.listing);
   const { setQuickSwitcherOpen, setShortcutsOpen } = useUiStore.getState();
-  const recent = recentDocuments(documents ?? [], 10);
+  const recent = recentDocuments(listing?.documents ?? [], 8);
+  const libraryName = listing?.root.split(/[\\/]/).pop() || "Library";
+  const now = useNow();
+
+  if (listing && listing.documents.length === 0) {
+    return (
+      <div className="flex-1 overflow-y-auto">
+        <EmptyState
+          title="Nothing here yet"
+          description="Write something new, or paste Markdown into a blank document and export it as PDF, Word or HTML."
+          actions={
+            <>
+              <Button onClick={() => void newDocument()}>
+                <FilePlus2 />
+                New document
+              </Button>
+              <Button variant="secondary" onClick={() => void openDocument()}>
+                <FolderOpen />
+                Open file…
+              </Button>
+            </>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <PageHeader icon={<House />} title="Home" topic="Recent documents and quick actions" />
-      <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="mx-auto max-w-3xl space-y-8">
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <ActionTile
-              icon={<FilePlus2 />}
-              title="New document"
-              shortcut="Ctrl+N"
-              onClick={() => void newDocument()}
-            />
-            <ActionTile
-              icon={<FolderOpen />}
-              title="Open file"
-              shortcut="Ctrl+O"
-              onClick={() => void openDocument()}
-            />
-            <ActionTile
-              icon={<Search />}
-              title="Find document"
-              shortcut="Ctrl+K"
-              onClick={() => setQuickSwitcherOpen(true)}
-            />
-            <ActionTile
-              icon={<Keyboard />}
-              title="Shortcuts"
-              shortcut="Ctrl+/"
-              onClick={() => setShortcutsOpen(true)}
-            />
-          </div>
+    <div className="flex-1 overflow-y-auto">
+      <div className="mx-auto grid max-w-[880px] gap-12 px-8 py-14 md:grid-cols-[1fr_240px]">
+        <section aria-labelledby="recent-heading" className="min-w-0">
+          <h1 className="text-[22px] font-semibold tracking-[-0.015em] text-text">{libraryName}</h1>
+          <h2 id="recent-heading" className="mt-8 mb-2 text-[13px] font-medium text-muted">
+            Recently edited
+          </h2>
+          <ul className="border-t border-line">
+            {recent.map((doc) => {
+              const folder = folderOf(doc.relativePath);
+              return (
+                <li key={doc.path} className="border-b border-line">
+                  <button
+                    type="button"
+                    onClick={() => void openPath(doc.path)}
+                    className="group flex w-full items-baseline gap-4 py-2.5 text-left"
+                  >
+                    <span className="min-w-0 flex-1 truncate text-[14px] text-text group-hover:text-accent">
+                      {stem(doc.name)}
+                      {folder && (
+                        <span className="ml-2 text-[12.5px] text-muted">
+                          {folder.split("/").join(" / ")}
+                        </span>
+                      )}
+                    </span>
+                    <span className="shrink-0 text-[12.5px] text-muted tabular-nums">
+                      {relativeTime(doc.modifiedMs, now)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
 
-          {recent.length > 0 ? (
-            <DocumentList title="Recently edited" documents={recent} />
-          ) : (
-            documents && (
-              <EmptyState
-                icon={<FilePlus2 />}
-                title="Your library is empty"
-                description="Create your first document, or add folders with the + button in the left rail."
-                actions={<Button onClick={() => void newDocument()}>New document</Button>}
-              />
-            )
-          )}
-        </div>
+        <section aria-label="Start" className="flex flex-col md:pt-[68px]">
+          <StartAction
+            icon={<FilePlus2 />}
+            label="New document"
+            shortcut="Ctrl N"
+            onClick={() => void newDocument()}
+          />
+          <StartAction
+            icon={<FolderOpen />}
+            label="Open file…"
+            shortcut="Ctrl O"
+            onClick={() => void openDocument()}
+          />
+          <StartAction
+            icon={<Search />}
+            label="Find a document"
+            shortcut="Ctrl K"
+            onClick={() => setQuickSwitcherOpen(true)}
+          />
+          <StartAction
+            icon={<Keyboard />}
+            label="Keyboard shortcuts"
+            shortcut="Ctrl /"
+            onClick={() => setShortcutsOpen(true)}
+          />
+        </section>
       </div>
-    </>
+    </div>
   );
 }

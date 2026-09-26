@@ -1,19 +1,17 @@
 import { Outlet } from "@tanstack/react-router";
-import { ServerRail } from "@/components/layout/ServerRail";
 import { StatusBar } from "@/components/layout/StatusBar";
-import { Sidebar } from "@/components/sidebar/Sidebar";
+import { LibraryIndex } from "@/components/library-index/LibraryIndex";
 import { NoticeBar } from "@/features/notices/NoticeBar";
 
 /**
- * Discord-style layout:
- * [rail 72px] [sidebar 240px] [main: page header + content + status bar]
+ * [library index 264px] [main: notice + page + status]
+ * The index is the only navigation; every page renders in the main column.
  */
 export function AppShell() {
   return (
     <div className="flex h-full">
-      <ServerRail />
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col bg-surface-primary">
+      <LibraryIndex />
+      <div className="flex min-w-0 flex-1 flex-col bg-canvas">
         <NoticeBar />
         <main className="flex min-h-0 flex-1 flex-col">
           <Outlet />

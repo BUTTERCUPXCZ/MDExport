@@ -1,9 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
-import { sidebarOrder } from "@/features/library/libraryModel";
+import { useActiveDocument } from "@/features/documents/useActiveDocument";
+import { libraryOrder } from "@/features/library/libraryModel";
 import { useLibraryStore } from "@/features/library/libraryStore";
-import { useActiveServer } from "@/features/library/useActiveServer";
 import { useUiStore } from "@/features/ui/uiStore";
 
 /**
@@ -15,21 +15,21 @@ import { useUiStore } from "@/features/ui/uiStore";
 export function useGlobalShortcuts() {
   const navigate = useNavigate();
   const { newDocument, openDocument, openPath } = useDocumentCommands();
-  const { server, activePath } = useActiveServer();
+  const activePath = useActiveDocument()?.path ?? null;
 
   // Latest values for the long-lived listener.
-  const latest = useRef({ server, activePath, openPath });
+  const latest = useRef({ activePath, openPath });
   useEffect(() => {
-    latest.current = { server, activePath, openPath };
+    latest.current = { activePath, openPath };
   });
 
   useEffect(() => {
-    /** Ctrl+PageUp / PageDown: previous / next document in the sidebar. */
+    /** Ctrl+PageUp / PageDown: previous / next document in the library index. */
     const stepDocument = (delta: number) => {
       const listing = useLibraryStore.getState().listing;
-      const { server, activePath, openPath } = latest.current;
+      const { activePath, openPath } = latest.current;
       if (!listing) return;
-      const order = sidebarOrder(listing, server);
+      const order = libraryOrder(listing);
       if (order.length === 0) return;
       const index = order.findIndex((d) => d.path === activePath);
       const next =
@@ -66,7 +66,7 @@ export function useGlobalShortcuts() {
             void navigate({ to: "/settings" });
             return true;
           case "\\":
-            ui.cycleViewMode();
+            ui.toggleWriteProof();
             return true;
           case "pageup":
             stepDocument(-1);
@@ -84,7 +84,7 @@ export function useGlobalShortcuts() {
             return true;
           case "e":
             if (!latest.current.activePath) return false;
-            ui.setExportMenuOpen(true);
+            ui.setStage("deliver");
             return true;
           case "s":
             return true;

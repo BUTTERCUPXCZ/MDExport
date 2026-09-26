@@ -7,16 +7,23 @@ import { markdownService } from "@/services/tauri/markdown";
 import { docFile, renderAt, renderEditor, setupApp } from "@/test/renderApp";
 
 const content = (id: string) => useDocumentsStore.getState().documents[id]?.content;
+const saveState = () => screen.getByRole("status");
+const index = () => screen.getByRole("navigation", { name: "Documents" });
+
+async function openActions(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: "Document actions" }));
+  return screen.getByRole("menu");
+}
 
 describe("Editor page", () => {
   beforeEach(() => setupApp());
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows the file's source and rendered preview side by side", async () => {
+  it("opens in Proof: the source beside the rendered page", async () => {
     await renderEditor();
 
     expect(screen.getByRole("heading", { level: 1, name: "Bug Fix" })).toBeInTheDocument();
-    expect(screen.getByText("Bug Fix.md")).toBeInTheDocument(); // header topic: path in library
+    expect(screen.getByText("Bug Fix.md")).toBeInTheDocument(); // path in the library
     expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent("# Bug Fix");
     const preview = screen.getByRole("article", { name: "Preview" });
     expect(await within(preview).findByRole("heading", { name: "Bug Fix" })).toBeInTheDocument();
@@ -29,17 +36,16 @@ describe("Editor page", () => {
     expect(screen.getByRole("heading", { level: 1, name: "notes" })).toBeInTheDocument();
   });
 
-  it("shows cursor, word count and save state in the status bar", async () => {
+  it("shows the save state in the header and cursor and length in the status bar", async () => {
     const { id } = await renderEditor();
-    const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("Ln 1, Col 1");
-    expect(status).toHaveTextContent("3 words");
-    expect(status).toHaveTextContent("Saved");
+    const footer = screen.getByRole("contentinfo", { name: "Document status" });
+    expect(footer).toHaveTextContent("Ln 1, Col 1");
+    expect(footer).toHaveTextContent("3 words");
+    expect(saveState()).toHaveTextContent("Saved");
 
     useDocumentsStore.getState().setContent(id, "# Bug Fix\n\nMore details");
 
-    await waitFor(() => expect(status).toHaveTextContent("Unsaved changes"));
-    expect(screen.getByRole("heading", { level: 1, name: "Bug Fix •" })).toBeInTheDocument();
+    await waitFor(() => expect(saveState()).toHaveTextContent("Unsaved"));
   });
 
   it("Ctrl+S saves with the version the editor last saw", async () => {
@@ -56,17 +62,24 @@ describe("Editor page", () => {
       "v1",
       false,
     );
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Saved"));
+    await waitFor(() => expect(saveState()).toHaveTextContent("Saved"));
   });
 
-  it("Save is disabled until there are unsaved changes", async () => {
+  it("Save in the actions menu is disabled until there are unsaved changes", async () => {
+    const user = userEvent.setup();
     const { id } = await renderEditor();
-    expect(screen.getByRole("button", { name: "Save (Ctrl+S)" })).toBeDisabled();
+    let menu = await openActions(user);
+    expect(within(menu).getByRole("menuitem", { name: /^Save\s*Ctrl S$/ })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    await user.keyboard("{Escape}");
 
     useDocumentsStore.getState().setContent(id, "changed");
 
-    await waitFor(() =>
-      expect(screen.getByRole("button", { name: "Save (Ctrl+S)" })).toBeEnabled(),
+    menu = await openActions(user);
+    expect(within(menu).getByRole("menuitem", { name: /^Save\s*Ctrl S$/ })).not.toHaveAttribute(
+      "aria-disabled",
     );
   });
 
@@ -139,7 +152,7 @@ describe("Editor page", () => {
 
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
       expect(content(id)).toBe("mine");
-      expect(screen.getByRole("status")).toHaveTextContent("Unsaved changes");
+      expect(saveState()).toHaveTextContent("Unsaved");
     });
   });
 
@@ -148,7 +161,9 @@ describe("Editor page", () => {
     const del = vi.spyOn(documentService, "delete").mockResolvedValue();
     const { router } = await renderEditor();
 
-    await user.click(screen.getByRole("button", { name: "Move to trash" }));
+    await user.click(
+      within(await openActions(user)).getByRole("menuitem", { name: "Move to trash" }),
+    );
     const dialog = screen.getByRole("alertdialog", { name: "Move “Bug Fix.md” to trash?" });
     await user.click(within(dialog).getByRole("button", { name: "Move to trash" }));
 
@@ -162,24 +177,25 @@ describe("Editor page", () => {
     expect(screen.getByText("This document isn't open")).toBeInTheDocument();
   });
 
-  it("switches between editor, split and preview views", async () => {
+  it("Write shows only the source; Deliver shows the page and export, keeping the editor", async () => {
     const user = userEvent.setup();
     await renderEditor();
     const source = screen.getByRole("region", { name: "Markdown source" });
-    const rendered = screen.getByRole("region", { name: "Rendered preview" });
 
-    await user.click(screen.getByRole("button", { name: "Preview only" }));
-    expect(source).toHaveClass("hidden");
-    expect(rendered).not.toHaveClass("hidden");
-
-    await user.click(screen.getByRole("button", { name: "Editor only" }));
+    await user.click(screen.getByRole("tab", { name: "Write" }));
     expect(source).not.toHaveClass("hidden");
-    expect(rendered).toHaveClass("hidden");
+    expect(screen.queryByRole("region", { name: "Rendered preview" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Deliver" }));
+    expect(source).toHaveClass("hidden");
+    expect(screen.getByRole("region", { name: "Rendered preview" })).toBeInTheDocument();
+    expect(screen.getByRole("complementary", { name: "Export" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Markdown source" })).toBe(source);
   });
 
-  it("highlights the open document in the sidebar and marks unsaved changes", async () => {
+  it("highlights the open document in the library index and marks unsaved changes", async () => {
     const { id } = await renderEditor();
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
+    const sidebar = index();
     expect(within(sidebar).getByRole("button", { name: "Bug Fix" })).toHaveAttribute(
       "aria-current",
       "page",
@@ -192,9 +208,9 @@ describe("Editor page", () => {
     ).toBeInTheDocument();
   });
 
-  it("shows files outside the library in their own sidebar section", async () => {
+  it("shows files outside the library in their own section", async () => {
     await renderEditor(docFile({ path: "/tmp/scratch.md", name: "scratch.md" }));
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
+    const sidebar = index();
 
     expect(within(sidebar).getByText("Outside library")).toBeInTheDocument();
     expect(within(sidebar).getByRole("button", { name: "scratch" })).toHaveAttribute(
@@ -207,10 +223,10 @@ describe("Editor page", () => {
   it("clears editor status when leaving the editor", async () => {
     const user = userEvent.setup();
     await renderEditor();
-    const sidebar = screen.getByRole("navigation", { name: "Main" });
+    const sidebar = index();
 
-    await user.click(within(sidebar).getByRole("link", { name: "Home" }));
+    await user.click(within(sidebar).getByRole("link", { name: "MDForge" }));
 
-    expect(screen.getByRole("status")).toHaveTextContent("No document open");
+    expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
   });
 });

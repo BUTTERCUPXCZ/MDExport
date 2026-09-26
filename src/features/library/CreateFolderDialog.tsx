@@ -1,4 +1,3 @@
-import { useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Modal, ModalCancel } from "@/components/layout/Modal";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { useUiStore } from "@/features/ui/uiStore";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
 
-/** "+" on the rail: creates a top-level folder (a new rail entry). */
+/** Library footer / command: creates a top-level folder in the library. */
 export function CreateFolderDialog() {
   const open = useUiStore((s) => s.createFolderOpen);
   // Mounted only while open, so the form starts empty every time.
@@ -16,7 +15,6 @@ export function CreateFolderDialog() {
 
 function CreateFolderModal() {
   const setOpen = useUiStore((s) => s.setCreateFolderOpen);
-  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -26,10 +24,9 @@ function CreateFolderModal() {
     setBusy(true);
     setError(null);
     try {
-      const folder = await libraryService.createFolder(name);
+      await libraryService.createFolder(name);
       await refreshLibrary();
       setOpen(false);
-      void navigate({ to: "/folder/$folder", params: { folder } });
     } catch (e) {
       setError(toAppError(e).message);
     } finally {
@@ -42,7 +39,7 @@ function CreateFolderModal() {
       open
       onOpenChange={setOpen}
       title="Create a folder"
-      description="Folders group related documents, e.g. one per project. Each folder gets its own icon in the left rail."
+      description="Folders group related documents, e.g. one per project. It appears in the library index."
       footer={
         <>
           <ModalCancel onClick={() => setOpen(false)} />
@@ -52,11 +49,8 @@ function CreateFolderModal() {
         </>
       }
     >
-      <form onSubmit={(e) => void submit(e)} className="pt-2">
-        <label
-          htmlFor="folder-name"
-          className="mb-2 block text-xs font-bold tracking-wide text-header-secondary uppercase"
-        >
+      <form onSubmit={(e) => void submit(e)} className="pt-4">
+        <label htmlFor="folder-name" className="mb-1.5 block text-[12.5px] font-medium text-text-2">
           Folder name
         </label>
         <input
@@ -66,10 +60,10 @@ function CreateFolderModal() {
           onChange={(e) => setName(e.target.value)}
           placeholder="e.g. backend"
           maxLength={64}
-          className="h-10 w-full rounded-[3px] bg-surface-tertiary px-2.5 text-base text-text-normal placeholder:text-text-muted focus:outline-none"
+          className="h-9 w-full rounded-md border border-line-strong bg-canvas px-2.5 text-[14px] text-text placeholder:text-muted focus-visible:border-accent focus-visible:outline-none"
         />
         {error && (
-          <p role="alert" className="mt-2 text-sm text-destructive">
+          <p role="alert" className="mt-2 text-[13px] text-danger">
             {error}
           </p>
         )}

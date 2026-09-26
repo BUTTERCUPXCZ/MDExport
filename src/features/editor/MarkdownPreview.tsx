@@ -29,7 +29,7 @@ export function MarkdownPreview({ preview }: MarkdownPreviewProps) {
 
   if (preview.status === "error") {
     return (
-      <p role="alert" className="p-6 text-destructive">
+      <p role="alert" className="p-6 text-[13px] text-danger">
         Preview failed to render.
       </p>
     );

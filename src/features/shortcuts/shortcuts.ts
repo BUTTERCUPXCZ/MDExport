@@ -1,12 +1,12 @@
-/** Every keyboard shortcut, shown in the Ctrl+/ sheet and Settings → Keybinds. */
+/** Every keyboard shortcut, shown in the Ctrl+/ sheet and Settings. */
 export const SHORTCUT_GROUPS = [
   {
     title: "Navigation",
     items: [
       ["Quick switcher", ["Ctrl", "K"]],
       ["Quick switcher (alternative)", ["Ctrl", "P"]],
-      ["Previous document in sidebar", ["Ctrl", "Page Up"]],
-      ["Next document in sidebar", ["Ctrl", "Page Down"]],
+      ["Previous document in library", ["Ctrl", "Page Up"]],
+      ["Next document in library", ["Ctrl", "Page Down"]],
       ["Settings", ["Ctrl", ","]],
       ["Keyboard shortcuts", ["Ctrl", "/"]],
     ],
@@ -19,13 +19,13 @@ export const SHORTCUT_GROUPS = [
       ["Save", ["Ctrl", "S"]],
       ["Save as", ["Ctrl", "Shift", "S"]],
       ["Rename document", ["F2"]],
-      ["Export (PDF, Word, HTML)", ["Ctrl", "E"]],
+      ["Deliver: export PDF, Word or HTML", ["Ctrl", "E"]],
     ],
   },
   {
     title: "Editor",
     items: [
-      ["Switch view (edit / split / preview)", ["Ctrl", "\\"]],
+      ["Switch between Write and Proof", ["Ctrl", "\\"]],
       ["Bold", ["Ctrl", "B"]],
       ["Italic", ["Ctrl", "I"]],
       ["Undo", ["Ctrl", "Z"]],

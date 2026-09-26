@@ -6,8 +6,7 @@ import { documentService } from "@/services/tauri/documents";
 import { libraryService } from "@/services/tauri/library";
 import { docFile, LIBRARY, renderAt, renderEditor, setupApp } from "@/test/renderApp";
 
-const rail = () => screen.getByRole("navigation", { name: "Folders" });
-const sidebar = () => screen.getByRole("navigation", { name: "Main" });
+const index = () => screen.getByRole("navigation", { name: "Documents" });
 
 /** Makes documentService.open return a file for whatever path is requested. */
 function openAnyPath() {
@@ -18,61 +17,46 @@ function openAnyPath() {
     );
 }
 
-describe("Folder rail", () => {
+describe("Library index", () => {
   beforeEach(() => setupApp());
   afterEach(() => vi.restoreAllMocks());
 
-  it("shows Home plus one entry per top-level library folder", async () => {
+  it("lists the whole library: root documents, then folders with counts", async () => {
     await renderAt("/");
 
-    expect(within(rail()).getByRole("link", { name: "Home" })).toHaveAttribute(
-      "aria-current",
-      "page",
+    const rows = within(index()).getAllByRole("button");
+    const names = rows.map((r) => r.getAttribute("aria-label") ?? r.textContent);
+    expect(names.indexOf("Readme")).toBeLessThan(names.findIndex((n) => /^backend/.test(n!)));
+    expect(within(index()).getByRole("button", { name: /^backend\s*2$/ })).toHaveAttribute(
+      "aria-expanded",
+      "true",
     );
-    expect(within(rail()).getByRole("link", { name: "backend" })).toHaveTextContent("B");
+    const handovers = within(index()).getByRole("group", { name: "handovers" });
+    expect(within(handovers).getByRole("button", { name: "auth-flow" })).toHaveTextContent("1m");
   });
 
-  it("selecting a folder shows its documents grouped by subfolder", async () => {
+  it("folders collapse and expand", async () => {
     const user = userEvent.setup();
-    const router = await renderAt("/");
-    expect(within(sidebar()).getByRole("button", { name: "Readme" })).toBeInTheDocument();
+    await renderAt("/");
+    const handovers = within(index()).getByRole("group", { name: "handovers" });
 
-    await user.click(within(rail()).getByRole("link", { name: "backend" }));
-
-    expect(router.state.location.pathname).toBe("/folder/backend");
-    expect(screen.getByRole("heading", { name: "Welcome to backend" })).toBeInTheDocument();
-    expect(within(sidebar()).getByRole("button", { name: "api" })).toBeInTheDocument();
-    const handovers = within(sidebar()).getByRole("region", { name: "handovers" });
-    expect(within(handovers).getByRole("button", { name: "auth-flow" })).toBeInTheDocument();
-    expect(within(sidebar()).queryByRole("button", { name: "Readme" })).not.toBeInTheDocument();
-  });
-
-  it("categories collapse and expand", async () => {
-    const user = userEvent.setup();
-    await renderAt("/folder/backend");
-    const handovers = within(sidebar()).getByRole("region", { name: "handovers" });
-
-    await user.click(within(handovers).getByRole("button", { name: "handovers" }));
+    await user.click(within(handovers).getByRole("button", { name: /^handovers/ }));
     expect(within(handovers).queryByRole("button", { name: "auth-flow" })).not.toBeInTheDocument();
 
-    await user.click(within(handovers).getByRole("button", { name: "handovers" }));
+    await user.click(within(handovers).getByRole("button", { name: /^handovers/ }));
     expect(within(handovers).getByRole("button", { name: "auth-flow" })).toBeInTheDocument();
   });
 
-  it("clicking a document opens it and keeps its folder selected", async () => {
+  it("clicking a document opens it and marks it current", async () => {
     const user = userEvent.setup();
     openAnyPath();
-    await renderAt("/folder/backend");
+    await renderAt("/");
 
-    await user.click(within(sidebar()).getByRole("button", { name: "auth-flow" }));
+    await user.click(within(index()).getByRole("button", { name: "auth-flow" }));
 
     expect(screen.getByRole("heading", { level: 1, name: "auth-flow" })).toBeInTheDocument();
     expect(screen.getByText("backend / handovers / auth-flow.md")).toBeInTheDocument();
-    expect(within(rail()).getByRole("link", { name: "backend" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-    expect(within(sidebar()).getByRole("button", { name: "auth-flow" })).toHaveAttribute(
+    expect(within(index()).getByRole("button", { name: "auth-flow" })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -81,13 +65,13 @@ describe("Folder rail", () => {
   it("reopening a document keeps its unsaved changes", async () => {
     const user = userEvent.setup();
     const open = openAnyPath();
-    await renderAt("/folder/backend");
-    await user.click(within(sidebar()).getByRole("button", { name: "api" }));
+    await renderAt("/");
+    await user.click(within(index()).getByRole("button", { name: "api" }));
     const id = Object.keys(useDocumentsStore.getState().documents)[0]!;
     useDocumentsStore.getState().setContent(id, "unsaved edit");
 
-    await user.click(within(sidebar()).getByRole("button", { name: "auth-flow" }));
-    await user.click(within(sidebar()).getByRole("button", { name: "api (unsaved changes)" }));
+    await user.click(within(index()).getByRole("button", { name: "auth-flow" }));
+    await user.click(within(index()).getByRole("button", { name: "api (unsaved changes)" }));
 
     expect(open).toHaveBeenCalledTimes(2);
     expect(screen.getByRole("textbox", { name: "Markdown editor" })).toHaveTextContent(
@@ -95,39 +79,30 @@ describe("Folder rail", () => {
     );
   });
 
-  it("flags folders that contain unsaved documents", async () => {
-    await renderEditor(docFile({ path: `${LIBRARY}/backend/api.md`, name: "api.md" }));
-    const id = Object.keys(useDocumentsStore.getState().documents)[0]!;
-
-    useDocumentsStore.getState().setContent(id, "changed");
-
-    expect(
-      await within(rail()).findByRole("link", { name: "backend (unsaved changes)" }),
-    ).toBeInTheDocument();
-  });
-
-  it("the category + creates a document in that subfolder", async () => {
+  it("a folder's + creates a document in that folder", async () => {
     const user = userEvent.setup();
     const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
-    await renderAt("/folder/backend");
+    await renderAt("/");
 
-    await user.click(within(sidebar()).getByRole("button", { name: "New document in handovers" }));
+    await user.click(within(index()).getByRole("button", { name: "New document in handovers" }));
 
     expect(create).toHaveBeenCalledWith("backend/handovers");
   });
 
-  it("the rail + creates a folder and selects it", async () => {
+  it("New folder creates a folder in the library", async () => {
     const user = userEvent.setup();
     const createFolder = vi.spyOn(libraryService, "createFolder").mockResolvedValue("frontend");
-    const router = await renderAt("/");
+    const list = vi.spyOn(libraryService, "list");
+    await renderAt("/");
+    const scans = list.mock.calls.length;
 
-    await user.click(within(rail()).getByRole("button", { name: "Create folder" }));
+    await user.click(screen.getByRole("button", { name: "New folder" }));
     const dialog = screen.getByRole("alertdialog", { name: "Create a folder" });
     await user.type(within(dialog).getByLabelText("Folder name"), "frontend{Enter}");
 
     expect(createFolder).toHaveBeenCalledWith("frontend");
-    await waitFor(() => expect(router.state.location.pathname).toBe("/folder/frontend"));
-    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(list.mock.calls.length).toBeGreaterThan(scans);
   });
 
   it("shows folder name errors inline", async () => {
@@ -138,7 +113,7 @@ describe("Folder rail", () => {
     });
     await renderAt("/");
 
-    await user.click(within(rail()).getByRole("button", { name: "Create folder" }));
+    await user.click(screen.getByRole("button", { name: "New folder" }));
     await user.type(screen.getByLabelText("Folder name"), "backend{Enter}");
 
     expect(await screen.findByText("Already exists: backend")).toBeInTheDocument();
@@ -166,11 +141,12 @@ describe("Quick switcher", () => {
     expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
   });
 
-  it("the sidebar search button opens it too, showing recent documents first", async () => {
+  it("the index search button opens it too, showing recent documents first", async () => {
     const user = userEvent.setup();
     await renderAt("/");
 
-    await user.click(screen.getByRole("button", { name: /Find a document/ }));
+    const library = screen.getByRole("complementary", { name: "Library" });
+    await user.click(within(library).getByRole("button", { name: /Find a document/ }));
 
     const options = within(screen.getByRole("listbox")).getAllByRole("option");
     expect(options[0]).toHaveTextContent("auth-flow");
@@ -196,7 +172,7 @@ describe("Quick switcher", () => {
     await user.keyboard("{Control>}k{/Control}");
     await user.type(screen.getByRole("combobox"), "zzzzqq");
 
-    expect(screen.getByText(/No documents or commands match/)).toBeInTheDocument();
+    expect(screen.getByText(/Nothing matches/)).toBeInTheDocument();
   });
 });
 
@@ -211,15 +187,15 @@ describe("Keyboard navigation", () => {
     await user.keyboard("{Control>}/{/Control}");
 
     const sheet = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
-    expect(within(sheet).getByText("Next document in sidebar")).toBeInTheDocument();
+    expect(within(sheet).getByText("Next document in library")).toBeInTheDocument();
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("Ctrl+PageDown / PageUp step through the sidebar's documents", async () => {
+  it("Ctrl+PageDown / PageUp step through the library in index order", async () => {
     const user = userEvent.setup();
     const open = openAnyPath();
-    await renderAt("/folder/backend");
+    await renderEditor(docFile({ path: `${LIBRARY}/Readme.md`, name: "Readme.md" }));
 
     await user.keyboard("{Control>}{PageDown}{/Control}");
     expect(open).toHaveBeenLastCalledWith(`${LIBRARY}/backend/api.md`);
@@ -233,19 +209,21 @@ describe("Keyboard navigation", () => {
     );
   });
 
-  it("Ctrl+\\ cycles the editor view", async () => {
+  it("Ctrl+\\ switches between Write and Proof, Ctrl+E jumps to Deliver", async () => {
     const user = userEvent.setup();
     await renderEditor();
-    expect(screen.getByRole("button", { name: "Split view" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    const tab = (name: string) => screen.getByRole("tab", { name });
+    expect(tab("Proof")).toHaveAttribute("aria-selected", "true");
 
     await user.keyboard("{Control>}\\{/Control}");
+    expect(tab("Write")).toHaveAttribute("aria-selected", "true");
+    expect(screen.queryByRole("region", { name: "Rendered preview" })).not.toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: "Preview only" })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
+    await user.keyboard("{Control>}\\{/Control}");
+    expect(tab("Proof")).toHaveAttribute("aria-selected", "true");
+
+    await user.keyboard("{Control>}e{/Control}");
+    expect(tab("Deliver")).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("complementary", { name: "Export" })).toBeInTheDocument();
   });
 });
