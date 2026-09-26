@@ -80,17 +80,26 @@ describe("Library index", () => {
     );
   });
 
-  it("a folder's + creates a document in that folder", async () => {
+  it("a folder's hover buttons create a document or folder inside it, named in place", async () => {
     const user = userEvent.setup();
-    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
+    const create = vi
+      .spyOn(documentService, "create")
+      .mockResolvedValue(
+        docFile({ path: `${LIBRARY}/backend/handovers/login.md`, name: "login.md" }),
+      );
     await renderAt("/");
 
     await user.click(within(index()).getByRole("button", { name: "New document in handovers" }));
+    const field = within(index()).getByRole("textbox", { name: "New document name" });
+    expect(within(index()).getByRole("group", { name: "handovers" })).toContainElement(field);
+    await user.type(field, "login{Enter}");
 
-    expect(create).toHaveBeenCalledWith("backend/handovers");
+    expect(create).toHaveBeenCalledWith("backend/handovers", "login");
+    expect(await screen.findByRole("heading", { level: 1, name: "login" })).toBeInTheDocument();
+    expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
   });
 
-  it("New folder creates a folder in the library", async () => {
+  it("New folder at the bottom names the folder in place at the top level", async () => {
     const user = userEvent.setup();
     const createFolder = vi.spyOn(libraryService, "createFolder").mockResolvedValue("frontend");
     const list = vi.spyOn(libraryService, "list");
@@ -98,15 +107,33 @@ describe("Library index", () => {
     const scans = list.mock.calls.length;
 
     await user.click(screen.getByRole("button", { name: "New folder" }));
-    const dialog = screen.getByRole("alertdialog", { name: "Create a folder" });
-    await user.type(within(dialog).getByLabelText("Folder name"), "frontend{Enter}");
+    await user.type(
+      within(index()).getByRole("textbox", { name: "New folder name" }),
+      "frontend{Enter}",
+    );
 
     expect(createFolder).toHaveBeenCalledWith("frontend", "");
-    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument());
     expect(list.mock.calls.length).toBeGreaterThan(scans);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
-  it("shows folder name errors inline", async () => {
+  it("Esc or an empty name cancels", async () => {
+    const user = userEvent.setup();
+    const createFolder = vi.spyOn(libraryService, "createFolder");
+    await renderAt("/");
+
+    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await user.type(within(index()).getByRole("textbox"), "draft{Escape}");
+    expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await user.type(within(index()).getByRole("textbox"), "{Enter}");
+    expect(within(index()).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(createFolder).not.toHaveBeenCalled();
+  });
+
+  it("shows name errors inline and keeps the field to fix them", async () => {
     const user = userEvent.setup();
     vi.spyOn(libraryService, "createFolder").mockRejectedValue({
       kind: "alreadyExists",
@@ -115,9 +142,10 @@ describe("Library index", () => {
     await renderAt("/");
 
     await user.click(screen.getByRole("button", { name: "New folder" }));
-    await user.type(screen.getByLabelText("Folder name"), "backend{Enter}");
+    await user.type(within(index()).getByRole("textbox"), "backend{Enter}");
 
-    expect(await screen.findByText("Already exists: backend")).toBeInTheDocument();
+    expect(await within(index()).findByRole("alert")).toHaveTextContent("Already exists: backend");
+    expect(within(index()).getByRole("textbox")).toHaveAttribute("aria-invalid", "true");
   });
 });
 
@@ -130,20 +158,24 @@ describe("Library index menus", () => {
     return within(screen.getByRole("menu"));
   }
 
-  it("a folder's menu creates a folder inside it", async () => {
+  it("a folder's menu creates a folder inside it, opening a collapsed folder", async () => {
     const user = userEvent.setup();
     const createFolder = vi
       .spyOn(libraryService, "createFolder")
       .mockResolvedValue("backend/archive");
     await renderAt("/");
+    const backend = within(index()).getByRole("button", { name: /^backend/ });
+    await user.click(backend); // collapse
 
-    const menu = await rightClick(user, within(index()).getByRole("button", { name: /^backend/ }));
-    await user.click(menu.getByRole("menuitem", { name: "New folder inside" }));
-    const dialog = screen.getByRole("alertdialog", { name: "New folder in backend" });
-    await user.type(within(dialog).getByLabelText("Folder name"), "archive{Enter}");
+    const menu = await rightClick(user, backend);
+    await user.click(menu.getByRole("menuitem", { name: "New folder" }));
+    expect(backend).toHaveAttribute("aria-expanded", "true");
+    await user.type(
+      within(index()).getByRole("textbox", { name: "New folder name" }),
+      "archive{Enter}",
+    );
 
     expect(createFolder).toHaveBeenCalledWith("archive", "backend");
-    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 
   it("the library name's menu creates a top-level folder", async () => {
@@ -153,7 +185,7 @@ describe("Library index menus", () => {
     const menu = await rightClick(user, within(index()).getByRole("link", { name: "MDForge" }));
     await user.click(menu.getByRole("menuitem", { name: "New folder" }));
 
-    expect(screen.getByRole("alertdialog", { name: "Create a folder" })).toBeInTheDocument();
+    expect(within(index()).getByRole("textbox", { name: "New folder name" })).toBeInTheDocument();
   });
 
   it("moves a folder to trash after confirmation, closing its open documents", async () => {
@@ -209,6 +241,53 @@ describe("Library index menus", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Couldn't move the folder to trash: Not found: backend",
     );
+  });
+
+  it("a document's menu creates a document next to it", async () => {
+    const user = userEvent.setup();
+    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: "auth-flow" }));
+    expect(screen.getAllByRole("menu")).toHaveLength(1);
+    await user.click(menu.getByRole("menuitem", { name: "New document here" }));
+    await user.type(
+      within(index()).getByRole("textbox", { name: "New document name" }),
+      "notes{Enter}",
+    );
+
+    expect(create).toHaveBeenCalledWith("backend/handovers", "notes");
+  });
+
+  it("New folder here on a top-level document creates a top-level folder", async () => {
+    const user = userEvent.setup();
+    const createFolder = vi.spyOn(libraryService, "createFolder").mockResolvedValue("x");
+    await renderAt("/");
+
+    const menu = await rightClick(user, within(index()).getByRole("button", { name: "Readme" }));
+    await user.click(menu.getByRole("menuitem", { name: "New folder here" }));
+    await user.type(within(index()).getByRole("textbox", { name: "New folder name" }), "x{Enter}");
+
+    expect(createFolder).toHaveBeenCalledWith("x", "");
+  });
+
+  it("right-clicking empty space creates at the top of the library", async () => {
+    const user = userEvent.setup();
+    const create = vi.spyOn(documentService, "create").mockResolvedValue(docFile());
+    await renderAt("/");
+
+    const menu = await rightClick(user, index());
+    expect(menu.getAllByRole("menuitem").map((i) => i.textContent)).toEqual([
+      "New document",
+      "New folder",
+    ]);
+    await user.click(menu.getByRole("menuitem", { name: "New document" }));
+    await user.type(
+      within(index()).getByRole("textbox", { name: "New document name" }),
+      "ideas{Enter}",
+    );
+
+    expect(create).toHaveBeenCalledWith(undefined, "ideas");
   });
 
   it("moves a document to trash from its menu", async () => {

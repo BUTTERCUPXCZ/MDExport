@@ -32,6 +32,22 @@ export function useDocumentCommands() {
     [openInEditor],
   );
 
+  /**
+   * Creates `name`.md in `folder` and opens it. Rejects with a user-facing
+   * message, so the inline name field in the library can show it.
+   */
+  const createNamedDocument = useCallback(
+    async (folder: string, name: string) => {
+      try {
+        openInEditor(await documentService.create(folder || undefined, name));
+      } catch (e) {
+        throw new Error(toAppError(e).message, { cause: e });
+      }
+      void refreshLibrary();
+    },
+    [openInEditor],
+  );
+
   /** Shows the system Open dialog. */
   const openDocument = useCallback(async () => {
     try {
@@ -76,5 +92,5 @@ export function useDocumentCommands() {
     }
   }, []);
 
-  return { newDocument, openDocument, openPath, renameDocument };
+  return { newDocument, createNamedDocument, openDocument, openPath, renameDocument };
 }

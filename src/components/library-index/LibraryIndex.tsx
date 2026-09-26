@@ -12,6 +12,7 @@ import {
 import { ContextMenu } from "radix-ui";
 import { useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { CreateField } from "@/components/library-index/CreateField";
 import { DocumentRow } from "@/components/library-index/DocumentRow";
 import {
   IndexMenuContent,
@@ -67,6 +68,8 @@ interface TreeProps {
   onTrash: (target: TrashTarget) => void;
   /** Current time for age labels; one timer for the whole tree. */
   now: number;
+  /** Inline "new document / folder" field, if open. */
+  creating: { kind: "document" | "folder"; parent: string } | null;
 }
 
 function copyToClipboard(text: string) {
@@ -88,9 +91,10 @@ function FolderHeading({
   onToggle: () => void;
   onTrash: () => void;
 }) {
-  const { newDocument } = useDocumentCommands();
-  const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
+  const startCreating = useUiStore((s) => s.startCreating);
   const root = useLibraryStore((s) => s.listing?.root);
+  const hoverButton =
+    "flex size-6 items-center justify-center rounded-md text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-accent-soft hover:text-text";
   return (
     <ContextMenu.Root>
       <ContextMenu.Trigger asChild>
@@ -119,22 +123,35 @@ function FolderHeading({
               <button
                 type="button"
                 aria-label={`New document in ${node.name}`}
-                onClick={() => void newDocument(node.path)}
-                className="flex size-6 items-center justify-center rounded-md text-muted opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 hover:bg-accent-soft hover:text-text"
+                onClick={() => startCreating("document", node.path)}
+                className={hoverButton}
               >
-                <Plus className="size-3.5" />
+                <FilePlus2 className="size-3.5" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right">New document here</TooltipContent>
+            <TooltipContent side="bottom">New document</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={`New folder in ${node.name}`}
+                onClick={() => startCreating("folder", node.path)}
+                className={hoverButton}
+              >
+                <FolderPlus className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">New folder</TooltipContent>
           </Tooltip>
         </div>
       </ContextMenu.Trigger>
       <IndexMenuContent>
-        <IndexMenuItem icon={<FilePlus2 />} onSelect={() => void newDocument(node.path)}>
+        <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document", node.path)}>
           New document
         </IndexMenuItem>
-        <IndexMenuItem icon={<FolderPlus />} onSelect={() => setCreateFolderOpen(true, node.path)}>
-          New folder inside
+        <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder", node.path)}>
+          New folder
         </IndexMenuItem>
         {root && (
           <IndexMenuItem
@@ -156,8 +173,12 @@ function FolderHeading({
 function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode; depth: number }) {
   const { openPath } = useDocumentCommands();
 
+  const indent = 8 + depth * INDENT + (depth > 0 ? 4 : 0);
   return (
     <>
+      {tree.creating?.parent === node.path && (
+        <CreateField kind={tree.creating.kind} parent={node.path} indent={indent} />
+      )}
       {node.documents.map((doc) => (
         <DocumentRow
           key={doc.path}
@@ -165,11 +186,12 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
           path={doc.path}
           title={doc.relativePath}
           age={shortAge(doc.modifiedMs, tree.now)}
-          indent={8 + depth * INDENT + (depth > 0 ? 4 : 0)}
+          indent={indent}
           active={doc.path === tree.activePath}
           unsaved={tree.dirty.has(doc.path)}
           onOpen={() => void openPath(doc.path)}
           onTrash={() => tree.onTrash({ kind: "document", path: doc.path, name: doc.name })}
+          folder={node.path}
         />
       ))}
       {node.folders.map((folder) => {
@@ -184,7 +206,9 @@ function FolderContents({ node, depth, ...tree }: TreeProps & { node: FolderNode
               onTrash={() => tree.onTrash({ kind: "folder", node: folder })}
             />
             {!isCollapsed &&
-              (folder.total === 0 ? (
+              (folder.documents.length === 0 &&
+              folder.folders.length === 0 &&
+              tree.creating?.parent !== folder.path ? (
                 <p
                   style={{ paddingLeft: 12 + (depth + 1) * INDENT }}
                   className="h-[26px] text-[12.5px] leading-[26px] text-muted"
@@ -237,9 +261,9 @@ export function LibraryIndex() {
   const listing = useLibraryStore((s) => s.listing);
   const status = useLibraryStore((s) => s.status);
   const active = useActiveDocumentInfo();
-  const { newDocument } = useDocumentCommands();
   const setQuickSwitcherOpen = useUiStore((s) => s.setQuickSwitcherOpen);
-  const setCreateFolderOpen = useUiStore((s) => s.setCreateFolderOpen);
+  const creating = useUiStore((s) => s.creating);
+  const startCreating = useUiStore((s) => s.startCreating);
   const dirty = useDirtyPaths();
   const { trashDocument, trashFolder } = useLibraryTrash();
   const [trash, setTrash] = useState<TrashTarget | null>(null);
@@ -253,6 +277,18 @@ export function LibraryIndex() {
       else next.add(path);
       return next;
     });
+
+  // Creating inside a collapsed folder shows it (and its parents) open, like VS Code.
+  const visiblyCollapsed = useMemo(() => {
+    let path = creating?.parent ?? "";
+    if (!path) return collapsed;
+    const next = new Set(collapsed);
+    while (path) {
+      next.delete(path);
+      path = path.includes("/") ? path.slice(0, path.lastIndexOf("/")) : "";
+    }
+    return next;
+  }, [collapsed, creating]);
 
   const tree = useMemo(() => (listing ? libraryTree(listing) : null), [listing]);
   const libraryName = listing?.root.split(/[\\/]/).pop() || "Library";
@@ -274,71 +310,85 @@ export function LibraryIndex() {
         </button>
         <button
           type="button"
-          onClick={() => void newDocument()}
+          onClick={() => startCreating("document")}
           className="flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-[13px] font-medium text-text-2 transition-colors hover:bg-raised hover:text-text"
         >
           <Plus aria-hidden className="size-3.5 shrink-0 text-accent" />
           <span className="flex-1 text-left">New document</span>
-          <kbd className="font-sans text-[11.5px] font-normal text-muted">Ctrl N</kbd>
         </button>
       </div>
 
-      <nav aria-label="Documents" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
-        <ContextMenu.Root>
-          <ContextMenu.Trigger asChild>
-            <Link
-              to="/"
-              activeOptions={{ exact: true }}
-              className="mt-3 flex h-[30px] items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[state=open]:bg-raised data-[status=active]:bg-accent-soft"
-              title={listing?.root}
-            >
-              <span className="truncate">{libraryName}</span>
-            </Link>
-          </ContextMenu.Trigger>
-          <IndexMenuContent>
-            <IndexMenuItem icon={<FilePlus2 />} hint="Ctrl N" onSelect={() => void newDocument()}>
-              New document
-            </IndexMenuItem>
-            <IndexMenuItem icon={<FolderPlus />} onSelect={() => setCreateFolderOpen(true)}>
-              New folder
-            </IndexMenuItem>
-          </IndexMenuContent>
-        </ContextMenu.Root>
+      {/* Right-click on empty space: create at the top of the library. Rows and
+          folders have their own menus (they handle the event first). */}
+      <ContextMenu.Root>
+        <ContextMenu.Trigger asChild>
+          <nav aria-label="Documents" className="min-h-0 flex-1 overflow-y-auto px-2.5 pb-4">
+            <ContextMenu.Root>
+              <ContextMenu.Trigger asChild>
+                <Link
+                  to="/"
+                  activeOptions={{ exact: true }}
+                  className="mt-3 flex h-[30px] items-center rounded-md px-2 text-[13px] font-semibold text-text transition-colors hover:bg-raised data-[state=open]:bg-raised data-[status=active]:bg-accent-soft"
+                  title={listing?.root}
+                >
+                  <span className="truncate">{libraryName}</span>
+                </Link>
+              </ContextMenu.Trigger>
+              <IndexMenuContent>
+                <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document")}>
+                  New document
+                </IndexMenuItem>
+                <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder")}>
+                  New folder
+                </IndexMenuItem>
+              </IndexMenuContent>
+            </ContextMenu.Root>
 
-        {status === "loading" && !tree && (
-          <p className="px-2 py-2 text-[13px] text-muted">Reading the library…</p>
-        )}
-        {status === "error" && (
-          <p role="alert" className="px-2 py-2 text-[13px] text-danger">
-            Couldn't read the library folder.
-          </p>
-        )}
+            {status === "loading" && !tree && (
+              <p className="px-2 py-2 text-[13px] text-muted">Reading the library…</p>
+            )}
+            {status === "error" && (
+              <p role="alert" className="px-2 py-2 text-[13px] text-danger">
+                Couldn't read the library folder.
+              </p>
+            )}
 
-        {tree && (
-          <div className="mt-0.5">
-            <FolderContents
-              node={tree}
-              depth={0}
-              activePath={active?.path ?? null}
-              dirty={dirty}
-              collapsed={collapsed}
-              onToggle={toggle}
-              onTrash={setTrash}
-              now={now}
-            />
-          </div>
-        )}
-        {tree && tree.total === 0 && (
-          <p className="px-2 py-1 text-[13px] text-muted">No documents yet.</p>
-        )}
+            {tree && (
+              <div className="mt-0.5">
+                <FolderContents
+                  node={tree}
+                  depth={0}
+                  activePath={active?.path ?? null}
+                  dirty={dirty}
+                  collapsed={visiblyCollapsed}
+                  onToggle={toggle}
+                  onTrash={setTrash}
+                  now={now}
+                  creating={creating}
+                />
+              </div>
+            )}
+            {tree && tree.total === 0 && (
+              <p className="px-2 py-1 text-[13px] text-muted">No documents yet.</p>
+            )}
 
-        <OutsideLibrary activePath={active?.path ?? null} dirty={dirty} />
-      </nav>
+            <OutsideLibrary activePath={active?.path ?? null} dirty={dirty} />
+          </nav>
+        </ContextMenu.Trigger>
+        <IndexMenuContent>
+          <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document")}>
+            New document
+          </IndexMenuItem>
+          <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder")}>
+            New folder
+          </IndexMenuItem>
+        </IndexMenuContent>
+      </ContextMenu.Root>
 
       <div className="flex h-11 shrink-0 items-center justify-between border-t border-line px-2.5">
         <button
           type="button"
-          onClick={() => setCreateFolderOpen(true)}
+          onClick={() => startCreating("folder")}
           className="flex h-8 items-center gap-2 rounded-md px-2 text-[13px] text-text-2 transition-colors hover:bg-raised hover:text-text"
         >
           <FolderPlus aria-hidden className="size-4 text-muted" />

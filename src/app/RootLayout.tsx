@@ -1,7 +1,6 @@
 import { Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { TitleBar } from "@/components/layout/TitleBar";
-import { CreateFolderDialog } from "@/features/library/CreateFolderDialog";
 import { LibrarySetupDialog } from "@/features/library/LibrarySetupDialog";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
@@ -52,7 +51,6 @@ export function RootLayout() {
       <LibrarySetupDialog />
       <QuickSwitcher />
       <ShortcutsDialog />
-      <CreateFolderDialog />
       <CloseGuardDialog />
     </>
   );

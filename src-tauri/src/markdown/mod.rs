@@ -73,7 +73,10 @@ mod tests {
         let md = "# Title\n\nFirst paragraph.\n\n- item";
         let preview = render_preview_html(md);
         assert!(preview.contains(r#"data-sourcepos="1:1-1:7""#), "{preview}");
-        assert!(preview.contains(r#"data-sourcepos="3:1-3:16""#), "{preview}");
+        assert!(
+            preview.contains(r#"data-sourcepos="3:1-3:16""#),
+            "{preview}"
+        );
         assert!(!render_html(md).contains("data-sourcepos"));
     }
 

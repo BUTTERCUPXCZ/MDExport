@@ -17,9 +17,12 @@ export const documentService = {
     return invoke("open_document", { path });
   },
 
-  /** Creates an empty `Untitled.md` in the library, optionally in a `/`-separated subfolder. */
-  create(folder?: string): Promise<DocumentFile> {
-    return invoke("create_document", { folder: folder || null });
+  /**
+   * Creates an empty document in the library, optionally in a `/`-separated subfolder.
+   * Named `name` (`.md` added) when given, otherwise the next free `Untitled N.md`.
+   */
+  create(folder?: string, name?: string): Promise<DocumentFile> {
+    return invoke("create_document", { folder: folder || null, name: name ?? null });
   },
 
   /**

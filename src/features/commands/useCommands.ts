@@ -23,14 +23,14 @@ export function useCommands(): Command[] {
     documentId ? s.documents[documentId]?.path : undefined,
   );
   const hasDocument = Boolean(documentPath);
-  const { setStage, setExportFormat, setShortcutsOpen, setCreateFolderOpen, setRenamingPath } =
+  const { setStage, setExportFormat, setShortcutsOpen, startCreating, setRenamingPath } =
     useUiStore.getState();
 
   return useMemo(() => {
     const commands: Command[] = [
       { id: "new", label: "New document", shortcut: "Ctrl+N", run: () => void newDocument() },
       { id: "open", label: "Open file…", shortcut: "Ctrl+O", run: () => void openDocument() },
-      { id: "folder", label: "New folder…", run: () => setCreateFolderOpen(true) },
+      { id: "folder", label: "New folder…", run: () => startCreating("folder") },
       { id: "home", label: "Go to library home", run: () => void navigate({ to: "/" }) },
       { id: "refresh", label: "Refresh library", run: () => void refreshLibrary() },
       {
@@ -91,7 +91,7 @@ export function useCommands(): Command[] {
     navigate,
     newDocument,
     openDocument,
-    setCreateFolderOpen,
+    startCreating,
     setRenamingPath,
     setExportFormat,
     setShortcutsOpen,

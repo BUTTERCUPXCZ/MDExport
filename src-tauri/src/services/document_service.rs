@@ -101,6 +101,24 @@ pub fn create_in(dir: &Path) -> AppResult<DocumentFile> {
     )))
 }
 
+/// Creates an empty document named `name` in `dir` (`.md` is added when missing).
+/// Refuses names that already exist.
+pub fn create_named(dir: &Path, name: &str) -> AppResult<DocumentFile> {
+    let name = library_tree::validate_name(name)?;
+    if !dir.is_dir() {
+        return Err(AppError::NotFound(dir.display().to_string()));
+    }
+    let path = with_markdown_extension(&dir.join(name));
+    if path.exists() {
+        return Err(AppError::AlreadyExists(file_name(&path)));
+    }
+    let version = file_repository::create_new(&path, "")?;
+    let canonical = path
+        .canonicalize()
+        .map_err(|e| AppError::from_io(e, &path))?;
+    Ok(document(&canonical, String::new(), version))
+}
+
 pub fn delete(path: &Path) -> AppResult<()> {
     file_repository::move_to_trash(path)
 }
@@ -133,6 +151,31 @@ pub fn rename(path: &Path, new_name: &str) -> AppResult<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn create_named_adds_the_extension_and_refuses_duplicates() {
+        let dir = tempfile::tempdir().unwrap();
+
+        let file = create_named(dir.path(), " auth flow ").unwrap();
+        assert_eq!(file.name, "auth flow.md");
+        assert!(dir.path().join("auth flow.md").is_file());
+        assert_eq!(
+            create_named(dir.path(), "notes.md").unwrap().name,
+            "notes.md"
+        );
+        assert!(matches!(
+            create_named(dir.path(), "auth flow"),
+            Err(AppError::AlreadyExists(_))
+        ));
+        assert!(matches!(
+            create_named(dir.path(), "a/b"),
+            Err(AppError::InvalidName(_))
+        ));
+        assert!(matches!(
+            create_named(&dir.path().join("missing"), "x"),
+            Err(AppError::NotFound(_))
+        ));
+    }
 
     #[test]
     fn open_returns_content_name_and_version() {

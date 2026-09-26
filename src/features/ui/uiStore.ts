@@ -17,11 +17,10 @@ export const STAGES: { stage: Stage; label: string }[] = [
 interface UiState {
   quickSwitcherOpen: boolean;
   shortcutsOpen: boolean;
-  createFolderOpen: boolean;
+  /** Inline "new document / new folder" name field in the library index, if open. */
+  creating: { kind: "document" | "folder"; parent: string } | null;
   /** "You have unsaved changes" dialog shown when closing the window. */
   closeGuardOpen: boolean;
-  /** Folder the new folder goes into (relative; `""` = library root). */
-  createFolderParent: string;
   /** Path of the document whose name is being edited in the library, if any. */
   renamingPath: string | null;
   /** Format currently being exported, if any. */
@@ -32,7 +31,9 @@ interface UiState {
   exportFormat: ExportFormat;
   setQuickSwitcherOpen: (open: boolean) => void;
   setShortcutsOpen: (open: boolean) => void;
-  setCreateFolderOpen: (open: boolean, parent?: string) => void;
+  /** Opens the inline name field in `parent` (relative; `""` = library root). */
+  startCreating: (kind: "document" | "folder", parent?: string) => void;
+  cancelCreating: () => void;
   setCloseGuardOpen: (open: boolean) => void;
   setRenamingPath: (path: string | null) => void;
   setExporting: (format: ExportFormat | null) => void;
@@ -45,9 +46,8 @@ interface UiState {
 export const useUiStore = create<UiState>((set) => ({
   quickSwitcherOpen: false,
   shortcutsOpen: false,
-  createFolderOpen: false,
+  creating: null,
   closeGuardOpen: false,
-  createFolderParent: "",
   renamingPath: null,
   exporting: null,
   // Documents reopen in the stage used last.
@@ -56,8 +56,8 @@ export const useUiStore = create<UiState>((set) => ({
   setQuickSwitcherOpen: (quickSwitcherOpen) => set({ quickSwitcherOpen }),
   setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
   setCloseGuardOpen: (closeGuardOpen) => set({ closeGuardOpen }),
-  setCreateFolderOpen: (createFolderOpen, parent = "") =>
-    set({ createFolderOpen, createFolderParent: parent }),
+  startCreating: (kind, parent = "") => set({ creating: { kind, parent }, renamingPath: null }),
+  cancelCreating: () => set({ creating: null }),
   setRenamingPath: (renamingPath) => set({ renamingPath }),
   setExporting: (exporting) => set({ exporting }),
   setStage: (stage) => {

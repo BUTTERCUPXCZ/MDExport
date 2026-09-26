@@ -6,7 +6,10 @@ import { cn } from "@/lib/utils";
 export function IndexMenuContent({ children }: { children: ReactNode }) {
   return (
     <ContextMenu.Portal>
-      <ContextMenu.Content className="z-50 w-[220px] rounded-lg border border-line bg-raised p-1 shadow-float">
+      <ContextMenu.Content
+        onCloseAutoFocus={(event) => event.preventDefault()}
+        className="z-50 w-[220px] rounded-lg border border-line bg-raised p-1 shadow-float"
+      >
         {children}
       </ContextMenu.Content>
     </ContextMenu.Portal>

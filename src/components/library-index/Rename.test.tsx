@@ -82,6 +82,7 @@ describe("Renaming documents", () => {
     await user.click(
       within(await openContextMenu(user, "api")).getByRole("menuitem", { name: /Rename/ }),
     );
+    await waitFor(() => expect(within(sidebar()).getByRole("textbox")).toHaveFocus());
     await user.keyboard("{Enter}");
 
     expect(rename).not.toHaveBeenCalled();
@@ -147,6 +148,7 @@ describe("Renaming documents", () => {
     expect(within(sidebar()).getByRole("textbox", { name: "Document name" })).toHaveValue(
       "auth-flow",
     );
+    await waitFor(() => expect(within(sidebar()).getByRole("textbox")).toHaveFocus());
     await user.keyboard("{Escape}");
 
     await user.keyboard("{Control>}k{/Control}");

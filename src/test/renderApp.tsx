@@ -63,9 +63,8 @@ export function setupApp({
   useUiStore.setState({
     quickSwitcherOpen: false,
     shortcutsOpen: false,
-    createFolderOpen: false,
+    creating: null,
     closeGuardOpen: false,
-    createFolderParent: "",
     renamingPath: null,
     exporting: null,
     stage: "proof",

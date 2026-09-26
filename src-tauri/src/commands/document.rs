@@ -28,18 +28,23 @@ pub fn open_document(state: State<'_, AppState>, path: String) -> AppResult<Docu
 }
 
 /// Creates a new empty document in the library, optionally in a subfolder
-/// (`/`-separated, relative to the library).
+/// (`/`-separated, relative to the library). With `name` it gets that name
+/// (typed in the library index); without, the next free `Untitled N.md`.
 #[tauri::command]
 pub fn create_document(
     state: State<'_, AppState>,
     folder: Option<String>,
+    name: Option<String>,
 ) -> AppResult<DocumentFile> {
     let library = state
         .scope
         .library()
         .ok_or(AppError::LibraryNotConfigured)?;
     let dir = library_tree::resolve_folder(&library, folder.as_deref().unwrap_or(""))?;
-    document_service::create_in(&dir)
+    match name {
+        Some(name) => document_service::create_named(&dir, &name),
+        None => document_service::create_in(&dir),
+    }
 }
 
 #[tauri::command]

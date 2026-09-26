@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, FileText, Pencil, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, FilePlus2, FileText, FolderPlus, Pencil, Trash2 } from "lucide-react";
 import { ContextMenu } from "radix-ui";
 import { useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import {
@@ -10,6 +10,7 @@ import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { stem } from "@/features/library/libraryModel";
 import { showError } from "@/features/notices/noticeStore";
 import { useUiStore } from "@/features/ui/uiStore";
+import { useDeferredFocus } from "@/hooks/useDeferredFocus";
 import { cn } from "@/lib/utils";
 
 const rowClass =
@@ -29,6 +30,7 @@ function RenameField({
   const setRenamingPath = useUiStore((s) => s.setRenamingPath);
   const [error, setError] = useState<string | null>(null);
   const submitting = useRef(false);
+  const { ref, ready } = useDeferredFocus<HTMLInputElement>();
   const current = stem(fileName);
 
   const finish = async (value: string) => {
@@ -58,16 +60,17 @@ function RenameField({
   return (
     <div style={{ paddingLeft: indent }}>
       <input
-        autoFocus
+        ref={ref}
         defaultValue={current}
         aria-label="Document name"
         aria-invalid={error !== null}
-        onFocus={(e) => e.currentTarget.select()}
+
         onChange={() => setError(null)}
         onKeyDown={onKeyDown}
         onBlur={(e) => {
-          // Keep the field open while an error is shown so it can be fixed.
-          if (!error) void finish(e.currentTarget.value);
+          // Ignore focus moving before the field got it (a closing menu);
+          // keep the field open while an error is shown so it can be fixed.
+          if (ready.current && !error) void finish(e.currentTarget.value);
         }}
         className="h-[30px] w-full rounded-md border border-accent bg-canvas px-2 text-[13.5px] text-text outline-none aria-invalid:border-danger"
       />
@@ -95,6 +98,8 @@ interface DocumentRowProps {
   onOpen: () => void;
   /** Asks to move the document to the trash (confirmation is up to the caller). */
   onTrash?: () => void;
+  /** Library folder the document is in (`""` = root); enables "New … here". */
+  folder?: string;
 }
 
 /** A document in the library index. Right-click for Open / Rename / Copy path / Move to trash; F2 renames. */
@@ -108,9 +113,11 @@ export function DocumentRow({
   indent = 8,
   onOpen,
   onTrash,
+  folder,
 }: DocumentRowProps) {
   const renaming = useUiStore((s) => s.renamingPath === path);
   const setRenamingPath = useUiStore((s) => s.setRenamingPath);
+  const startCreating = useUiStore((s) => s.startCreating);
   const name = stem(fileName);
 
   if (renaming) return <RenameField path={path} fileName={fileName} indent={indent} />;
@@ -159,6 +166,17 @@ export function DocumentRow({
         <IndexMenuItem icon={<Copy />} onSelect={copyPath}>
           Copy path
         </IndexMenuItem>
+        {folder !== undefined && (
+          <>
+            <IndexMenuSeparator />
+            <IndexMenuItem icon={<FilePlus2 />} onSelect={() => startCreating("document", folder)}>
+              New document here
+            </IndexMenuItem>
+            <IndexMenuItem icon={<FolderPlus />} onSelect={() => startCreating("folder", folder)}>
+              New folder here
+            </IndexMenuItem>
+          </>
+        )}
         {onTrash && (
           <>
             <IndexMenuSeparator />
