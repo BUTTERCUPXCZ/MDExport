@@ -4,6 +4,7 @@
 //! becomes an escaped string literal, so Markdown content can never inject
 //! Typst markup or scripting. The Typst "world" has no file access at all.
 
+use std::cell::Cell;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 
@@ -58,6 +59,7 @@ const PREAMBLE: &str = r##"
   inset: (x: 8pt, y: 6pt),
 )
 #let header-cell(body) = table.cell(fill: rgb("#f0f3f6"), strong(body))
+#set table.cell(breakable: false)
 #show table: set text(size: 9.5pt)
 #show table: set block(above: 1.1em, below: 1.2em)
 #set list(indent: 0.4em, body-indent: 0.55em, spacing: 0.65em)
@@ -153,6 +155,60 @@ fn lit(text: &str) -> String {
     out
 }
 
+/// Characters after which long inline code in a table cell may wrap.
+const CODE_BREAK_AFTER: &[char] = &['.', '/', '_', '-', '(', ',', ':', '=', '&', '?'];
+
+/// Inserts zero-width spaces (invisible line-break opportunities) into long
+/// unbroken code tokens, so code like `sessionProxy.relayClosed` can wrap inside a
+/// narrow table column instead of running off the page. Short tokens are untouched.
+fn breakable_code(code: &str) -> String {
+    code.split(' ')
+        .map(|token| {
+            if token.chars().count() <= 12 {
+                return token.to_string();
+            }
+            let mut out = String::with_capacity(token.len() + 8);
+            for ch in token.chars() {
+                out.push(ch);
+                if CODE_BREAK_AFTER.contains(&ch) {
+                    out.push('\u{200B}');
+                }
+            }
+            out
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Relative column widths, like Word's "AutoFit to contents": each column gets
+/// a share of the page based on how much text it holds (average cell length, but
+/// at least its longest word), clamped so no column is starved or dominates.
+fn column_weights(table: Node<'_>, columns: usize) -> Vec<f64> {
+    let mut total = vec![0usize; columns];
+    let mut longest_word = vec![0usize; columns];
+    let mut rows = 0usize;
+    for row in table.children() {
+        rows += 1;
+        for (i, cell) in row.children().enumerate().take(columns) {
+            let text = plain_text(cell);
+            total[i] += text.chars().count();
+            let word = text
+                .split_whitespace()
+                .map(|w| w.chars().count())
+                .max()
+                .unwrap_or(0);
+            longest_word[i] = longest_word[i].max(word);
+        }
+    }
+    (0..columns)
+        .map(|i| {
+            let average = total[i] as f64 / rows.max(1) as f64;
+            // Long code tokens can wrap, so count at most ~20 chars of a word.
+            average.max(longest_word[i].min(20) as f64).clamp(6.0, 45.0)
+        })
+        .collect()
+}
+
 /// Joins content expressions: `(a + b)`, or `[]` when empty.
 fn join(parts: Vec<String>) -> String {
     match parts.len() {
@@ -169,6 +225,8 @@ fn is_external(url: &str) -> bool {
 
 struct Writer<'a> {
     footnotes: HashMap<String, Node<'a>>,
+    /// True while writing table cells (long inline code may then wrap).
+    in_table: Cell<bool>,
 }
 
 impl<'a> Writer<'a> {
@@ -180,7 +238,10 @@ impl<'a> Writer<'a> {
                 _ => None,
             })
             .collect();
-        Self { footnotes }
+        Self {
+            footnotes,
+            in_table: Cell::new(false),
+        }
     }
 
     fn blocks(&self, parent: Node<'a>) -> String {
@@ -266,6 +327,7 @@ impl<'a> Writer<'a> {
                     })
                     .collect();
                 let mut cells = Vec::new();
+                self.in_table.set(true);
                 for row in node.children() {
                     let header = matches!(row.data.borrow().value, NodeValue::TableRow(true));
                     if header {
@@ -285,10 +347,10 @@ impl<'a> Writer<'a> {
                         cells.extend(row_cells);
                     }
                 }
-                // Full page width: content-sized columns, the last one takes the rest.
-                let n = table.num_columns.max(1);
-                let columns: Vec<&str> = (0..n)
-                    .map(|i| if i + 1 == n { "1fr" } else { "auto" })
+                self.in_table.set(false);
+                let columns: Vec<String> = column_weights(node, table.num_columns.max(1))
+                    .iter()
+                    .map(|w| format!("{w:.1}fr"))
                     .collect();
                 format!(
                     "table(columns: ({},), align: ({},), {})",
@@ -310,7 +372,14 @@ impl<'a> Writer<'a> {
             NodeValue::Text(text) => lit(&text),
             NodeValue::SoftBreak => lit(" "),
             NodeValue::LineBreak => "linebreak()".into(),
-            NodeValue::Code(code) => format!("raw({})", lit(&code.literal)),
+            NodeValue::Code(code) => {
+                let text = if self.in_table.get() {
+                    breakable_code(&code.literal)
+                } else {
+                    code.literal.clone()
+                };
+                format!("raw({})", lit(&text))
+            }
             NodeValue::Emph => format!("emph({})", self.inlines(node)),
             NodeValue::Strong => format!("strong({})", self.inlines(node)),
             NodeValue::Strikethrough => format!("strike({})", self.inlines(node)),
@@ -422,6 +491,51 @@ mod tests {
             normal.contains(r#"table.header(header-cell("File"), header-cell("Change"))"#),
             "{normal}"
         );
+    }
+
+    #[test]
+    fn long_code_in_tables_gets_break_opportunities() {
+        assert_eq!(breakable_code("short.rs"), "short.rs");
+        assert_eq!(
+            breakable_code("sessionProxy.relayClosed x"),
+            "sessionProxy.\u{200B}relayClosed x"
+        );
+        let src = source("| a |\n|---|\n| `sessionProxy.relayClosed` |");
+        assert!(src.contains("sessionProxy.\u{200B}relayClosed"), "{src}");
+        // Outside tables, code stays copy-paste clean.
+        assert!(!source("`sessionProxy.relayClosed`").contains('\u{200B}'));
+    }
+
+    #[test]
+    fn column_widths_follow_content() {
+        let src = source(
+            "| Symptom | Layer | Evidence |\n|---|---|---|\n\
+             | Whole creator dark for a minute, then recovers | tunnel keepalive death and reconnect | `tunnel keepalive timeout` |",
+        );
+        let columns = src
+            .split("columns: (")
+            .nth(1)
+            .unwrap()
+            .split(')')
+            .next()
+            .unwrap();
+        let weights: Vec<f64> = columns
+            .split(", ")
+            .filter(|w| !w.is_empty())
+            .map(|w| {
+                w.trim_end_matches(',')
+                    .trim_end_matches("fr")
+                    .parse()
+                    .unwrap()
+            })
+            .collect();
+        assert_eq!(weights.len(), 3, "{columns}");
+        // No column is starved: the narrowest gets at least a quarter of the widest.
+        let (min, max) = weights
+            .iter()
+            .fold((f64::MAX, 0f64), |(a, b), w| (a.min(*w), b.max(*w)));
+        assert!(min * 4.0 >= max, "{weights:?}");
+        assert!(src.contains("#set table.cell(breakable: false)"));
     }
 
     #[test]
