@@ -46,7 +46,7 @@ const PREAMBLE: &str = r##"
 #show heading.where(level: 3): set text(size: 12.5pt)
 #show heading.where(level: 4): set text(size: 11pt)
 #show raw: set text(font: ("DejaVu Sans Mono", "Noto Emoji"), size: 8.8pt)
-#show raw.where(block: false): box.with(fill: rgb("#eff1f3"), inset: (x: 3pt), outset: (y: 3pt), radius: 3pt)
+#show raw.where(block: false): it => highlight(fill: rgb("#eff1f3"), extent: 1.5pt, radius: 2pt, top-edge: "ascender", bottom-edge: "descender", it)
 #show raw.where(block: true): block.with(fill: tint, stroke: 0.5pt + rule, inset: 10pt, radius: 6pt, width: 100%)
 #show link: set text(fill: link-blue)
 #show quote.where(block: true): it => block(
@@ -56,10 +56,10 @@ const PREAMBLE: &str = r##"
 #set table(
   stroke: 0.5pt + rule,
   inset: (x: 8pt, y: 6pt),
-  fill: (_, y) => if y == 0 { rgb("#f0f3f6") },
 )
-#show table.cell.where(y: 0): strong
+#let header-cell(body) = table.cell(fill: rgb("#f0f3f6"), strong(body))
 #show table: set text(size: 9.5pt)
+#show table: set block(above: 1.1em, below: 1.2em)
 #set list(indent: 0.4em, body-indent: 0.55em, spacing: 0.65em)
 #set enum(indent: 0.4em, body-indent: 0.55em, spacing: 0.65em)
 #let checkbox(checked) = box(width: 0.8em, height: 0.8em, stroke: 0.7pt + muted, radius: 2pt, baseline: 0.1em, fill: if checked { link-blue } else { none }, if checked { align(center + horizon, text(fill: white, size: 0.62em, weight: "bold", "✓")) })
@@ -268,10 +268,20 @@ impl<'a> Writer<'a> {
                 let mut cells = Vec::new();
                 for row in node.children() {
                     let header = matches!(row.data.borrow().value, NodeValue::TableRow(true));
-                    let row_cells: Vec<String> = row.children().map(|c| self.inlines(c)).collect();
                     if header {
-                        cells.push(format!("table.header({})", row_cells.join(", ")));
+                        // `| | |` headers (common in AI-written key/value tables) are dropped
+                        // instead of rendering an empty shaded row.
+                        if row.children().all(|c| plain_text(c).trim().is_empty()) {
+                            continue;
+                        }
+                        let header_cells: Vec<String> = row
+                            .children()
+                            .map(|c| format!("header-cell({})", self.inlines(c)))
+                            .collect();
+                        cells.push(format!("table.header({})", header_cells.join(", ")));
                     } else {
+                        let row_cells: Vec<String> =
+                            row.children().map(|c| self.inlines(c)).collect();
                         cells.extend(row_cells);
                     }
                 }
@@ -399,6 +409,19 @@ mod tests {
         assert!(src.contains(r#"raw("fn a() {}", block: true, lang: "rust")"#));
         assert!(src.contains(r#"link("https://y.dev", "y")"#));
         assert!(!src.contains("javascript"), "{src}");
+    }
+
+    #[test]
+    fn tables_drop_empty_headers_and_style_real_ones() {
+        let key_value = source("| | |\n|---|---|\n| **Status** | done |");
+        assert!(!key_value.contains("table.header"), "{key_value}");
+        assert!(key_value.contains(r#"strong("Status")"#));
+
+        let normal = source("| File | Change |\n|---|---|\n| a | b |");
+        assert!(
+            normal.contains(r#"table.header(header-cell("File"), header-cell("Change"))"#),
+            "{normal}"
+        );
     }
 
     #[test]

@@ -401,6 +401,10 @@ impl<'a> Writer<'a> {
                 let mut rows = Vec::new();
                 for row in node.children() {
                     let header = matches!(row.data.borrow().value, NodeValue::TableRow(true));
+                    // Skip `| | |` headers instead of emitting an empty shaded row.
+                    if header && row.children().all(|c| plain_text(c).trim().is_empty()) {
+                        continue;
+                    }
                     let cells = row
                         .children()
                         .enumerate()

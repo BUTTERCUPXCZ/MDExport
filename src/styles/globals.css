@@ -379,10 +379,28 @@
       border: 1px solid var(--doc-rule);
       text-align: left;
       vertical-align: top;
+      /* `anywhere` (inherited) would let the browser squeeze a column down to one
+         letter per line; `break-word` keeps whole words as the minimum width. */
+      overflow-wrap: break-word;
+    }
+    /* Long inline code (URLs, fetch(...) calls) may break anywhere so it never
+       pushes the table past the page edge. */
+    & :is(th, td) code {
+      overflow-wrap: anywhere;
     }
     & th {
       background: #f0f3f6;
       font-weight: 700;
+    }
+    /* Short label column in key/value tables (e.g. "Status", "File") stays on one line. */
+    & td:first-child:has(> strong:only-child) {
+      width: 1%;
+      white-space: nowrap;
+    }
+    /* `| | |` headers — common in AI-written key/value tables — are hidden
+       instead of showing an empty shaded row (exports drop them too). */
+    & thead:not(:has(th:not(:empty))) {
+      display: none;
     }
     & hr {
       margin: 1.6em 0;

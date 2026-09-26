@@ -34,6 +34,14 @@ typst-assets = { version = "0.15.1", features = ["fonts"] }
 typst-layout = "0.15.1"
 
 
+# Dev builds: keep line-level debug info for MDForge itself, none for dependencies.
+# Full debug info for Typst, docx-rs & co. made `target/` grow past 20 GB.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
 [profile.release]
 codegen-units = 1

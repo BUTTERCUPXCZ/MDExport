@@ -22,6 +22,8 @@ blockquote { margin: 0 0 1em; padding: 0 1em; color: #59636e; border-left: 4px s
 table { border-collapse: collapse; margin: 0 0 1em; }
 th, td { border: 1px solid #d1d9e0; padding: 6px 13px; }
 th { background: #f6f8fa; }
+td code, th code { overflow-wrap: anywhere; }
+thead:not(:has(th:not(:empty))) { display: none; }
 hr { border: 0; border-top: 1px solid #d1d9e0; margin: 1.5em 0; }
 img { max-width: 100%; }
 li:has(> input[type=checkbox]) { list-style: none; margin-left: -1.4em; }
