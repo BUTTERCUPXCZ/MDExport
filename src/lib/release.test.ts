@@ -1,24 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { detectOS, formatSize, pickAssets } from "@/lib/release";
+import { formatSize, pickAssets } from "@/lib/release";
 
 const asset = (name: string) => ({
   name,
   browser_download_url: `https://example.test/${name}`,
   size: 27_153_846,
-});
-
-describe("detectOS", () => {
-  it("recognises desktop platforms", () => {
-    expect(detectOS("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")).toBe("windows");
-    expect(detectOS("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5)")).toBe("mac");
-    expect(detectOS("Mozilla/5.0 (X11; Linux x86_64)")).toBe("linux");
-    expect(detectOS("", "macOS")).toBe("mac");
-  });
-
-  it("treats phones as unknown", () => {
-    expect(detectOS("Mozilla/5.0 (Linux; Android 14)")).toBe("unknown");
-    expect(detectOS("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)")).toBe("unknown");
-  });
 });
 
 describe("pickAssets", () => {

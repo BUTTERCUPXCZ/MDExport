@@ -3,10 +3,9 @@ import { FeatureBento } from "@/components/FeatureBento";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/components/Hero";
 import { Navbar } from "@/components/Navbar";
-import { useLatestRelease, useOS } from "@/lib/release";
+import { useLatestRelease } from "@/lib/release";
 
 export function App() {
-  const os = useOS();
   const release = useLatestRelease();
 
   return (
@@ -19,9 +18,9 @@ export function App() {
       </a>
       <Navbar />
       <main>
-        <Hero os={os} version={release.version} />
+        <Hero version={release.version} />
         <FeatureBento />
-        <DownloadSection os={os} release={release} />
+        <DownloadSection release={release} />
       </main>
       <Footer />
     </>

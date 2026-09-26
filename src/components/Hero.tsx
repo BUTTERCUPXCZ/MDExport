@@ -3,15 +3,8 @@ import { useState } from "react";
 import { GitHubMark } from "@/components/GitHubMark";
 import { Button } from "@/components/ui/button";
 import { AppWindow, Shot, STAGES, type Stage } from "@/mocks/AppMocks";
-import { REPO_URL, type OS } from "@/lib/release";
+import { REPO_URL } from "@/lib/release";
 import { cn } from "@/lib/utils";
-
-const OS_NAME: Record<OS, string | null> = {
-  windows: "Windows",
-  mac: "macOS",
-  linux: "Linux",
-  unknown: null,
-};
 
 const STAGE_TEXT: Record<Stage, string> = {
   write: "Write. The editor, full width, with find and replace and the shortcuts you know.",
@@ -19,9 +12,8 @@ const STAGE_TEXT: Record<Stage, string> = {
   deliver: "Deliver. The finished page with PDF, Word and HTML export one click away.",
 };
 
-export function Hero({ os, version }: { os: OS; version: string | null }) {
+export function Hero({ version }: { version: string | null }) {
   const [stage, setStage] = useState<Stage>("proof");
-  const osName = OS_NAME[os];
 
   return (
     <section id="top" className="relative overflow-hidden pt-28 pb-20 sm:pt-32">
@@ -52,7 +44,7 @@ export function Hero({ os, version }: { os: OS; version: string | null }) {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button size="cta" asChild>
               <a href="#download">
-                {osName ? `Download for ${osName}` : "Download"}
+                Download MDForge
                 <ArrowDown />
               </a>
             </Button>

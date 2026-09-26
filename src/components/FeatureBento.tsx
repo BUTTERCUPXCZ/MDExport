@@ -8,6 +8,7 @@ import {
   Shot,
 } from "@/mocks/AppMocks";
 import { cn } from "@/lib/utils";
+import { Keycap } from "@/components/Keycap";
 
 /** A bento tile: product UI on top (most of the tile), one title and one line below. */
 function BentoCard({
@@ -38,14 +39,6 @@ function BentoCard({
         <p className="mt-1.5 max-w-[62ch] text-[15px] leading-relaxed text-text-2">{children}</p>
       </div>
     </article>
-  );
-}
-
-function Keycap({ children }: { children: string }) {
-  return (
-    <kbd className="inline-flex h-7 min-w-7 items-center justify-center rounded-md border border-line-strong bg-canvas px-2 font-sans text-[13px] font-medium text-text-2 shadow-[inset_0_-1px_0_rgb(0_0_0/0.35)]">
-      {children}
-    </kbd>
   );
 }
 

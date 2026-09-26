@@ -4,18 +4,6 @@ export const REPO_URL = "https://github.com/BUTTERCUPXCZ/MDforge";
 export const RELEASES_URL = `${REPO_URL}/releases/latest`;
 const LATEST_API = "https://api.github.com/repos/BUTTERCUPXCZ/MDforge/releases/latest";
 
-export type OS = "windows" | "mac" | "linux" | "unknown";
-
-/** Best guess of the visitor's desktop OS (phones count as unknown). */
-export function detectOS(userAgent: string, platform = ""): OS {
-  const text = `${platform} ${userAgent}`.toLowerCase();
-  if (/android|iphone|ipad|ipod/.test(text)) return "unknown";
-  if (text.includes("win")) return "windows";
-  if (text.includes("mac")) return "mac";
-  if (text.includes("linux") || text.includes("x11")) return "linux";
-  return "unknown";
-}
-
 export interface Asset {
   name: string;
   url: string;
@@ -82,18 +70,4 @@ export function useLatestRelease(): Release {
   }, []);
 
   return release;
-}
-
-/** Visitor's OS, read once on the client. */
-export function useOS(): OS {
-  const [os] = useState<OS>(() =>
-    typeof navigator === "undefined"
-      ? "unknown"
-      : detectOS(
-          navigator.userAgent,
-          (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
-            ?.platform ?? navigator.platform,
-        ),
-  );
-  return os;
 }

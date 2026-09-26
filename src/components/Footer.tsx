@@ -3,7 +3,7 @@ import { REPO_URL } from "@/lib/release";
 const LINKS = [
   { href: REPO_URL, label: "GitHub" },
   { href: `${REPO_URL}/releases`, label: "Releases" },
-  { href: `${REPO_URL}#readme`, label: "Docs" },
+  { href: "./docs.html", label: "Docs" },
   { href: `${REPO_URL}/issues`, label: "Report an issue" },
 ];
 

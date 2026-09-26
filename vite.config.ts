@@ -9,5 +9,14 @@ export default defineConfig({
   base: "./",
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+  // Two pages: the landing page and the docs.
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, "index.html"),
+        docs: path.resolve(__dirname, "docs.html"),
+      },
+    },
+  },
   test: { environment: "jsdom" },
 });

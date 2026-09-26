@@ -1,18 +1,16 @@
-import { Check, Copy, Download } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { CopyButton } from "@/components/CopyButton";
 import {
   formatSize,
   RELEASES_URL,
   REPO_URL,
   type FileKind,
-  type OS,
   type Release,
 } from "@/lib/release";
 import { cn } from "@/lib/utils";
 
 interface Platform {
-  os: Exclude<OS, "unknown">;
+  id: string;
   name: string;
   files: { kind: FileKind; label: string; hint: string }[];
   note: string;
@@ -20,7 +18,7 @@ interface Platform {
 
 const PLATFORMS: Platform[] = [
   {
-    os: "windows",
+    id: "windows",
     name: "Windows",
     files: [
       { kind: "exe", label: "Installer", hint: ".exe · Windows 10 and 11" },
@@ -29,7 +27,7 @@ const PLATFORMS: Platform[] = [
     note: "SmartScreen may warn: More info → Run anyway.",
   },
   {
-    os: "mac",
+    id: "mac",
     name: "macOS",
     files: [
       { kind: "dmgArm", label: "Apple Silicon", hint: ".dmg · M1 and newer" },
@@ -38,7 +36,7 @@ const PLATFORMS: Platform[] = [
     note: "First launch: right-click the app → Open.",
   },
   {
-    os: "linux",
+    id: "linux",
     name: "Linux",
     files: [
       { kind: "deb", label: "Debian / Ubuntu", hint: ".deb" },
@@ -53,30 +51,7 @@ const BUILD = `git clone ${REPO_URL}.git
 cd MDforge && pnpm install
 pnpm tauri build`;
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Button
-      variant="ghost"
-      size="icon-sm"
-      aria-label={copied ? "Copied" : "Copy commands"}
-      className="absolute top-3 right-3 text-muted-foreground hover:text-text"
-      onClick={() =>
-        navigator.clipboard?.writeText(text).then(
-          () => {
-            setCopied(true);
-            window.setTimeout(() => setCopied(false), 1500);
-          },
-          () => {},
-        )
-      }
-    >
-      {copied ? <Check className="text-success" /> : <Copy />}
-    </Button>
-  );
-}
-
-export function DownloadSection({ os, release }: { os: OS; release: Release }) {
+export function DownloadSection({ release }: { release: Release }) {
   return (
     <section id="download" className="scroll-mt-20 border-t border-line py-24 sm:py-32">
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
@@ -92,26 +67,19 @@ export function DownloadSection({ os, release }: { os: OS; release: Release }) {
 
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3 lg:gap-6">
           {PLATFORMS.map((platform) => {
-            const yours = platform.os === os;
             return (
               <div
-                key={platform.os}
-                className={cn(
-                  "flex flex-col rounded-[20px] border bg-panel p-6",
-                  yours ? "border-accent/60" : "border-line",
-                )}
+                key={platform.id}
+                className="flex flex-col rounded-[20px] border border-line bg-panel p-6"
               >
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-xl font-semibold tracking-[-0.015em] text-text">
-                    {platform.name}
-                  </h3>
-                  {yours && <span className="text-[13px] text-accent">Your system</span>}
-                </div>
+                <h3 className="text-xl font-semibold tracking-[-0.015em] text-text">
+                  {platform.name}
+                </h3>
 
                 <ul className="mt-5 flex flex-col gap-2">
                   {platform.files.map((file, index) => {
                     const asset = release.files[file.kind];
-                    const primary = yours && index === 0;
+                    const primary = index === 0;
                     return (
                       <li key={file.kind}>
                         <a
@@ -163,7 +131,7 @@ export function DownloadSection({ os, release }: { os: OS; release: Release }) {
               {"\n"}
               {BUILD}
             </pre>
-            <CopyButton text={BUILD} />
+            <CopyButton text={BUILD} label="Copy commands" />
           </div>
           <p className="self-center text-[15px] leading-relaxed text-text-2 md:col-span-5">
             The builds aren't code-signed yet, so your OS asks once before the first launch.
