@@ -1,6 +1,6 @@
 [package]
 name = "mdexport"
-version = "0.3.0"
+version = "0.3.1"
 description = "Local-first Markdown workspace for developers"
 authors = ["MDExport"]
 edition = "2021"
