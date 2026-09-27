@@ -162,10 +162,16 @@ mod tests {
             let path = std::path::Path::new(&dir).join(format!("sample.{}", format.extension()));
             std::fs::write(path, bytes).unwrap();
         }
+        let continuous = export_with(&input, ExportFormat::Pdf, "sample", PdfPages::Continuous);
+        std::fs::write(
+            std::path::Path::new(&dir).join("sample-continuous.pdf"),
+            continuous.unwrap(),
+        )
+        .unwrap();
     }
 
     #[test]
-    fn continuous_pdf_is_one_page() {
+    fn continuous_pdf_has_one_page_per_section() {
         let long = "Paragraph of text that fills the page.\n\n".repeat(200);
         let a4 = export_with(&long, ExportFormat::Pdf, "x", PdfPages::A4).unwrap();
         let continuous = export_with(&long, ExportFormat::Pdf, "x", PdfPages::Continuous).unwrap();
@@ -173,6 +179,10 @@ mod tests {
         assert!(pdf::page_count(&long, PdfPages::A4) > 1);
         assert_eq!(pdf::page_count(&long, PdfPages::Continuous), 1);
         assert_ne!(a4, continuous);
+
+        // A new page per `#` section (none before the first), never in the middle.
+        let sections = format!("# One\n\n{long}# Two\n\n{long}## Sub\n\ntext\n\n# Three\n");
+        assert_eq!(pdf::page_count(&sections, PdfPages::Continuous), 3);
     }
 
     #[test]

@@ -19,7 +19,7 @@ const PDF_PAGES: { value: PdfPages; label: string; note: string }[] = [
   {
     value: "continuous",
     label: "Continuous",
-    note: "One long page, never cut between pages. Best for reading on screen.",
+    note: "A tall page per # section, never cut mid-content. Best for reading on screen.",
   },
 ];
 

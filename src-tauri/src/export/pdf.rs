@@ -419,8 +419,10 @@ fn typst_source(root: Node<'_>, title: &str, pages: PdfPages) -> String {
     let writer = Writer::new(root);
     let mut source = format!("#set document(title: {})\n{PREAMBLE}\n", lit(title));
     if pages == PdfPages::Continuous {
-        // One page as tall as the content: nothing is cut, so no page numbers either.
+        // Pages as tall as their content, one per top-level section: nothing is cut
+        // mid-content, and no page grows past what PDF viewers can zoom into.
         source.push_str("#set page(height: auto, footer: none)\n");
+        source.push_str("#show heading.where(level: 1): it => { pagebreak(weak: true); it }\n");
     }
     for node in root.children() {
         if let Some(block) = writer.block(node) {

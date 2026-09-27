@@ -76,7 +76,7 @@ describe("Export", () => {
 
     expect(deliver.getByRole("radio", { name: "A4" })).toBeChecked();
     await user.click(deliver.getByRole("radio", { name: "Continuous" }));
-    expect(deliver.getByText(/never cut between pages/)).toBeInTheDocument();
+    expect(deliver.getByText(/never cut mid-content/)).toBeInTheDocument();
     await user.click(deliver.getByRole("button", { name: "Export PDF" }));
 
     expect(exportFn).toHaveBeenCalledWith(
