@@ -42,7 +42,7 @@ export default defineConfig(() => ({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    // The landing page (mdforge-landing/) has its own tests and config.
+    // The landing page (mdexport-landing/) has its own tests and config.
     include: ["src/**/*.test.{ts,tsx}"],
     css: false,
   },

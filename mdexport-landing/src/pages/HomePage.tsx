@@ -6,7 +6,7 @@ import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 export function HomePage() {
   const release = useLatestRelease();
-  useDocumentTitle("MDForge: Markdown in, polished documents out");
+  useDocumentTitle("MDExport: Markdown in, polished documents out");
 
   return (
     <main>

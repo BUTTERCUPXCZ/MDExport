@@ -24,7 +24,7 @@ describe("TitleBar", () => {
 
     const bar = controls().closest("header")!;
     expect(bar).toHaveAttribute("data-tauri-drag-region");
-    expect(within(bar).getByText("MDForge")).toBeInTheDocument();
+    expect(within(bar).getByText("MDExport")).toBeInTheDocument();
     expect(within(bar).getByText("auth-flow")).toBeInTheDocument();
   });
 

@@ -11,10 +11,10 @@ describe("appService", () => {
     const calls: string[] = [];
     mockIPC((cmd) => {
       calls.push(cmd);
-      if (cmd === "get_app_info") return { name: "MDForge", version: "0.1.0" };
+      if (cmd === "get_app_info") return { name: "MDExport", version: "0.1.0" };
     });
 
-    await expect(appService.getInfo()).resolves.toEqual({ name: "MDForge", version: "0.1.0" });
+    await expect(appService.getInfo()).resolves.toEqual({ name: "MDExport", version: "0.1.0" });
     expect(calls).toEqual(["get_app_info"]);
   });
 });

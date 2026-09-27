@@ -14,7 +14,7 @@ describe("Home", () => {
   it("shows the library name, start actions and recent documents, newest first", async () => {
     await renderAt("/");
 
-    expect(screen.getByRole("heading", { level: 1, name: "MDForge" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "MDExport" })).toBeInTheDocument();
     expect(start().getByRole("button", { name: /^New document\s*Ctrl N$/ })).toBeInTheDocument();
     const names = within(screen.getByRole("region", { name: "Recently edited" }))
       .getAllByRole("button")
@@ -36,14 +36,14 @@ describe("Home", () => {
     const open = vi
       .spyOn(documentService, "open")
       .mockResolvedValue(
-        docFile({ path: "/home/me/Documents/MDForge/backend/api.md", name: "api.md" }),
+        docFile({ path: "/home/me/Documents/MDExport/backend/api.md", name: "api.md" }),
       );
     const router = await renderAt("/");
     const recent = screen.getByRole("region", { name: "Recently edited" });
 
     await user.click(within(recent).getByRole("button", { name: /^api/ }));
 
-    expect(open).toHaveBeenCalledWith("/home/me/Documents/MDForge/backend/api.md");
+    expect(open).toHaveBeenCalledWith("/home/me/Documents/MDExport/backend/api.md");
     expect(router.state.location.pathname).toMatch(/^\/editor\//);
   });
 
@@ -110,7 +110,7 @@ describe("Settings", () => {
     await user.keyboard("{Control>},{/Control}");
     expect(router.state.location.pathname).toBe("/settings");
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
-    expect(await screen.findByText("/home/me/Documents/MDForge")).toBeInTheDocument();
+    expect(await screen.findByText("/home/me/Documents/MDExport")).toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     expect(router.state.location.pathname).toBe(editorPath);

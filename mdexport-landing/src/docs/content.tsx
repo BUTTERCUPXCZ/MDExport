@@ -74,7 +74,7 @@ const tag = await git.tag("v0.2.0");
 [^1]: Tags trigger the installer builds.`;
 
 const BUILD = `git clone ${REPO_URL}.git
-cd MDforge
+cd MDExport
 pnpm install
 pnpm tauri dev      # run with hot reload
 pnpm tauri build    # installers in src-tauri/target/release/bundle/`;
@@ -91,7 +91,7 @@ export function DocsContent() {
           <a className="text-text underline decoration-line-strong underline-offset-4 hover:decoration-accent" href={`${REPO_URL}/releases/latest`}>
             latest release
           </a>
-          . MDForge runs fully offline and needs no account.
+          . MDExport runs fully offline and needs no account.
         </P>
         <Table
           head={["System", "File", "Notes"]}
@@ -99,9 +99,9 @@ export function DocsContent() {
             ["Windows 10 / 11", <C>…_x64-setup.exe</C>, "Or the .msi for managed installs."],
             ["macOS (Apple Silicon)", <C>…_aarch64.dmg</C>, "M1 and newer."],
             ["macOS (Intel)", <C>…_x64.dmg</C>, "Intel Macs."],
-            ["Debian / Ubuntu", <C>…_amd64.deb</C>, <C>sudo apt install ./MDForge_*.deb</C>],
+            ["Debian / Ubuntu", <C>…_amd64.deb</C>, <C>sudo apt install ./MDExport_*.deb</C>],
             ["Any Linux", <C>…_amd64.AppImage</C>, <><C>chmod +x</C> the file, then run it.</>],
-            ["Fedora / openSUSE", <C>….x86_64.rpm</C>, <C>sudo dnf install ./MDForge-*.rpm</C>],
+            ["Fedora / openSUSE", <C>….x86_64.rpm</C>, <C>sudo dnf install ./MDExport-*.rpm</C>],
           ]}
         />
         <Note title="The builds aren't code-signed yet">
@@ -113,12 +113,12 @@ export function DocsContent() {
 
       <Section id="first-launch" title="First launch">
         <P>
-          MDForge asks where to keep your documents. This folder is your <UI>library</UI>:
+          MDExport asks where to keep your documents. This folder is your <UI>library</UI>:
           every Markdown file inside it shows up in the file tree on the left.
         </P>
         <UL>
           <li>
-            <UI>Use this folder</UI> creates <C>Documents/MDForge</C> in your home folder.
+            <UI>Use this folder</UI> creates <C>Documents/MDExport</C> in your home folder.
           </li>
           <li>
             <UI>Choose folder…</UI> lets you pick an existing one, for example a <C>docs/</C>{" "}
@@ -152,7 +152,7 @@ export function DocsContent() {
           ]}
         />
         <P>
-          <Keys keys={["Ctrl", "\\"]} /> flips between Write and Proof. MDForge remembers the
+          <Keys keys={["Ctrl", "\\"]} /> flips between Write and Proof. MDExport remembers the
           last stage you used.
         </P>
       </Section>
@@ -192,7 +192,7 @@ export function DocsContent() {
           </li>
           <li>
             <UI>Move to trash</UI> sends documents and folders to your system trash, so you
-            can restore them. MDForge asks first.
+            can restore them. MDExport asks first.
           </li>
           <li>
             Files you open from elsewhere (<Keys keys={["Ctrl", "O"]} />) appear under{" "}
@@ -219,7 +219,7 @@ export function DocsContent() {
           </li>
           <li>
             Closing the window never loses edits: with autosave on, pending changes are saved
-            first. With it off, MDForge asks <UI>Save and close</UI>,{" "}
+            first. With it off, MDExport asks <UI>Save and close</UI>,{" "}
             <UI>Close without saving</UI> or <UI>Cancel</UI>.
           </li>
           <li>
@@ -227,7 +227,7 @@ export function DocsContent() {
             saving stops and asks: <UI>Reload from disk</UI>, <UI>Save as copy</UI> or{" "}
             <UI>Overwrite</UI>.
           </li>
-          <li>On the next launch MDForge reopens the document you were working on.</li>
+          <li>On the next launch MDExport reopens the document you were working on.</li>
         </UL>
       </Section>
 
@@ -264,7 +264,7 @@ export function DocsContent() {
 
       <Section id="markdown" title="Supported Markdown">
         <P>
-          MDForge uses GitHub Flavored Markdown. The preview and all three exports come from the
+          MDExport uses GitHub Flavored Markdown. The preview and all three exports come from the
           same parser, so what you proof is what you export.
         </P>
         <UL>
@@ -302,7 +302,7 @@ export function DocsContent() {
           <li>
             Documents are plain <C>.md</C> files. Grep them, diff them, commit them.
           </li>
-          <li>MDForge makes no network requests. No account, no telemetry, no cloud.</li>
+          <li>MDExport makes no network requests. No account, no telemetry, no cloud.</li>
           <li>
             Saves are atomic (written to a temporary file, then renamed), so a crash can't
             leave half a file.
@@ -315,9 +315,9 @@ export function DocsContent() {
         <Table
           head={["System", "Settings file"]}
           rows={[
-            ["Linux", <C>~/.config/dev.mdforge.app/config.json</C>],
-            ["macOS", <C>~/Library/Application Support/dev.mdforge.app/config.json</C>],
-            ["Windows", <C>%APPDATA%\dev.mdforge.app\config.json</C>],
+            ["Linux", <C>~/.config/dev.mdexport.app/config.json</C>],
+            ["macOS", <C>~/Library/Application Support/dev.mdexport.app/config.json</C>],
+            ["Windows", <C>%APPDATA%\dev.mdexport.app\config.json</C>],
           ]}
         />
       </Section>
@@ -342,7 +342,7 @@ export function DocsContent() {
       <Section id="troubleshooting" title="Troubleshooting">
         <H3>macOS says the app "can't be opened"</H3>
         <P>
-          Right-click MDForge in Applications and choose <UI>Open</UI>. You only need to do this
+          Right-click MDExport in Applications and choose <UI>Open</UI>. You only need to do this
           once.
         </P>
         <H3>The AppImage doesn't start</H3>
@@ -351,8 +351,8 @@ export function DocsContent() {
           <C>.deb</C> instead.
         </P>
         <H3>Blank or flickering window on Linux with an NVIDIA GPU</H3>
-        <P>Start MDForge with the DMA-BUF renderer turned off:</P>
-        <Pre>WEBKIT_DISABLE_DMABUF_RENDERER=1 mdforge</Pre>
+        <P>Start MDExport with the DMA-BUF renderer turned off:</P>
+        <Pre>WEBKIT_DISABLE_DMABUF_RENDERER=1 mdexport</Pre>
         <H3>A document is missing from the tree</H3>
         <P>
           Check that it ends in <C>.md</C> or <C>.markdown</C> and isn't in a hidden folder,{" "}
@@ -364,7 +364,7 @@ export function DocsContent() {
           <a className="text-text underline decoration-line-strong underline-offset-4 hover:decoration-accent" href={`${REPO_URL}/issues`}>
             Open an issue
           </a>{" "}
-          with your system, the MDForge version (Settings → About) and what you expected.
+          with your system, the MDExport version (Settings → About) and what you expected.
         </P>
       </Section>
     </>

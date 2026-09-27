@@ -12,7 +12,7 @@ export function Footer() {
     <footer className="border-t border-line">
       <div className="mx-auto flex max-w-[1200px] flex-col gap-4 px-5 py-10 sm:flex-row sm:items-center sm:px-8">
         <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-text">MDForge</span> · Built with Tauri, Rust and
+          <span className="font-semibold text-text">MDExport</span> · Built with Tauri, Rust and
           React.
         </p>
         <ul className="flex flex-wrap gap-x-6 gap-y-2 sm:ml-auto">

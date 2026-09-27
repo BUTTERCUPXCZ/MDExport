@@ -267,7 +267,7 @@ export function LibraryTree({ menu, creating }: { menu?: boolean; creating?: boo
         <kbd>Ctrl K</kbd>
       </div>
       <div className="m-libhead">
-        MDForge
+        MDExport
         <span className={`m-plus${menu ? " open" : ""}`}>
           <Plus />
         </span>
@@ -333,12 +333,12 @@ export const STAGES: { id: Stage; label: string }[] = [
   { id: "deliver", label: "Deliver" },
 ];
 
-/** The full MDForge window at one stage. */
+/** The full MDExport window at one stage. */
 export function AppWindow({ stage }: { stage: Stage }) {
   return (
     <div className="m-window">
       <div className="m-titlebar">
-        <span className="brand">MDForge</span>
+        <span className="brand">MDExport</span>
         <span className="ctx">auth-flow</span>
         <span className="win" aria-hidden>
           <span>–</span>

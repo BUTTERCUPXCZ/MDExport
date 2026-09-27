@@ -57,7 +57,7 @@ describe("Editor page", () => {
     await user.keyboard("{Control>}s{/Control}");
 
     expect(save).toHaveBeenCalledWith(
-      "/home/me/Documents/MDForge/Bug Fix.md",
+      "/home/me/Documents/MDExport/Bug Fix.md",
       "# Bug Fix\n\nEdited",
       "v1",
       false,
@@ -167,7 +167,7 @@ describe("Editor page", () => {
     const dialog = screen.getByRole("alertdialog", { name: "Move “Bug Fix.md” to trash?" });
     await user.click(within(dialog).getByRole("button", { name: "Move to trash" }));
 
-    expect(del).toHaveBeenCalledWith("/home/me/Documents/MDForge/Bug Fix.md");
+    expect(del).toHaveBeenCalledWith("/home/me/Documents/MDExport/Bug Fix.md");
     await waitFor(() => expect(router.state.location.pathname).toBe("/"));
   });
 
@@ -225,7 +225,7 @@ describe("Editor page", () => {
     await renderEditor();
     const sidebar = index();
 
-    await user.click(within(sidebar).getByRole("link", { name: "MDForge" }));
+    await user.click(within(sidebar).getByRole("link", { name: "MDExport" }));
 
     expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
   });

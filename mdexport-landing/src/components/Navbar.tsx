@@ -33,7 +33,7 @@ export function Navbar() {
         className="mx-auto flex h-16 max-w-[1200px] items-center gap-8 px-5 sm:px-8"
       >
         <Link to="/" className="text-[17px] font-semibold tracking-[-0.02em] text-text">
-          MDForge
+          MDExport
         </Link>
         <ul className="hidden items-center gap-7 md:flex">
           <li>
@@ -59,7 +59,7 @@ export function Navbar() {
         </ul>
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" size="icon" asChild>
-            <a href={REPO_URL} aria-label="MDForge on GitHub">
+            <a href={REPO_URL} aria-label="MDExport on GitHub">
               <GitHubMark className="size-[18px]" />
             </a>
           </Button>

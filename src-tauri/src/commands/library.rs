@@ -15,7 +15,7 @@ fn default_location(app: &AppHandle) -> AppResult<PathBuf> {
         .document_dir()
         .or_else(|_| app.path().home_dir())
         .map_err(|e| AppError::Io(e.to_string()))?;
-    Ok(base.join("MDForge"))
+    Ok(base.join("MDExport"))
 }
 
 fn apply(state: &AppState, dir: &std::path::Path) -> AppResult<String> {

@@ -11,7 +11,7 @@ export const libraryService = {
     return invoke("get_default_library_location");
   },
 
-  /** Creates and uses `~/Documents/MDForge`. */
+  /** Creates and uses `~/Documents/MDExport`. */
   useDefaultLocation(): Promise<string> {
     return invoke("use_default_library_location");
   },

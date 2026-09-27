@@ -6,7 +6,7 @@ import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
 
-/** First launch: asks where MDForge should keep new documents. */
+/** First launch: asks where MDExport should keep new documents. */
 export function LibrarySetupDialog() {
   const location = useLibraryLocation((s) => s.location);
   const load = useLibraryLocation((s) => s.load);
@@ -42,7 +42,7 @@ export function LibrarySetupDialog() {
     <Modal
       open={needed}
       title="Choose your library folder"
-      description="MDForge saves new documents as plain .md files in this folder. You can change it later in Settings."
+      description="MDExport saves new documents as plain .md files in this folder. You can change it later in Settings."
       footer={
         <>
           <Button

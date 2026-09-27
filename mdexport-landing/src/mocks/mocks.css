@@ -1,5 +1,5 @@
 /*
- * Product pictures: static HTML copies of MDForge's real UI, drawn in em units
+ * Product pictures: static HTML copies of MDExport's real UI, drawn in em units
  * inside an inline-size container, so every shot scales like an image and
  * stays crisp. `--shot` sets how many container-widths one em is.
  */

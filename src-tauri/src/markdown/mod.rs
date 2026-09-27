@@ -1,4 +1,4 @@
-//! Markdown → HTML rendering. The single Markdown parser for MDForge (comrak, GFM).
+//! Markdown → HTML rendering. The single Markdown parser for MDExport (comrak, GFM).
 //!
 //! Security: document content is untrusted. Raw HTML is never passed through
 //! (`render.unsafe = false`), and comrak drops dangerous URLs such as

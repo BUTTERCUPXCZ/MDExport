@@ -48,7 +48,7 @@ const PLATFORMS: Platform[] = [
 ];
 
 const BUILD = `git clone ${REPO_URL}.git
-cd MDforge && pnpm install
+cd MDExport && pnpm install
 pnpm tauri build`;
 
 export function DownloadSection({ release }: { release: Release }) {
@@ -57,7 +57,7 @@ export function DownloadSection({ release }: { release: Release }) {
       <div className="mx-auto max-w-[1200px] px-5 sm:px-8">
         <div className="max-w-[640px]">
           <h2 className="text-[clamp(32px,4.4vw,46px)] leading-[1.05] font-semibold tracking-[-0.03em] text-text">
-            Download MDForge
+            Download MDExport
           </h2>
           <p className="mt-4 text-[17px] leading-relaxed text-text-2">
             {release.version ?? "Latest release"} for Windows, macOS and Linux. Free, open source,

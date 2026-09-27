@@ -213,7 +213,7 @@ describe("Library index menus", () => {
     const user = userEvent.setup();
     await renderAt("/");
 
-    const menu = await rightClick(user, within(index()).getByRole("link", { name: "MDForge" }));
+    const menu = await rightClick(user, within(index()).getByRole("link", { name: "MDExport" }));
     await user.click(menu.getByRole("menuitem", { name: "New folder" }));
 
     expect(within(index()).getByRole("textbox", { name: "New folder name" })).toBeInTheDocument();

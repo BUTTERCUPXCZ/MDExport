@@ -40,7 +40,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("nested").join("config.json");
         let config = AppConfig {
-            library_path: Some("/home/me/Documents/MDForge".into()),
+            library_path: Some("/home/me/Documents/MDExport".into()),
         };
 
         save(&path, &config).unwrap();

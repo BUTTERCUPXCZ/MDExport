@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-export const REPO_URL = "https://github.com/BUTTERCUPXCZ/MDforge";
+export const REPO_URL = "https://github.com/BUTTERCUPXCZ/MDExport";
 export const RELEASES_URL = `${REPO_URL}/releases/latest`;
-const LATEST_API = "https://api.github.com/repos/BUTTERCUPXCZ/MDforge/releases/latest";
+const LATEST_API = "https://api.github.com/repos/BUTTERCUPXCZ/MDExport/releases/latest";
 
 export interface Asset {
   name: string;
@@ -12,7 +12,7 @@ export interface Asset {
 
 export type FileKind = "exe" | "msi" | "dmgArm" | "dmgIntel" | "deb" | "appImage" | "rpm";
 
-/** Installer file names as tauri-action names them, e.g. MDForge_0.1.0_x64-setup.exe. */
+/** Installer file names as tauri-action names them, e.g. MDExport_0.1.0_x64-setup.exe. */
 const PATTERNS: Record<FileKind, RegExp> = {
   exe: /_x64-setup\.exe$/i,
   msi: /\.msi$/i,

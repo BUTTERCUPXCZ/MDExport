@@ -15,7 +15,7 @@ import { markdownService } from "@/services/tauri/markdown";
 import type { DocumentFile } from "@/types/document";
 import type { LibraryEntry, LibraryListing } from "@/types/library";
 
-export const LIBRARY = "/home/me/Documents/MDForge";
+export const LIBRARY = "/home/me/Documents/MDExport";
 
 export function docFile(overrides: Partial<DocumentFile> = {}): DocumentFile {
   return {
@@ -71,7 +71,7 @@ export function setupApp({
     exportFormat: "pdf",
   });
 
-  vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDForge", version: "0.1.0" });
+  vi.spyOn(appService, "getInfo").mockResolvedValue({ name: "MDExport", version: "0.1.0" });
   vi.spyOn(libraryService, "getLocation").mockResolvedValue(library);
   vi.spyOn(libraryService, "getDefaultLocation").mockResolvedValue(LIBRARY);
   vi.spyOn(libraryService, "list").mockResolvedValue(listing);

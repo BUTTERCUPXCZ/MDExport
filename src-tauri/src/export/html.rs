@@ -48,7 +48,7 @@ pub fn render(md: &str, title: &str) -> String {
     format!(
         "<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n\
          <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n\
-         <meta name=\"generator\" content=\"MDForge\">\n<title>{}</title>\n<style>{}</style>\n\
+         <meta name=\"generator\" content=\"MDExport\">\n<title>{}</title>\n<style>{}</style>\n\
          </head>\n<body>\n<main>\n{}</main>\n</body>\n</html>\n",
         escape(title),
         STYLE,

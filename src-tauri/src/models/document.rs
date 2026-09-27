@@ -1,7 +1,7 @@
 use serde::Serialize;
 
-/// Identifies the exact on-disk state of a file when MDForge last read or wrote it.
-/// Used to detect edits made outside MDForge before saving.
+/// Identifies the exact on-disk state of a file when MDExport last read or wrote it.
+/// Used to detect edits made outside MDExport before saving.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FileVersion {

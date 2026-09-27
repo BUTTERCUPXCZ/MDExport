@@ -16,7 +16,7 @@ import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 const FOCUS_RESCAN_MS = 3000;
 
 /** Scans the library once it's known, and again whenever the window regains focus
- *  (picks up files added or renamed outside MDForge). */
+ *  (picks up files added or renamed outside MDExport). */
 function useLibrarySync() {
   const location = useLibraryLocation((s) => s.location);
 

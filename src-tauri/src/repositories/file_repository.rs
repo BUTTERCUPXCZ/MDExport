@@ -55,7 +55,7 @@ fn temp_path_for(path: &Path) -> PathBuf {
         .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("document");
-    path.with_file_name(format!(".{name}.mdforge-{}.tmp", std::process::id()))
+    path.with_file_name(format!(".{name}.mdexport-{}.tmp", std::process::id()))
 }
 
 /// Writes atomically: temp file in the same folder, fsync, then rename over the target.

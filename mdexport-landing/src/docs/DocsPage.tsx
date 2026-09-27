@@ -59,7 +59,7 @@ function Toc({ active, onPick }: { active: string; onPick?: () => void }) {
 export function DocsPage() {
   const active = useActiveSection();
   const [tocOpen, setTocOpen] = useState(false);
-  useDocumentTitle("Documentation · MDForge");
+  useDocumentTitle("Documentation · MDExport");
 
   return (
     <main className="mx-auto max-w-[1200px] px-5 pt-28 pb-24 sm:px-8 sm:pt-32">
@@ -68,7 +68,7 @@ export function DocsPage() {
             Documentation
           </h1>
           <p className="mt-4 max-w-[60ch] text-[17px] leading-relaxed text-text-2">
-            Everything MDForge does, from the first launch to exporting and building it
+            Everything MDExport does, from the first launch to exporting and building it
             yourself. Something missing?{" "}
             <a
               href={`${REPO_URL}/issues`}

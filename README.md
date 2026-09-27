@@ -1,9 +1,9 @@
-# MDForge
+# MDExport
 
-**Download:** [latest release](https://github.com/BUTTERCUPXCZ/MDforge/releases/latest) ·
-**Website:** source in [`mdforge-landing/`](mdforge-landing/)
+**Download:** [latest release](https://github.com/BUTTERCUPXCZ/MDExport/releases/latest) ·
+**Website:** source in [`mdexport-landing/`](mdexport-landing/)
 
-MDForge is a local-first Markdown workspace for people who write a lot: handover notes,
+MDExport is a local-first Markdown workspace for people who write a lot: handover notes,
 specs, docs and long drafts. Your documents stay plain `.md` files in a folder you choose.
 There's no account, no cloud and no internet needed.
 
@@ -110,7 +110,7 @@ src-tauri/src/            Rust application core
 - Deleting documents or folders moves them to the OS trash. The library folder itself
   can't be deleted from the app.
 - The library folder is stored in `<app config dir>/config.json`
-  (Linux: `~/.config/dev.mdforge.app/`).
+  (Linux: `~/.config/dev.mdexport.app/`).
 
 Request flow: `React → services/tauri → Tauri command → service → repository`.
 

@@ -49,7 +49,7 @@ function LibrarySection() {
   return (
     <Section
       title="Library folder"
-      description="MDForge lists every Markdown file in this folder and its subfolders. New documents are created here."
+      description="MDExport lists every Markdown file in this folder and its subfolders. New documents are created here."
     >
       <div className="flex items-center gap-3">
         <code className="min-w-0 flex-1 rounded-md border border-line bg-sunken px-3 py-2 font-mono text-[12.5px] break-all text-text">
@@ -99,7 +99,7 @@ function AboutSection() {
   return (
     <Section title="About">
       <p className="text-[13px] text-text">
-        MDForge <span data-testid="app-version">{version ? `v${version}` : ""}</span>
+        MDExport <span data-testid="app-version">{version ? `v${version}` : ""}</span>
       </p>
       <p className="mt-1 text-[13px] text-text-2">
         Your documents stay plain .md files on your disk. Nothing leaves this computer.

@@ -44,7 +44,7 @@ mod tests {
         assert_eq!(service.location(), None);
 
         let chosen = service
-            .set_location(&root.path().join("Docs/MDForge"))
+            .set_location(&root.path().join("Docs/MDExport"))
             .unwrap();
 
         assert!(chosen.is_dir());

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useDocumentTitle } from "@/lib/useDocumentTitle";
 
 export function NotFoundPage() {
-  useDocumentTitle("Page not found · MDForge");
+  useDocumentTitle("Page not found · MDExport");
   return (
     <main className="mx-auto max-w-[1200px] px-5 pt-40 pb-32 sm:px-8">
       <h1 className="text-[40px] leading-tight font-semibold tracking-[-0.03em] text-text">

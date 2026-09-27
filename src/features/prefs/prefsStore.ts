@@ -50,6 +50,6 @@ export const usePrefsStore = create<PrefsState>()(
       setLastDocumentPath: (lastDocumentPath) => set({ lastDocumentPath }),
       setLastStage: (lastStage) => set({ lastStage }),
     }),
-    { name: "mdforge.prefs", version: 1, storage: createJSONStorage(() => safeStorage) },
+    { name: "mdexport.prefs", version: 1, storage: createJSONStorage(() => safeStorage) },
   ),
 );

@@ -75,7 +75,7 @@ export function TitleBar() {
     >
       <div data-tauri-drag-region className="flex items-center gap-2 pl-3">
         <span data-tauri-drag-region className="text-[12.5px] font-semibold text-text-2">
-          MDForge
+          MDExport
         </span>
       </div>
 

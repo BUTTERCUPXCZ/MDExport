@@ -18,7 +18,7 @@ pub enum AppError {
     #[error("The file changed on disk since it was opened")]
     Conflict { current: FileVersion },
 
-    #[error("MDForge is not allowed to access this path: {0}")]
+    #[error("MDExport is not allowed to access this path: {0}")]
     NotAllowed(String),
 
     #[error("Not a Markdown file: {0}")]

@@ -2966,7 +2966,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "mdforge"
+name = "mdexport"
 version = "0.1.0"
 dependencies = [
  "comrak",

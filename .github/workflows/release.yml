@@ -1,4 +1,4 @@
-# Builds MDForge for Windows, macOS (Apple Silicon + Intel) and Linux and
+# Builds MDExport for Windows, macOS (Apple Silicon + Intel) and Linux and
 # attaches the installers to a draft GitHub Release.
 #
 # Release: bump "version" in package.json and src-tauri/tauri.conf.json, then
@@ -73,12 +73,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
-          releaseName: MDForge v__VERSION__
+          releaseName: MDExport v__VERSION__
           releaseBody: |
             Local-first Markdown desktop app: write, proof and export to PDF, Word or HTML.
 
             **Downloads**
-            - **Windows:** `MDForge_x.y.z_x64-setup.exe` (or the `.msi`)
+            - **Windows:** `MDExport_x.y.z_x64-setup.exe` (or the `.msi`)
             - **macOS:** `.dmg`, `aarch64` for Apple Silicon (M1 and newer), `x64` for Intel
             - **Linux:** `.AppImage` (any distro), `.deb` (Ubuntu/Debian) or `.rpm` (Fedora)
 

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "MDForge",
+  "productName": "MDExport",
   "version": "0.1.0",
-  "identifier": "dev.mdforge.app",
+  "identifier": "dev.mdexport.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -14,7 +14,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "MDForge",
+        "title": "MDExport",
         "width": 1280,
         "height": 800,
         "minWidth": 900,

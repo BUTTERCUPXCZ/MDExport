@@ -35,7 +35,7 @@ export function Hero({ version }: { version: string | null }) {
           </h1>
 
           <p className="mt-5 max-w-[56ch] text-[17px] leading-relaxed text-text-2 sm:text-lg">
-            MDForge is a desktop Markdown workspace for developers. Write next to your code,
+            MDExport is a desktop Markdown workspace for developers. Write next to your code,
             check the real page as you go, and export PDF, Word or HTML from plain{" "}
             <code className="font-mono text-[0.9em] text-text">.md</code> files. Offline, no
             account.
@@ -44,7 +44,7 @@ export function Hero({ version }: { version: string | null }) {
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button size="cta" asChild>
               <a href="#download">
-                Download MDForge
+                Download MDExport
                 <ArrowDown />
               </a>
             </Button>
@@ -61,12 +61,12 @@ export function Hero({ version }: { version: string | null }) {
         <div
           id="how-it-works"
           className="mt-12 scroll-mt-24 sm:mt-14"
-          aria-label="How MDForge works"
+          aria-label="How MDExport works"
         >
           {/* On phones the window keeps a readable size and scrolls sideways. */}
           <div className="overflow-x-auto rounded-3xl border border-line-strong">
             <div className="min-w-[760px]">
-            <Shot label={`The MDForge window in the ${stage} stage: library on the left, ${
+            <Shot label={`The MDExport window in the ${stage} stage: library on the left, ${
               stage === "write"
                 ? "the Markdown editor"
                 : stage === "proof"

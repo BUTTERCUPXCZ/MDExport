@@ -1,6 +1,6 @@
-# MDForge landing page
+# MDExport landing page
 
-The website for [MDForge](https://github.com/BUTTERCUPXCZ/MDforge), a desktop Markdown
+The website for [MDExport](https://github.com/BUTTERCUPXCZ/MDExport), a desktop Markdown
 workspace for developers.
 
 **Stack:** React 19 · Vite · TypeScript · Tailwind CSS v4 · shadcn/ui · lucide
@@ -28,7 +28,7 @@ pnpm preview    # serve dist/
 ## Deploy
 
 `dist/` is a static site with relative paths, so it works on any static host.
-It is deployed on Vercel from this repo with **Root Directory** set to `mdforge-landing`
+It is deployed on Vercel from this repo with **Root Directory** set to `mdexport-landing`
 (framework preset Vite, build `pnpm build`, output `dist`).
 
 ## Layout

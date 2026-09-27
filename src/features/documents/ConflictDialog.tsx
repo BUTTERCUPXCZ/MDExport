@@ -10,7 +10,7 @@ interface ConflictDialogProps {
   onSaveCopy: () => void;
 }
 
-/** Shown when a save is refused because the file changed outside MDForge. */
+/** Shown when a save is refused because the file changed outside MDExport. */
 export function ConflictDialog({
   open,
   fileName,
@@ -27,7 +27,7 @@ export function ConflictDialog({
       title="File changed on disk"
       description={
         <>
-          <strong className="text-text">{fileName}</strong> was modified outside MDForge after you
+          <strong className="text-text">{fileName}</strong> was modified outside MDExport after you
           opened it. Choose which version to keep.
         </>
       }

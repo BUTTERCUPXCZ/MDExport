@@ -249,7 +249,7 @@ mod tests {
     #[test]
     fn create_in_picks_unique_untitled_names() {
         let dir = tempfile::tempdir().unwrap();
-        let library = dir.path().join("MDForge");
+        let library = dir.path().join("MDExport");
 
         let first = create_in(&library).unwrap();
         let second = create_in(&library).unwrap();

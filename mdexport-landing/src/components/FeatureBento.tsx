@@ -153,7 +153,7 @@ export function FeatureBento() {
             title="Plain files. Nothing leaves your machine."
             visual={
               <pre className="w-full overflow-hidden px-6 font-mono text-[13px] leading-[1.9] text-text-2">
-                <span className="text-muted-foreground">$</span> ls ~/Documents/MDForge/backend/handovers
+                <span className="text-muted-foreground">$</span> ls ~/Documents/MDExport/backend/handovers
                 {"\n"}
                 <span className="text-text">auth-flow.md</span>
                 {"   "}

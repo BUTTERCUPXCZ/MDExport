@@ -8,7 +8,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * MDForge design system — "Proof".
+ * MDExport design system — "Proof".
  * A document moves Write → Proof → Deliver. Slate ink for night sessions next to
  * an IDE (dark first, light available); the glacier accent is reserved for the
  * current stage, primary actions, selection and focus. See DESIGN.md.
