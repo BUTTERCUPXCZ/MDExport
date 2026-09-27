@@ -3,7 +3,12 @@
 #
 # Release: bump "version" in package.json and src-tauri/tauri.conf.json, then
 #   git tag v0.1.0 && git push origin v0.1.0
-# Review the draft under Releases and click Publish.
+# Review the draft under Releases and click Publish. Installed apps see the
+# update (via latest.json on the latest published release) only after Publish.
+#
+# In-app updates need the repo secrets TAURI_SIGNING_PRIVATE_KEY and
+# TAURI_SIGNING_PRIVATE_KEY_PASSWORD (from `pnpm tauri signer generate`);
+# the matching public key is plugins.updater.pubkey in tauri.conf.json.
 
 name: Release
 
@@ -71,6 +76,9 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Signs the updater bundles; the app only installs updates signed with this key.
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: MDExport v__VERSION__

@@ -32,6 +32,7 @@ typst = "0.15.1"
 typst-pdf = "0.15.1"
 typst-assets = { version = "0.15.1", features = ["fonts"] }
 typst-layout = "0.15.1"
+tauri-plugin-updater = "2"
 
 
 # Dev builds: keep line-level debug info for MDExport itself, none for dependencies.

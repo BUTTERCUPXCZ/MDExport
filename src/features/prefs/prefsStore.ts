@@ -9,7 +9,10 @@ interface PrefsState {
   lastDocumentPath: string | null;
   /** Stage to reopen documents in. */
   lastStage: Stage;
+  /** Look for new MDExport releases on launch and every few hours. */
+  autoUpdateCheck: boolean;
   setAutosave: (autosave: boolean) => void;
+  setAutoUpdateCheck: (autoUpdateCheck: boolean) => void;
   setLastDocumentPath: (path: string | null) => void;
   setLastStage: (stage: Stage) => void;
 }
@@ -46,7 +49,9 @@ export const usePrefsStore = create<PrefsState>()(
       autosave: true,
       lastDocumentPath: null,
       lastStage: "proof",
+      autoUpdateCheck: true,
       setAutosave: (autosave) => set({ autosave }),
+      setAutoUpdateCheck: (autoUpdateCheck) => set({ autoUpdateCheck }),
       setLastDocumentPath: (lastDocumentPath) => set({ lastDocumentPath }),
       setLastStage: (lastStage) => set({ lastStage }),
     }),

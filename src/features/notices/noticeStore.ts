@@ -20,11 +20,11 @@ export const useNoticeStore = create<NoticeState>((set) => ({
   dismiss: () => set({ notice: null }),
 }));
 
-export const showError = (message: string) =>
-  useNoticeStore.getState().show({ kind: "error", message });
+export const showError = (message: string, action?: Notice["action"]) =>
+  useNoticeStore.getState().show({ kind: "error", message, action });
 
-export const showInfo = (message: string) =>
-  useNoticeStore.getState().show({ kind: "info", message });
+export const showInfo = (message: string, action?: Notice["action"]) =>
+  useNoticeStore.getState().show({ kind: "info", message, action });
 
 export const showSuccess = (message: string, action?: Notice["action"]) =>
   useNoticeStore.getState().show({ kind: "success", message, action });

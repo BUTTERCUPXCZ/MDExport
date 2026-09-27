@@ -31,6 +31,7 @@ import { useLibraryStore } from "@/features/library/libraryStore";
 import { folderPrefix, useLibraryTrash } from "@/features/library/useLibraryTrash";
 import { showError } from "@/features/notices/noticeStore";
 import { useUiStore } from "@/features/ui/uiStore";
+import { UpdateBadge } from "@/features/updates/UpdateBadge";
 import { useNow } from "@/hooks/useNow";
 import { cn } from "@/lib/utils";
 
@@ -376,7 +377,8 @@ export function LibraryIndex() {
         </IndexMenuContent>
       </ContextMenu.Root>
 
-      <div className="flex h-11 shrink-0 items-center justify-end border-t border-line px-2.5">
+      <div className="flex h-11 shrink-0 items-center justify-between border-t border-line px-2.5">
+        <UpdateBadge />
         <Tooltip>
           <TooltipTrigger asChild>
             <Link

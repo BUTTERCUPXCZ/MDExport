@@ -10,6 +10,7 @@ import { useAutosave } from "@/features/session/useAutosave";
 import { useCloseGuard } from "@/features/session/useCloseGuard";
 import { useSessionRestore } from "@/features/session/useSessionRestore";
 import { ShortcutsDialog } from "@/features/shortcuts/ShortcutsDialog";
+import { useUpdateCheck } from "@/features/updates/useUpdateCheck";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
 /** Focus rescans closer together than this are skipped (alt-tabbing back and forth). */
@@ -40,6 +41,7 @@ export function RootLayout() {
   useAutosave();
   useCloseGuard();
   useSessionRestore();
+  useUpdateCheck();
   return (
     <>
       <div className="flex h-screen flex-col">

@@ -8,6 +8,7 @@ import { useLibraryLocation } from "@/features/library/useLibraryLocation";
 import { showError } from "@/features/notices/noticeStore";
 import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { ShortcutList } from "@/features/shortcuts/ShortcutsDialog";
+import { useUpdateStore } from "@/features/updates/updateStore";
 import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
 import { toAppError } from "@/types/document";
@@ -102,8 +103,66 @@ function AboutSection() {
         MDExport <span data-testid="app-version">{version ? `v${version}` : ""}</span>
       </p>
       <p className="mt-1 text-[13px] text-text-2">
-        Your documents stay plain .md files on your disk. Nothing leaves this computer.
+        Your documents stay plain .md files on your disk and never leave this computer. The only
+        thing MDExport asks the internet is whether a new version is out.
       </p>
+    </Section>
+  );
+}
+
+function UpdatesSection() {
+  const autoCheck = usePrefsStore((s) => s.autoUpdateCheck);
+  const setAutoCheck = usePrefsStore((s) => s.setAutoUpdateCheck);
+  const { status, info, progress, error, check, install } = useUpdateStore();
+
+  return (
+    <Section title="Updates">
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          checked={autoCheck}
+          onChange={(e) => setAutoCheck(e.target.checked)}
+          className="mt-0.5 size-4 accent-(--accent)"
+        />
+        <span>
+          <span className="block text-[13.5px] text-text">Check for updates automatically</span>
+          <span className="block text-[12.5px] text-text-2">
+            Looks for a new version on GitHub when the app starts and every few hours.
+          </span>
+        </span>
+      </label>
+
+      <div className="mt-4 flex items-center gap-3">
+        {status === "available" && info ? (
+          <Button onClick={() => void install()}>Install v{info.version} and restart</Button>
+        ) : (
+          <Button
+            variant="secondary"
+            disabled={status === "checking" || status === "installing"}
+            onClick={() => void check()}
+          >
+            {status === "checking" ? "Checking…" : "Check now"}
+          </Button>
+        )}
+        <p role="status" className="text-[13px] text-text-2">
+          {status === "upToDate" && "You have the latest version."}
+          {status === "available" && info && `Version ${info.version} is available.`}
+          {status === "installing" &&
+            (progress === null
+              ? "Downloading the update…"
+              : `Downloading the update… ${Math.round(progress * 100)}%`)}
+        </p>
+      </div>
+      {status === "error" && error && (
+        <p role="alert" className="mt-2 text-[13px] text-danger">
+          {error}
+        </p>
+      )}
+      {status === "available" && info?.notes && (
+        <div className="mt-4 max-h-48 overflow-y-auto rounded-md border border-line bg-sunken px-3 py-2 text-[12.5px] whitespace-pre-wrap text-text-2">
+          {info.notes}
+        </div>
+      )}
     </Section>
   );
 }
@@ -147,6 +206,7 @@ export function SettingsPage() {
           <Section title="Keyboard shortcuts">
             <ShortcutList />
           </Section>
+          <UpdatesSection />
           <AboutSection />
         </div>
       </div>

@@ -11,7 +11,9 @@ import { useUiStore } from "@/features/ui/uiStore";
 import { useNoticeStore } from "@/features/notices/noticeStore";
 import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
+import { useUpdateStore } from "@/features/updates/updateStore";
 import { markdownService } from "@/services/tauri/markdown";
+import { updaterService } from "@/services/tauri/updater";
 import type { DocumentFile } from "@/types/document";
 import type { LibraryEntry, LibraryListing } from "@/types/library";
 
@@ -59,7 +61,12 @@ export function setupApp({
   useLibraryLocation.setState({ location: undefined });
   useLibraryStore.setState({ listing: null, status: "idle" });
   window.localStorage.clear();
-  usePrefsStore.setState({ autosave: false, lastDocumentPath: null, lastStage: "proof" });
+  usePrefsStore.setState({
+    autosave: false,
+    lastDocumentPath: null,
+    lastStage: "proof",
+    autoUpdateCheck: true,
+  });
   useUiStore.setState({
     quickSwitcherOpen: false,
     shortcutsOpen: false,
@@ -75,6 +82,8 @@ export function setupApp({
   vi.spyOn(libraryService, "getLocation").mockResolvedValue(library);
   vi.spyOn(libraryService, "getDefaultLocation").mockResolvedValue(LIBRARY);
   vi.spyOn(libraryService, "list").mockResolvedValue(listing);
+  useUpdateStore.setState({ status: "idle", info: null, progress: null, error: null });
+  vi.spyOn(updaterService, "check").mockResolvedValue(null);
   vi.spyOn(markdownService, "render").mockImplementation(async (md) =>
     md.startsWith("# ") ? `<h2>${md.slice(2).split("\n")[0]}</h2>` : "",
   );

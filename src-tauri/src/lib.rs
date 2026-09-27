@@ -17,6 +17,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             let config_path = app.path().app_config_dir()?.join("config.json");
             let library = LibraryService::new(config_path);
@@ -25,6 +26,7 @@ pub fn run() {
                 scope,
                 library,
                 exported: Default::default(),
+                pending_update: Default::default(),
             });
             Ok(())
         })
@@ -47,6 +49,8 @@ pub fn run() {
             commands::document::rename_document,
             commands::export::export_document,
             commands::export::open_exported,
+            commands::update::check_for_update,
+            commands::update::install_update,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

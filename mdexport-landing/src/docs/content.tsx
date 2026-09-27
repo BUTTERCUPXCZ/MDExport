@@ -8,6 +8,7 @@ export const DOC_SECTIONS = [
   { id: "stages", title: "Write, Proof, Deliver" },
   { id: "library", title: "The library" },
   { id: "saving", title: "Saving and autosave" },
+  { id: "updates", title: "Updates" },
   { id: "export", title: "Exporting" },
   { id: "markdown", title: "Supported Markdown" },
   { id: "shortcuts", title: "Keyboard shortcuts" },
@@ -91,7 +92,7 @@ export function DocsContent() {
           <a className="text-text underline decoration-line-strong underline-offset-4 hover:decoration-accent" href={`${REPO_URL}/releases/latest`}>
             latest release
           </a>
-          . MDExport runs fully offline and needs no account.
+          . MDExport works fully offline and needs no account. Once installed, it updates itself.
         </P>
         <Table
           head={["System", "File", "Notes"]}
@@ -231,6 +232,23 @@ export function DocsContent() {
         </UL>
       </Section>
 
+      <Section id="updates" title="Updates">
+        <UL>
+          <li>
+            MDExport looks for a new version shortly after it starts and every few hours. When
+            one is out, a notice says so and <UI>Update to vX</UI> appears at the bottom of the
+            library.
+          </li>
+          <li>
+            <UI>Update</UI> saves your open documents, downloads the new version and restarts
+            the app on it.
+          </li>
+          <li>
+            Turn automatic checks off, or check by hand, in <UI>Settings → Updates</UI>.
+          </li>
+        </UL>
+      </Section>
+
       <Section id="export" title="Exporting">
         <OL>
           <li>
@@ -302,7 +320,10 @@ export function DocsContent() {
           <li>
             Documents are plain <C>.md</C> files. Grep them, diff them, commit them.
           </li>
-          <li>MDExport makes no network requests. No account, no telemetry, no cloud.</li>
+          <li>
+            Your documents never leave your computer. The only network request is the update
+            check against GitHub, which you can turn off. No account, no telemetry, no cloud.
+          </li>
           <li>
             Saves are atomic (written to a temporary file, then renamed), so a crash can't
             leave half a file.

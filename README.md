@@ -5,7 +5,7 @@
 
 MDExport is a local-first Markdown workspace for people who write a lot: handover notes,
 specs, docs and long drafts. Your documents stay plain `.md` files in a folder you choose.
-There's no account, no cloud and no internet needed.
+There's no account and no cloud; the only thing that goes online is the update check.
 
 Every document moves through three stages:
 
@@ -26,6 +26,8 @@ Vite · Tailwind CSS v4 · CodeMirror 6 · Zustand · TanStack Router
   all built from the same Markdown parser as the preview. Unsaved and pasted text is included.
 - **Keyboard first**: quick switcher, stage switching, shortcut sheet (see below).
 - **Picks up where you left off**: reopens the last document in the last-used stage.
+- **Updates itself**: tells you when a new version is out and installs it in one click
+  (open documents are saved first). Checks can be turned off in Settings.
 - **Dark first**, with a light theme that follows the system. Tuned to stay smooth on
   modest hardware: adaptive preview rendering and a code-split editor.
 
@@ -65,6 +67,11 @@ pnpm tauri dev      # run the desktop app with hot reload
 pnpm check          # format, lint, typecheck, frontend tests, Rust fmt/clippy/tests
 pnpm tauri build    # build a release bundle
 ```
+
+Release builds sign the in-app updater bundles, so `pnpm tauri build` needs the signing key
+(`TAURI_SIGNING_PRIVATE_KEY` / `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`; generate once with
+`pnpm tauri signer generate`, keep it safe). CI reads them from repo secrets; see
+`.github/workflows/release.yml`.
 
 | Script            | Purpose                                                 |
 | ----------------- | ------------------------------------------------------- |
@@ -111,6 +118,8 @@ src-tauri/src/            Rust application core
   can't be deleted from the app.
 - The library folder is stored in `<app config dir>/config.json`
   (Linux: `~/.config/dev.mdexport.app/`).
+- Updates are checked against `latest.json` on the latest published GitHub release and
+  installed only if signed with the project's updater key. No other network requests.
 
 Request flow: `React → services/tauri → Tauri command → service → repository`.
 

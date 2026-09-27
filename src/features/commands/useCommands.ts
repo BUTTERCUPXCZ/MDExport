@@ -5,6 +5,7 @@ import { useDocumentCommands } from "@/features/documents/useDocumentCommands";
 import { EXPORT_FORMATS, useExport } from "@/features/export/useExport";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { STAGES, useUiStore } from "@/features/ui/uiStore";
+import { checkForUpdates } from "@/features/updates/updateStore";
 
 export interface Command {
   id: string;
@@ -39,6 +40,7 @@ export function useCommands(): Command[] {
         shortcut: "Ctrl+,",
         run: () => void navigate({ to: "/settings" }),
       },
+      { id: "updates", label: "Check for updates", run: () => void checkForUpdates() },
       {
         id: "shortcuts",
         label: "Keyboard shortcuts",
