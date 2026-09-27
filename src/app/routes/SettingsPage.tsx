@@ -11,6 +11,8 @@ import { ShortcutList } from "@/features/shortcuts/ShortcutsDialog";
 import { useUpdateStore } from "@/features/updates/updateStore";
 import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
+import { openerService } from "@/services/tauri/opener";
+import { releaseUrl } from "@/services/tauri/updater";
 import { toAppError } from "@/types/document";
 
 function Section({
@@ -158,10 +160,14 @@ function UpdatesSection() {
           {error}
         </p>
       )}
-      {status === "available" && info?.notes && (
-        <div className="mt-4 max-h-48 overflow-y-auto rounded-md border border-line bg-sunken px-3 py-2 text-[12.5px] whitespace-pre-wrap text-text-2">
-          {info.notes}
-        </div>
+      {status === "available" && info && (
+        <button
+          type="button"
+          onClick={() => void openerService.openExternal(releaseUrl(info.version)).catch(() => {})}
+          className="mt-3 text-[13px] text-accent hover:underline"
+        >
+          What's new in v{info.version}
+        </button>
       )}
     </Section>
   );

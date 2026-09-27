@@ -42,7 +42,7 @@ const PREAMBLE: &str = r##"
 #show heading: set text(fill: ink, weight: "bold")
 #show heading: set block(above: 1.6em, below: 0.7em)
 #show heading.where(level: 1): set text(size: 22pt)
-#show heading.where(level: 1): set block(above: 0em, below: 1em)
+#show heading.where(level: 1): set block(above: 1.8em, below: 1em)
 #show heading.where(level: 2): set text(size: 15pt, fill: accent)
 #show heading.where(level: 3): set text(size: 12.5pt)
 #show heading.where(level: 4): set text(size: 11pt)
@@ -455,9 +455,10 @@ mod tests {
 
     #[test]
     fn document_text_only_appears_inside_string_literals() {
-        let src = source("# Hi #set page(width: 1cm) $x$ \"q\" \\ @ref");
+        // Smart punctuation curls quotes in text; code keeps straight ones, escaped.
+        let src = source("# Hi #set page(width: 1cm) $x$ \"q\" \\ @ref `\"c\"`");
         assert!(
-            src.contains(r#"heading(level: 1, "Hi #set page(width: 1cm) $x$ \"q\" \\ @ref")"#),
+            src.contains(r#""Hi #set page(width: 1cm) $x$ “q” \\ @ref " + raw("\"c\"")"#),
             "{src}"
         );
         // Inline HTML is dropped, as in the preview.
@@ -536,6 +537,14 @@ mod tests {
             .fold((f64::MAX, 0f64), |(a, b), w| (a.min(*w), b.max(*w)));
         assert!(min * 4.0 >= max, "{weights:?}");
         assert!(src.contains("#set table.cell(breakable: false)"));
+    }
+
+    #[test]
+    fn section_titles_get_space_above() {
+        // Documents often have several `#` sections, not just one title.
+        assert!(PREAMBLE.contains("heading.where(level: 1): set block(above: 1.8em"));
+        let src = source("# One\n\ntext\n\n---\n\n# Two");
+        assert!(src.contains(r#"heading(level: 1, "Two")"#), "{src}");
     }
 
     #[test]

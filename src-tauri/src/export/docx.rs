@@ -62,7 +62,7 @@ fn styles(docx: Docx) -> Docx {
                 .line_spacing(
                     LineSpacing::new()
                         .before(match level {
-                            1 => 0,
+                            1 => 480,
                             2 => 400,
                             _ => 280,
                         })
@@ -338,7 +338,11 @@ impl<'a> Writer<'a> {
                 self.blocks.push(para(p));
             }
             NodeValue::Heading(h) => {
-                let p = Paragraph::new().style(&format!("Heading{}", h.level.clamp(1, 6)));
+                let mut p = Paragraph::new().style(&format!("Heading{}", h.level.clamp(1, 6)));
+                // A title at the very top starts flush with the page margin.
+                if self.blocks.is_empty() {
+                    p = p.line_spacing(LineSpacing::new().before(0));
+                }
                 let p = self.inline_paragraph(node, p, Format::default());
                 self.blocks.push(para(p));
             }

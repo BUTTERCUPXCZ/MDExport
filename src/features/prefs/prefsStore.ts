@@ -11,8 +11,11 @@ interface PrefsState {
   lastStage: Stage;
   /** Look for new MDExport releases on launch and every few hours. */
   autoUpdateCheck: boolean;
+  /** Release the user chose to skip; automatic checks don't pop up for it. */
+  skippedVersion: string | null;
   setAutosave: (autosave: boolean) => void;
   setAutoUpdateCheck: (autoUpdateCheck: boolean) => void;
+  setSkippedVersion: (version: string | null) => void;
   setLastDocumentPath: (path: string | null) => void;
   setLastStage: (stage: Stage) => void;
 }
@@ -50,8 +53,10 @@ export const usePrefsStore = create<PrefsState>()(
       lastDocumentPath: null,
       lastStage: "proof",
       autoUpdateCheck: true,
+      skippedVersion: null,
       setAutosave: (autosave) => set({ autosave }),
       setAutoUpdateCheck: (autoUpdateCheck) => set({ autoUpdateCheck }),
+      setSkippedVersion: (skippedVersion) => set({ skippedVersion }),
       setLastDocumentPath: (lastDocumentPath) => set({ lastDocumentPath }),
       setLastStage: (lastStage) => set({ lastStage }),
     }),

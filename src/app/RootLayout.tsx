@@ -10,6 +10,7 @@ import { useAutosave } from "@/features/session/useAutosave";
 import { useCloseGuard } from "@/features/session/useCloseGuard";
 import { useSessionRestore } from "@/features/session/useSessionRestore";
 import { ShortcutsDialog } from "@/features/shortcuts/ShortcutsDialog";
+import { UpdateDialog } from "@/features/updates/UpdateDialog";
 import { useUpdateCheck } from "@/features/updates/useUpdateCheck";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
@@ -54,6 +55,7 @@ export function RootLayout() {
       <QuickSwitcher />
       <ShortcutsDialog />
       <CloseGuardDialog />
+      <UpdateDialog />
     </>
   );
 }

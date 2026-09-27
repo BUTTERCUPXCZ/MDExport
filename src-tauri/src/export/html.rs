@@ -9,7 +9,8 @@ body { margin: 0; background: #fff; color: #1f2328;
   font: 16px/1.6 -apple-system, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif; }
 main { max-width: 800px; margin: 0 auto; padding: 48px 32px; }
 h1, h2, h3, h4, h5, h6 { line-height: 1.25; margin: 1.5em 0 0.5em; }
-h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid #d1d9e0; margin-top: 0; }
+h1 { font-size: 2em; padding-bottom: .3em; border-bottom: 1px solid #d1d9e0; }
+main > :first-child { margin-top: 0; }
 h2 { font-size: 1.5em; padding-bottom: .3em; border-bottom: 1px solid #d1d9e0; }
 h3 { font-size: 1.25em; }
 .anchor { display: none; }

@@ -4,6 +4,10 @@ import type { UpdateInfo, UpdateProgress } from "@/types/update";
 /** Where users can download a release by hand (when an in-app install isn't possible). */
 export const RELEASES_URL = "https://github.com/BUTTERCUPXCZ/MDExport/releases/latest";
 
+/** GitHub page of one release (its notes and downloads). */
+export const releaseUrl = (version: string) =>
+  `https://github.com/BUTTERCUPXCZ/MDExport/releases/tag/v${version}`;
+
 /**
  * In-app updates. Rust checks the latest published GitHub release and installs
  * signed builds only; the frontend just asks and shows progress.

@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { showError, showInfo, showSuccess } from "@/features/notices/noticeStore";
+import { showError, showSuccess } from "@/features/notices/noticeStore";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { saveAll } from "@/features/session/useCloseGuard";
 import { openerService } from "@/services/tauri/opener";
 import { RELEASES_URL, updaterService } from "@/services/tauri/updater";
@@ -16,17 +17,22 @@ interface UpdateState {
   progress: number | null;
   /** Last error, shown in Settings. */
   error: string | null;
+  /** The "new version available" dialog. */
+  dialogOpen: boolean;
+  /** Versions already shown in the dialog this session. */
+  announced: string[];
   /**
-   * Looks for a newer release. `quiet` checks (automatic ones) only speak up when
-   * there is an update, and only once per version; manual checks always report.
+   * Looks for a newer release. `quiet` checks (automatic ones) show the dialog once
+   * per version per session and never for a skipped version; manual checks always report.
    */
   check: (options?: { quiet?: boolean }) => Promise<void>;
   /** Saves open documents, then downloads and installs the update and restarts. */
   install: () => Promise<void>;
+  openDialog: () => void;
+  closeDialog: () => void;
+  /** "Skip this version": automatic checks stay quiet until a newer one is out. */
+  skipVersion: () => void;
 }
-
-/** Versions already announced in the notice bar this session. */
-const announced = new Set<string>();
 
 const downloadAction = {
   label: "Download",
@@ -38,6 +44,8 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   info: null,
   progress: null,
   error: null,
+  dialogOpen: false,
+  announced: [],
 
   async check({ quiet = false } = {}) {
     const { status } = get();
@@ -50,14 +58,15 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         if (!quiet) showSuccess("MDExport is up to date.");
         return;
       }
-      set({ status: "available", info });
-      if (!quiet || !announced.has(info.version)) {
-        announced.add(info.version);
-        showInfo(`MDExport v${info.version} is available.`, {
-          label: "Update",
-          run: () => void get().install(),
-        });
-      }
+      const skipped = usePrefsStore.getState().skippedVersion === info.version;
+      const seen = get().announced.includes(info.version);
+      const announce = !quiet || (!seen && !skipped);
+      set({
+        status: "available",
+        info,
+        dialogOpen: announce || get().dialogOpen,
+        announced: seen ? get().announced : [...get().announced, info.version],
+      });
     } catch (e) {
       const message = toAppError(e).message;
       set({ status: quiet ? "idle" : "error", error: quiet ? null : message });
@@ -69,6 +78,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     if (get().status !== "available") return;
     // Never lose edits: the app restarts (or the installer closes it) right after.
     if (!(await saveAll())) {
+      set({ dialogOpen: false });
       showError("Save or discard your unsaved changes before updating.");
       return;
     }
@@ -80,9 +90,17 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     } catch (e) {
       const message = toAppError(e).message;
       // Rust hands the update over when installing starts; a new check is needed to retry.
-      set({ status: "error", progress: null, error: message });
+      set({ status: "error", progress: null, error: message, dialogOpen: false });
       showError(`${message} You can download it from GitHub instead.`, downloadAction);
     }
+  },
+
+  openDialog: () => set({ dialogOpen: true }),
+  closeDialog: () => set({ dialogOpen: false }),
+  skipVersion() {
+    const version = get().info?.version;
+    if (version) usePrefsStore.getState().setSkippedVersion(version);
+    set({ dialogOpen: false });
   },
 }));
 

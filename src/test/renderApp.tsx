@@ -66,6 +66,7 @@ export function setupApp({
     lastDocumentPath: null,
     lastStage: "proof",
     autoUpdateCheck: true,
+    skippedVersion: null,
   });
   useUiStore.setState({
     quickSwitcherOpen: false,
@@ -82,7 +83,14 @@ export function setupApp({
   vi.spyOn(libraryService, "getLocation").mockResolvedValue(library);
   vi.spyOn(libraryService, "getDefaultLocation").mockResolvedValue(LIBRARY);
   vi.spyOn(libraryService, "list").mockResolvedValue(listing);
-  useUpdateStore.setState({ status: "idle", info: null, progress: null, error: null });
+  useUpdateStore.setState({
+    status: "idle",
+    info: null,
+    progress: null,
+    error: null,
+    dialogOpen: false,
+    announced: [],
+  });
   vi.spyOn(updaterService, "check").mockResolvedValue(null);
   vi.spyOn(markdownService, "render").mockImplementation(async (md) =>
     md.startsWith("# ") ? `<h2>${md.slice(2).split("\n")[0]}</h2>` : "",

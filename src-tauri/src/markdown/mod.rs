@@ -4,6 +4,8 @@
 //! (`render.unsafe = false`), and comrak drops dangerous URLs such as
 //! `javascript:` links. Do not enable `unsafe` without adding sanitization.
 
+mod pandoc_tables;
+
 use std::sync::LazyLock;
 
 use comrak::options::Plugins;
@@ -30,6 +32,8 @@ pub(crate) fn options() -> Options<'static> {
     options.extension.tasklist = true;
     options.extension.footnotes = true;
     options.extension.header_id_prefix = Some(String::new());
+    // Typographic dashes and quotes: `---` → —, `--` → –, "…" → “…” (Pandoc writes dashes this way).
+    options.parse.smart = true;
 
     options.render.r#unsafe = false;
 
@@ -39,8 +43,9 @@ pub(crate) fn options() -> Options<'static> {
 /// Parses Markdown into comrak's AST and hands the root node to `f`.
 /// The AST is the document representation shared by the PDF and DOCX exporters.
 pub(crate) fn with_ast<R>(markdown: &str, f: impl for<'a> FnOnce(comrak::Node<'a>) -> R) -> R {
+    let markdown = pandoc_tables::to_pipe_tables(markdown);
     let arena = comrak::Arena::new();
-    let root = comrak::parse_document(&arena, markdown, &options());
+    let root = comrak::parse_document(&arena, &markdown, &options());
     f(root)
 }
 
@@ -61,7 +66,8 @@ fn render_with(markdown: &str, options: Options) -> String {
     let mut plugins = Plugins::default();
     plugins.render.codefence_syntax_highlighter = Some(&*HIGHLIGHTER);
 
-    markdown_to_html_with_plugins(markdown, &options, &plugins)
+    let markdown = pandoc_tables::to_pipe_tables(markdown);
+    markdown_to_html_with_plugins(&markdown, &options, &plugins)
 }
 
 #[cfg(test)]
@@ -168,6 +174,27 @@ mod tests {
         let html = render_html("[x](javascript:alert(1)) [y](vbscript:foo)");
         assert!(!html.contains("javascript:"), "{html}");
         assert!(!html.contains("vbscript:"), "{html}");
+    }
+
+    #[test]
+    fn renders_pandoc_tables_as_tables_without_shifting_lines() {
+        let md = "  Field   Type\n  ------- ------\n  id      UUID\n\nAfter the table.";
+        let preview = render_preview_html(md);
+        assert!(preview.contains("<table"), "{preview}");
+        assert!(preview.contains(">UUID</td>"), "{preview}");
+        assert!(!preview.contains("<hr"), "{preview}");
+        // "After the table." is still on line 5 of the source, for scroll sync.
+        assert!(
+            preview.contains(r#"<p data-sourcepos="5:1-5:16">After the table.</p>"#),
+            "{preview}"
+        );
+    }
+
+    #[test]
+    fn uses_typographic_dashes_outside_code() {
+        let html = render_html("Phase 3 --- SOLID, 1--2 `a --- b`");
+        assert!(html.contains("Phase 3 — SOLID, 1–2"), "{html}");
+        assert!(html.contains("<code>a --- b</code>"), "{html}");
     }
 
     #[test]

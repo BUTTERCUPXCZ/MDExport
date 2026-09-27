@@ -3,13 +3,13 @@ import { useUpdateStore } from "@/features/updates/updateStore";
 
 /**
  * "Update to vX" in the library footer while an update is available, so it
- * stays in reach after the notice bar shows something else. Shows progress while installing.
+ * stays in reach after the dialog is closed with "Later". Shows progress while installing.
  */
 export function UpdateBadge() {
   const status = useUpdateStore((s) => s.status);
   const version = useUpdateStore((s) => s.info?.version);
   const progress = useUpdateStore((s) => s.progress);
-  const install = useUpdateStore((s) => s.install);
+  const openDialog = useUpdateStore((s) => s.openDialog);
 
   if (status === "installing") {
     return (
@@ -24,7 +24,7 @@ export function UpdateBadge() {
   return (
     <button
       type="button"
-      onClick={() => void install()}
+      onClick={openDialog}
       className="flex h-8 items-center gap-1.5 rounded-md px-2 text-[12.5px] font-medium text-accent transition-colors hover:bg-accent-soft"
     >
       <ArrowDownToLine aria-hidden className="size-3.5" />
