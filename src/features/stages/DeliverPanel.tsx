@@ -3,20 +3,33 @@ import { Button } from "@/components/ui/button";
 import type { OpenDocument } from "@/features/documents/documentsStore";
 import { EXPORT_FORMATS, useExport } from "@/features/export/useExport";
 import { stem } from "@/features/library/libraryModel";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { cn } from "@/lib/utils";
+import type { PdfPages } from "@/services/tauri/export";
 
 const NOTES: Record<string, string> = {
-  pdf: "A4 pages, ready to share or print.",
+  pdf: "Ready to share or print.",
   docx: "Editable in Word, Google Docs or Pages.",
   html: "One self-contained web page.",
 };
+
+const PDF_PAGES: { value: PdfPages; label: string; note: string }[] = [
+  { value: "a4", label: "A4", note: "Numbered pages for printing." },
+  {
+    value: "continuous",
+    label: "Continuous",
+    note: "One long page, never cut between pages. Best for reading on screen.",
+  },
+];
 
 /** Deliver stage: pick a format beside the finished page and export it. */
 export function DeliverPanel({ doc }: { doc: OpenDocument }) {
   const format = useUiStore((s) => s.exportFormat);
   const setFormat = useUiStore((s) => s.setExportFormat);
   const exporting = useUiStore((s) => s.exporting);
+  const pdfPages = usePrefsStore((s) => s.pdfPages);
+  const setPdfPages = usePrefsStore((s) => s.setPdfPages);
   const runExport = useExport();
   const chosen = EXPORT_FORMATS.find((f) => f.format === format) ?? EXPORT_FORMATS[0];
 
@@ -69,6 +82,36 @@ export function DeliverPanel({ doc }: { doc: OpenDocument }) {
           })}
         </div>
       </fieldset>
+
+      {format === "pdf" && (
+        <fieldset className="mt-4">
+          <legend className="mb-2 text-[12px] font-medium text-muted">Pages</legend>
+          <div className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-canvas p-0.5">
+            {PDF_PAGES.map((option) => (
+              <label
+                key={option.value}
+                className={cn(
+                  "flex h-8 cursor-pointer items-center justify-center rounded-md text-[13px] font-medium text-muted transition-colors has-focus-visible:ring-2 has-focus-visible:ring-accent",
+                  pdfPages === option.value && "bg-accent-soft text-text",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="pdf-pages"
+                  value={option.value}
+                  checked={pdfPages === option.value}
+                  onChange={() => setPdfPages(option.value)}
+                  className="sr-only"
+                />
+                {option.label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1.5 text-[12.5px] text-text-2">
+            {PDF_PAGES.find((o) => o.value === pdfPages)?.note}
+          </p>
+        </fieldset>
+      )}
 
       <Button
         size="lg"

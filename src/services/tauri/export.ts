@@ -2,6 +2,9 @@ import { invoke } from "@tauri-apps/api/core";
 
 export type ExportFormat = "pdf" | "docx" | "html";
 
+/** PDF page layout: A4 pages for printing, or one continuous page that is never cut. */
+export type PdfPages = "a4" | "continuous";
+
 /** Mirrors `commands::export::ExportResult` in Rust. */
 export interface ExportResult {
   path: string;
@@ -18,12 +21,14 @@ export const exportService = {
     format: ExportFormat,
     fileName: string,
     sourcePath?: string,
+    pdfPages: PdfPages = "a4",
   ): Promise<ExportResult | null> {
     return invoke("export_document", {
       content,
       format,
       fileName,
       sourcePath: sourcePath ?? null,
+      pdfPages,
     });
   },
 

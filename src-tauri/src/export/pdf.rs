@@ -18,7 +18,7 @@ use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World};
 use typst_layout::PagedDocument;
 
-use super::plain_text;
+use super::{plain_text, PdfPages};
 use crate::models::error::{AppError, AppResult};
 
 /// "Modern document" style (the look of ChatGPT / Claude generated documents):
@@ -415,9 +415,13 @@ impl<'a> Writer<'a> {
 }
 
 /// Builds the complete Typst source for a document.
-fn typst_source(root: Node<'_>, title: &str) -> String {
+fn typst_source(root: Node<'_>, title: &str, pages: PdfPages) -> String {
     let writer = Writer::new(root);
     let mut source = format!("#set document(title: {})\n{PREAMBLE}\n", lit(title));
+    if pages == PdfPages::Continuous {
+        // One page as tall as the content: nothing is cut, so no page numbers either.
+        source.push_str("#set page(height: auto, footer: none)\n");
+    }
     for node in root.children() {
         if let Some(block) = writer.block(node) {
             source.push_str("#(");
@@ -428,16 +432,28 @@ fn typst_source(root: Node<'_>, title: &str) -> String {
     source
 }
 
-pub fn render(root: Node<'_>, title: &str) -> AppResult<Vec<u8>> {
+fn compile(root: Node<'_>, title: &str, pages: PdfPages) -> AppResult<PagedDocument> {
     let world = DocumentWorld {
-        source: Source::detached(typst_source(root, title)),
+        source: Source::detached(typst_source(root, title, pages)),
     };
-    let document = typst::compile::<PagedDocument>(&world)
+    typst::compile::<PagedDocument>(&world)
         .output
         .map_err(|errors| {
             let messages: Vec<&str> = errors.iter().map(|e| e.message.as_str()).collect();
             AppError::Io(format!("PDF export failed: {}", messages.join("; ")))
-        })?;
+        })
+}
+
+/// Number of pages a document lays out to (for tests).
+#[cfg(test)]
+pub(crate) fn page_count(markdown: &str, pages: PdfPages) -> usize {
+    crate::markdown::with_ast(markdown, |root| {
+        compile(root, "T", pages).unwrap().pages().len()
+    })
+}
+
+pub fn render(root: Node<'_>, title: &str, pages: PdfPages) -> AppResult<Vec<u8>> {
+    let document = compile(root, title, pages)?;
     typst_pdf::pdf(&document, &typst_pdf::PdfOptions::default()).map_err(|errors| {
         let messages: Vec<&str> = errors.iter().map(|e| e.message.as_str()).collect();
         AppError::Io(format!("PDF export failed: {}", messages.join("; ")))
@@ -450,7 +466,7 @@ mod tests {
     use crate::markdown;
 
     fn source(md: &str) -> String {
-        markdown::with_ast(md, |root| typst_source(root, "T"))
+        markdown::with_ast(md, |root| typst_source(root, "T", PdfPages::A4))
     }
 
     #[test]

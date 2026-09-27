@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist, type StateStorage } from "zustand/middleware";
 import type { Stage } from "@/features/ui/uiStore";
+import type { PdfPages } from "@/services/tauri/export";
 
 interface PrefsState {
   /** Save documents automatically shortly after typing stops. */
@@ -13,9 +14,12 @@ interface PrefsState {
   autoUpdateCheck: boolean;
   /** Release the user chose to skip; automatic checks don't pop up for it. */
   skippedVersion: string | null;
+  /** PDF page layout picked in Deliver. */
+  pdfPages: PdfPages;
   setAutosave: (autosave: boolean) => void;
   setAutoUpdateCheck: (autoUpdateCheck: boolean) => void;
   setSkippedVersion: (version: string | null) => void;
+  setPdfPages: (pdfPages: PdfPages) => void;
   setLastDocumentPath: (path: string | null) => void;
   setLastStage: (stage: Stage) => void;
 }
@@ -54,9 +58,11 @@ export const usePrefsStore = create<PrefsState>()(
       lastStage: "proof",
       autoUpdateCheck: true,
       skippedVersion: null,
+      pdfPages: "a4",
       setAutosave: (autosave) => set({ autosave }),
       setAutoUpdateCheck: (autoUpdateCheck) => set({ autoUpdateCheck }),
       setSkippedVersion: (skippedVersion) => set({ skippedVersion }),
+      setPdfPages: (pdfPages) => set({ pdfPages }),
       setLastDocumentPath: (lastDocumentPath) => set({ lastDocumentPath }),
       setLastStage: (lastStage) => set({ lastStage }),
     }),

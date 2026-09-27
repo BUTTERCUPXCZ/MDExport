@@ -5,7 +5,7 @@ use tauri::{AppHandle, State, Window};
 use tauri_plugin_opener::OpenerExt;
 
 use crate::commands::dialog;
-use crate::export::{self, ExportFormat};
+use crate::export::{self, ExportFormat, PdfPages};
 use crate::models::error::{AppError, AppResult};
 use crate::repositories::file_repository;
 use crate::state::AppState;
@@ -40,8 +40,11 @@ fn with_extension(path: PathBuf, extension: &str) -> PathBuf {
 
 /// Converts the editor's Markdown (open file or pasted text) to PDF / DOCX / HTML.
 /// Shows a Save dialog first; returns `None` if the user cancelled.
-/// `source_path` (the open document, if any) picks the dialog's starting folder.
+/// `source_path` (the open document, if any) picks the dialog's starting folder;
+/// `pdf_pages` picks A4 pages or one continuous page for PDF.
 #[tauri::command]
+// Each IPC field is its own argument; a struct would only rename them.
+#[allow(clippy::too_many_arguments)]
 pub async fn export_document(
     app: AppHandle,
     window: Window,
@@ -50,6 +53,7 @@ pub async fn export_document(
     format: ExportFormat,
     file_name: String,
     source_path: Option<String>,
+    pdf_pages: Option<PdfPages>,
 ) -> AppResult<Option<ExportResult>> {
     let title = stem(&file_name).to_string();
     let start_dir = source_path
@@ -73,10 +77,12 @@ pub async fn export_document(
     let target = with_extension(target, format.extension());
 
     // Typesetting can take a moment for long documents; keep it off the async workers.
-    let bytes =
-        tauri::async_runtime::spawn_blocking(move || export::export(&content, format, &title))
-            .await
-            .map_err(|e| AppError::Io(format!("Export failed: {e}")))??;
+    let pages = pdf_pages.unwrap_or_default();
+    let bytes = tauri::async_runtime::spawn_blocking(move || {
+        export::export_with(&content, format, &title, pages)
+    })
+    .await
+    .map_err(|e| AppError::Io(format!("Export failed: {e}")))??;
     file_repository::write_bytes_atomic(&target, &bytes)?;
 
     let name = target

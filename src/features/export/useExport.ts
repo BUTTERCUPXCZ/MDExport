@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import type { OpenDocument } from "@/features/documents/documentsStore";
 import { showError, showSuccess } from "@/features/notices/noticeStore";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { useUiStore } from "@/features/ui/uiStore";
 import { exportService, type ExportFormat } from "@/services/tauri/export";
 import { toAppError } from "@/types/document";
@@ -23,7 +24,13 @@ export function useExport() {
       if (useUiStore.getState().exporting) return;
       setExporting(format);
       try {
-        const result = await exportService.export(doc.content, format, doc.name, doc.path);
+        const result = await exportService.export(
+          doc.content,
+          format,
+          doc.name,
+          doc.path,
+          usePrefsStore.getState().pdfPages,
+        );
         if (result) {
           showSuccess(`Exported ${result.name}`, {
             label: "Open",

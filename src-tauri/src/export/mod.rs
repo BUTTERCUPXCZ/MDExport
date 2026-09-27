@@ -38,12 +38,35 @@ impl ExportFormat {
     }
 }
 
-/// Converts Markdown to the given format. `fallback_title` is used when the
-/// document has no top-level heading (usually the file name).
+/// How a PDF is split into pages.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum PdfPages {
+    /// A4 pages with page numbers, for printing.
+    #[default]
+    A4,
+    /// One long page: nothing is ever cut between pages. For reading on screen.
+    Continuous,
+}
+
+/// Converts Markdown to the given format (A4 pages for PDF).
+#[cfg(test)]
 pub fn export(markdown: &str, format: ExportFormat, fallback_title: &str) -> AppResult<Vec<u8>> {
+    export_with(markdown, format, fallback_title, PdfPages::A4)
+}
+
+/// Converts Markdown to the given format. `fallback_title` is used when the
+/// document has no top-level heading (usually the file name); `pages` only
+/// affects PDF.
+pub fn export_with(
+    markdown: &str,
+    format: ExportFormat,
+    fallback_title: &str,
+    pages: PdfPages,
+) -> AppResult<Vec<u8>> {
     let title = document_title(markdown).unwrap_or_else(|| fallback_title.to_string());
     match format {
-        ExportFormat::Pdf => markdown::with_ast(markdown, |root| pdf::render(root, &title)),
+        ExportFormat::Pdf => markdown::with_ast(markdown, |root| pdf::render(root, &title, pages)),
         ExportFormat::Docx => markdown::with_ast(markdown, |root| docx::render(root, &title)),
         ExportFormat::Html => Ok(html::render(markdown, &title).into_bytes()),
     }
@@ -139,6 +162,17 @@ mod tests {
             let path = std::path::Path::new(&dir).join(format!("sample.{}", format.extension()));
             std::fs::write(path, bytes).unwrap();
         }
+    }
+
+    #[test]
+    fn continuous_pdf_is_one_page() {
+        let long = "Paragraph of text that fills the page.\n\n".repeat(200);
+        let a4 = export_with(&long, ExportFormat::Pdf, "x", PdfPages::A4).unwrap();
+        let continuous = export_with(&long, ExportFormat::Pdf, "x", PdfPages::Continuous).unwrap();
+        assert!(continuous.starts_with(b"%PDF-"));
+        assert!(pdf::page_count(&long, PdfPages::A4) > 1);
+        assert_eq!(pdf::page_count(&long, PdfPages::Continuous), 1);
+        assert_ne!(a4, continuous);
     }
 
     #[test]

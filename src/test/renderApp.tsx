@@ -67,6 +67,7 @@ export function setupApp({
     lastStage: "proof",
     autoUpdateCheck: true,
     skippedVersion: null,
+    pdfPages: "a4",
   });
   useUiStore.setState({
     quickSwitcherOpen: false,

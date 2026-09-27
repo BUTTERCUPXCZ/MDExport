@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "@/features/documents/documentsStore";
+import { usePrefsStore } from "@/features/prefs/prefsStore";
 import { exportService } from "@/services/tauri/export";
 import { docFile, LIBRARY, renderEditor, setupApp } from "@/test/renderApp";
 
@@ -24,8 +25,8 @@ describe("Export", () => {
 
     const deliver = await openDeliver(user);
 
-    const radios = deliver.getAllByRole("radio");
-    expect(radios.map((r) => (r as HTMLInputElement).value)).toEqual(["pdf", "docx", "html"]);
+    const formats = within(deliver.getByRole("group", { name: "Format" })).getAllByRole("radio");
+    expect(formats.map((r) => (r as HTMLInputElement).value)).toEqual(["pdf", "docx", "html"]);
     expect(deliver.getByRole("radio", { name: /PDF document/ })).toBeChecked();
     expect(deliver.getByRole("button", { name: "Export PDF" })).toBeEnabled();
   });
@@ -46,6 +47,7 @@ describe("Export", () => {
       "pdf",
       "Bug Fix.md",
       PATH,
+      "a4",
     );
     const notice = await screen.findByRole("status", { name: "Notification" });
     expect(notice).toHaveTextContent("Exported Bug Fix.pdf");
@@ -63,7 +65,32 @@ describe("Export", () => {
     await user.click(panel().getByRole("radio", { name: /Word document/ }));
     await user.click(panel().getByRole("button", { name: "Export Word" }));
 
-    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH);
+    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH, "a4");
+  });
+
+  it("PDF can be one continuous page, and the choice is remembered", async () => {
+    const user = userEvent.setup();
+    const exportFn = vi.spyOn(exportService, "export").mockResolvedValue(null);
+    await renderEditor();
+    const deliver = await openDeliver(user);
+
+    expect(deliver.getByRole("radio", { name: "A4" })).toBeChecked();
+    await user.click(deliver.getByRole("radio", { name: "Continuous" }));
+    expect(deliver.getByText(/never cut between pages/)).toBeInTheDocument();
+    await user.click(deliver.getByRole("button", { name: "Export PDF" }));
+
+    expect(exportFn).toHaveBeenCalledWith(
+      expect.any(String),
+      "pdf",
+      "Bug Fix.md",
+      PATH,
+      "continuous",
+    );
+    expect(usePrefsStore.getState().pdfPages).toBe("continuous");
+
+    // Page layout only applies to PDF.
+    await user.click(deliver.getByRole("radio", { name: /Word document/ }));
+    expect(deliver.queryByRole("radio", { name: "Continuous" })).not.toBeInTheDocument();
   });
 
   it("cancelling the save dialog shows nothing", async () => {
@@ -117,7 +144,7 @@ describe("Export", () => {
     await user.keyboard("{Control>}k{/Control}");
     await user.type(screen.getByRole("combobox"), ">export word{Enter}");
 
-    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH);
+    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH, "a4");
     expect(screen.getByRole("tab", { name: "Deliver" })).toHaveAttribute("aria-selected", "true");
   });
 });
