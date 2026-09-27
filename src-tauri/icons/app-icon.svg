@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Source for every app icon: `pnpm tauri icon src-tauri/icons/app-icon.svg`.
+       Same mark as mdexport-landing/public/favicon.svg: an "M" and an export arrow. -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="#1e232b"/>
+  <g transform="translate(64 64) scale(28)" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 22V10l5 6 5-6v12" stroke="#dde2ea"/>
+    <path d="M23.5 10v11m-3.5-3.5 3.5 3.5 3.5-3.5" stroke="#86c8ec"/>
+  </g>
+</svg>
