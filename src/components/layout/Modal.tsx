@@ -9,7 +9,8 @@ interface ModalProps {
   title: string;
   description?: ReactNode;
   children?: ReactNode;
-  footer: ReactNode;
+  /** Buttons; omit for a dialog that only shows progress. */
+  footer?: ReactNode;
   size?: "default" | "wide";
 }
 
@@ -50,7 +51,9 @@ export function Modal({
             )}
             {children}
           </div>
-          <div className="flex justify-end gap-2 border-t border-line px-6 py-3.5">{footer}</div>
+          {footer && (
+            <div className="flex justify-end gap-2 border-t border-line px-6 py-3.5">{footer}</div>
+          )}
         </AlertDialog.Content>
       </AlertDialog.Portal>
     </AlertDialog.Root>

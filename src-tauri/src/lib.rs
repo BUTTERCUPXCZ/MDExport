@@ -49,6 +49,7 @@ pub fn run() {
             commands::document::rename_document,
             commands::export::export_document,
             commands::export::open_exported,
+            commands::export::reveal_exported,
             commands::update::check_for_update,
             commands::update::install_update,
         ])

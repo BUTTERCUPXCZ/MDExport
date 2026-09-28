@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useDocumentsStore } from "@/features/documents/documentsStore";
@@ -35,7 +35,7 @@ describe("Export", () => {
     const user = userEvent.setup();
     const exportFn = vi
       .spyOn(exportService, "export")
-      .mockResolvedValue({ path: `${LIBRARY}/Bug Fix.pdf`, name: "Bug Fix.pdf" });
+      .mockResolvedValue({ path: `${LIBRARY}/Bug Fix.pdf`, name: "Bug Fix.pdf", folder: LIBRARY });
     const open = vi.spyOn(exportService, "openExported").mockResolvedValue();
     const { id } = await renderEditor();
     useDocumentsStore.getState().setContent(id, "# Pasted\n\nFrom the clipboard");
@@ -48,12 +48,64 @@ describe("Export", () => {
       "Bug Fix.md",
       PATH,
       "a4",
+      expect.any(Function),
     );
-    const notice = await screen.findByRole("status", { name: "Notification" });
-    expect(notice).toHaveTextContent("Exported Bug Fix.pdf");
+    const done = await screen.findByRole("alertdialog", { name: "Export complete" });
+    expect(done).toHaveTextContent(`Bug Fix.pdf was saved to ${LIBRARY}.`);
 
-    await user.click(within(notice).getByRole("button", { name: "Open" }));
+    await user.click(within(done).getByRole("button", { name: "Open PDF" }));
     expect(open).toHaveBeenCalledWith(`${LIBRARY}/Bug Fix.pdf`);
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("Show in folder reveals the exported file; Done closes", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(exportService, "export").mockResolvedValue({
+      path: `${LIBRARY}/Bug Fix.docx`,
+      name: "Bug Fix.docx",
+      folder: LIBRARY,
+    });
+    const reveal = vi.spyOn(exportService, "revealExported").mockResolvedValue();
+    await renderEditor();
+    const deliver = await openDeliver(user);
+    await user.click(deliver.getByRole("radio", { name: /Word document/ }));
+
+    await user.click(deliver.getByRole("button", { name: "Export Word" }));
+    const done = await screen.findByRole("alertdialog", { name: "Export complete" });
+    expect(within(done).getByRole("button", { name: "Open document" })).toBeInTheDocument();
+    await user.click(within(done).getByRole("button", { name: "Show in folder" }));
+    expect(reveal).toHaveBeenCalledWith(`${LIBRARY}/Bug Fix.docx`);
+
+    await user.click(deliver.getByRole("button", { name: "Export Word" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Done" }),
+    );
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("shows progress while converting and saving", async () => {
+    const user = userEvent.setup();
+    let stage!: (s: "converting" | "saving") => void;
+    let finish!: (value: null) => void;
+    vi.spyOn(exportService, "export").mockImplementation((...args) => {
+      stage = args[5]!;
+      return new Promise((r) => (finish = r));
+    });
+    await renderEditor();
+
+    await user.click((await openDeliver(user)).getByRole("button", { name: "Export PDF" }));
+    // The Save dialog is still open: nothing shown yet.
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+
+    act(() => stage("converting"));
+    const working = await screen.findByRole("alertdialog", { name: "Exporting PDF…" });
+    expect(within(working).getByRole("progressbar")).toBeInTheDocument();
+    expect(working).toHaveTextContent("Converting the document…");
+    act(() => stage("saving"));
+    expect(working).toHaveTextContent("Saving the file…");
+
+    act(() => finish(null));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 
   it("Ctrl+E jumps to Deliver; the picked format is exported", async () => {
@@ -65,7 +117,14 @@ describe("Export", () => {
     await user.click(panel().getByRole("radio", { name: /Word document/ }));
     await user.click(panel().getByRole("button", { name: "Export Word" }));
 
-    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH, "a4");
+    expect(exportFn).toHaveBeenCalledWith(
+      expect.any(String),
+      "docx",
+      "Bug Fix.md",
+      PATH,
+      "a4",
+      expect.any(Function),
+    );
   });
 
   it("PDF can be one continuous page, and the choice is remembered", async () => {
@@ -85,6 +144,7 @@ describe("Export", () => {
       "Bug Fix.md",
       PATH,
       "continuous",
+      expect.any(Function),
     );
     expect(usePrefsStore.getState().pdfPages).toBe("continuous");
 
@@ -103,7 +163,7 @@ describe("Export", () => {
     await user.click(deliver.getByRole("button", { name: "Export HTML" }));
 
     await waitFor(() => expect(deliver.getByRole("button", { name: "Export HTML" })).toBeEnabled());
-    expect(screen.queryByRole("status", { name: "Notification" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
@@ -117,9 +177,10 @@ describe("Export", () => {
 
     await user.click((await openDeliver(user)).getByRole("button", { name: "Export PDF" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Export failed: Permission denied: /root/out.pdf",
-    );
+    const failed = await screen.findByRole("alertdialog", { name: "Export failed" });
+    expect(within(failed).getByRole("alert")).toHaveTextContent("Permission denied: /root/out.pdf");
+    await user.click(within(failed).getByRole("button", { name: "Close" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 
   it("disables the button while exporting", async () => {
@@ -144,7 +205,14 @@ describe("Export", () => {
     await user.keyboard("{Control>}k{/Control}");
     await user.type(screen.getByRole("combobox"), ">export word{Enter}");
 
-    expect(exportFn).toHaveBeenCalledWith(expect.any(String), "docx", "Bug Fix.md", PATH, "a4");
+    expect(exportFn).toHaveBeenCalledWith(
+      expect.any(String),
+      "docx",
+      "Bug Fix.md",
+      PATH,
+      "a4",
+      expect.any(Function),
+    );
     expect(screen.getByRole("tab", { name: "Deliver" })).toHaveAttribute("aria-selected", "true");
   });
 });

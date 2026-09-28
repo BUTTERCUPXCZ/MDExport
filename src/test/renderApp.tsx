@@ -12,6 +12,7 @@ import { useNoticeStore } from "@/features/notices/noticeStore";
 import { appService } from "@/services/tauri/app";
 import { libraryService } from "@/services/tauri/library";
 import { useUpdateStore } from "@/features/updates/updateStore";
+import { useExportDialog } from "@/features/export/exportDialogStore";
 import { markdownService } from "@/services/tauri/markdown";
 import { updaterService } from "@/services/tauri/updater";
 import type { DocumentFile } from "@/types/document";
@@ -84,6 +85,7 @@ export function setupApp({
   vi.spyOn(libraryService, "getLocation").mockResolvedValue(library);
   vi.spyOn(libraryService, "getDefaultLocation").mockResolvedValue(LIBRARY);
   vi.spyOn(libraryService, "list").mockResolvedValue(listing);
+  useExportDialog.setState({ state: { phase: "closed" } });
   useUpdateStore.setState({
     status: "idle",
     info: null,

@@ -8,9 +8,10 @@ mod pandoc_tables;
 
 use std::sync::LazyLock;
 
+use comrak::nodes::NodeValue;
 use comrak::options::Plugins;
 use comrak::plugins::syntect::{SyntectAdapter, SyntectAdapterBuilder};
-use comrak::{markdown_to_html_with_plugins, Options};
+use comrak::{format_html_with_plugins, Arena, Node, Options};
 
 /// Prefix for syntax-highlighting CSS classes (e.g. `hl-keyword`), styled in the frontend.
 pub const HIGHLIGHT_CLASS_PREFIX: &str = "hl-";
@@ -40,13 +41,36 @@ pub(crate) fn options() -> Options<'static> {
     options
 }
 
+/// Parses Markdown the same way for the preview and every export: Pandoc tables
+/// become real tables, and rules right before a heading are dropped.
+fn parse<'a>(arena: &'a Arena<'a>, markdown: &str, options: &Options) -> Node<'a> {
+    let markdown = pandoc_tables::to_pipe_tables(markdown);
+    let root = comrak::parse_document(arena, &markdown, options);
+    drop_rules_before_headings(root);
+    root
+}
+
+/// Removes `---` rules directly followed by a heading. Pandoc puts one before every
+/// section; the heading already marks the break, so the extra line is just noise.
+fn drop_rules_before_headings(root: Node<'_>) {
+    let rules: Vec<Node<'_>> = root
+        .descendants()
+        .filter(|node| matches!(node.data.borrow().value, NodeValue::ThematicBreak))
+        .filter(|node| {
+            node.next_sibling()
+                .is_some_and(|next| matches!(next.data.borrow().value, NodeValue::Heading(_)))
+        })
+        .collect();
+    for rule in rules {
+        rule.detach();
+    }
+}
+
 /// Parses Markdown into comrak's AST and hands the root node to `f`.
 /// The AST is the document representation shared by the PDF and DOCX exporters.
-pub(crate) fn with_ast<R>(markdown: &str, f: impl for<'a> FnOnce(comrak::Node<'a>) -> R) -> R {
-    let markdown = pandoc_tables::to_pipe_tables(markdown);
-    let arena = comrak::Arena::new();
-    let root = comrak::parse_document(&arena, &markdown, &options());
-    f(root)
+pub(crate) fn with_ast<R>(markdown: &str, f: impl for<'a> FnOnce(Node<'a>) -> R) -> R {
+    let arena = Arena::new();
+    f(parse(&arena, markdown, &options()))
 }
 
 /// Renders Markdown to an HTML fragment (used by the HTML export).
@@ -66,8 +90,12 @@ fn render_with(markdown: &str, options: Options) -> String {
     let mut plugins = Plugins::default();
     plugins.render.codefence_syntax_highlighter = Some(&*HIGHLIGHTER);
 
-    let markdown = pandoc_tables::to_pipe_tables(markdown);
-    markdown_to_html_with_plugins(&markdown, &options, &plugins)
+    let arena = Arena::new();
+    let root = parse(&arena, markdown, &options);
+    let mut html = String::new();
+    // Writing into a String can't fail.
+    let _ = format_html_with_plugins(root, &options, &mut html, &plugins);
+    html
 }
 
 #[cfg(test)]
@@ -195,6 +223,22 @@ mod tests {
         let html = render_html("Phase 3 --- SOLID, 1--2 `a --- b`");
         assert!(html.contains("Phase 3 — SOLID, 1–2"), "{html}");
         assert!(html.contains("<code>a --- b</code>"), "{html}");
+    }
+
+    #[test]
+    fn drops_rules_right_before_headings_only() {
+        let html = render_html("Intro.\n\n---\n\n# Section\n\nText.\n\n---\n\nMore.");
+        assert_eq!(html.matches("<hr").count(), 1, "{html}");
+        assert!(
+            html.find("<hr").unwrap() > html.find("Text.").unwrap(),
+            "{html}"
+        );
+        // Line numbers of what follows are unchanged (scroll sync).
+        let preview = render_preview_html("A\n\n---\n\n# B");
+        assert!(
+            preview.contains(r#"data-sourcepos="5:1-5:3""#) && !preview.contains("<hr"),
+            "{preview}"
+        );
     }
 
     #[test]

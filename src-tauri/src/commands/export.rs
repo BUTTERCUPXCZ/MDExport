@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
+use tauri::ipc::Channel;
 use tauri::{AppHandle, State, Window};
 use tauri_plugin_opener::OpenerExt;
 
@@ -15,6 +16,18 @@ use crate::state::AppState;
 pub struct ExportResult {
     pub path: String,
     pub name: String,
+    /// Folder the file was saved in.
+    pub folder: String,
+}
+
+/// Where an export is, sent while it runs (after the Save dialog).
+#[derive(Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ExportStage {
+    /// Laying out the document (PDF typesetting can take a few seconds).
+    Converting,
+    /// Writing the file to disk.
+    Saving,
 }
 
 fn stem(file_name: &str) -> &str {
@@ -41,7 +54,8 @@ fn with_extension(path: PathBuf, extension: &str) -> PathBuf {
 /// Converts the editor's Markdown (open file or pasted text) to PDF / DOCX / HTML.
 /// Shows a Save dialog first; returns `None` if the user cancelled.
 /// `source_path` (the open document, if any) picks the dialog's starting folder;
-/// `pdf_pages` picks A4 pages or one continuous page for PDF.
+/// `pdf_pages` picks A4 pages or one continuous page for PDF; `on_progress` reports
+/// each stage once a location is picked.
 #[tauri::command]
 // Each IPC field is its own argument; a struct would only rename them.
 #[allow(clippy::too_many_arguments)]
@@ -54,6 +68,7 @@ pub async fn export_document(
     file_name: String,
     source_path: Option<String>,
     pdf_pages: Option<PdfPages>,
+    on_progress: Channel<ExportStage>,
 ) -> AppResult<Option<ExportResult>> {
     let title = stem(&file_name).to_string();
     let start_dir = source_path
@@ -77,12 +92,14 @@ pub async fn export_document(
     let target = with_extension(target, format.extension());
 
     // Typesetting can take a moment for long documents; keep it off the async workers.
+    let _ = on_progress.send(ExportStage::Converting);
     let pages = pdf_pages.unwrap_or_default();
     let bytes = tauri::async_runtime::spawn_blocking(move || {
         export::export_with(&content, format, &title, pages)
     })
     .await
     .map_err(|e| AppError::Io(format!("Export failed: {e}")))??;
+    let _ = on_progress.send(ExportStage::Saving);
     file_repository::write_bytes_atomic(&target, &bytes)?;
 
     let name = target
@@ -90,29 +107,49 @@ pub async fn export_document(
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
     let path = target.display().to_string();
+    let folder = target
+        .parent()
+        .map(|p| p.display().to_string())
+        .unwrap_or_default();
     state
         .exported
         .lock()
         .expect("exported lock poisoned")
         .insert(target);
-    Ok(Some(ExportResult { path, name }))
+    Ok(Some(ExportResult { path, name, folder }))
 }
 
-/// Opens a file exported this session with the system's default app.
-#[tauri::command]
-pub fn open_exported(app: AppHandle, state: State<'_, AppState>, path: String) -> AppResult<()> {
+/// Only files exported this session may be opened or revealed.
+fn exported_path(state: &AppState, path: String) -> AppResult<PathBuf> {
     let path = PathBuf::from(path);
     let allowed = state
         .exported
         .lock()
         .expect("exported lock poisoned")
         .contains(&path);
-    if !allowed {
-        return Err(AppError::NotAllowed(path.display().to_string()));
+    if allowed {
+        Ok(path)
+    } else {
+        Err(AppError::NotAllowed(path.display().to_string()))
     }
+}
+
+/// Opens a file exported this session with the system's default app.
+#[tauri::command]
+pub fn open_exported(app: AppHandle, state: State<'_, AppState>, path: String) -> AppResult<()> {
+    let path = exported_path(&state, path)?;
     app.opener()
         .open_path(path.display().to_string(), None::<&str>)
         .map_err(|e| AppError::Io(format!("Couldn't open the file: {e}")))
+}
+
+/// Shows a file exported this session in the system file manager.
+#[tauri::command]
+pub fn reveal_exported(app: AppHandle, state: State<'_, AppState>, path: String) -> AppResult<()> {
+    let path = exported_path(&state, path)?;
+    app.opener()
+        .reveal_item_in_dir(&path)
+        .map_err(|e| AppError::Io(format!("Couldn't show the file: {e}")))
 }
 
 #[cfg(test)]

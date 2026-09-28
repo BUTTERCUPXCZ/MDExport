@@ -1,6 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { TitleBar } from "@/components/layout/TitleBar";
+import { ExportDialog } from "@/features/export/ExportDialog";
 import { LibrarySetupDialog } from "@/features/library/LibrarySetupDialog";
 import { refreshLibrary } from "@/features/library/libraryStore";
 import { useLibraryLocation } from "@/features/library/useLibraryLocation";
@@ -56,6 +57,7 @@ export function RootLayout() {
       <ShortcutsDialog />
       <CloseGuardDialog />
       <UpdateDialog />
+      <ExportDialog />
     </>
   );
 }
